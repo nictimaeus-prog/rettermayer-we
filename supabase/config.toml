@@ -1,0 +1,11 @@
+# Supabase-CLI: Projekt verknüpfen mit  supabase link --project-ref <REF>
+project_id = "rettermayer-we"
+
+[functions.send-mail]
+verify_jwt = true
+
+[functions.read-ls]
+verify_jwt = true
+
+[functions.users]
+verify_jwt = true

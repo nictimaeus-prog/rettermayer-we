@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2167b8"/><stop offset="1" stop-color="#174f93"/></linearGradient>
+    <linearGradient id="bulb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e6edf5"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- Trieb -->
+  <path d="M512 330 C 500 250, 470 190, 420 150" fill="none" stroke="#5cc27a" stroke-width="34" stroke-linecap="round"/>
+  <path d="M512 330 C 530 245, 575 185, 640 160" fill="none" stroke="#2b9348" stroke-width="34" stroke-linecap="round"/>
+  <!-- Knolle -->
+  <path d="M512 300
+           C 470 300, 455 345, 430 375
+           C 330 430, 250 500, 250 610
+           C 250 745, 370 830, 512 830
+           C 654 830, 774 745, 774 610
+           C 774 500, 694 430, 594 375
+           C 569 345, 554 300, 512 300 Z" fill="url(#bulb)"/>
+  <!-- Zehen-Linien -->
+  <path d="M512 320 C 470 420, 440 560, 470 810" fill="none" stroke="#c9d6e6" stroke-width="14" stroke-linecap="round"/>
+  <path d="M512 320 C 554 420, 584 560, 554 810" fill="none" stroke="#c9d6e6" stroke-width="14" stroke-linecap="round"/>
+  <path d="M450 380 C 360 450, 320 600, 380 780" fill="none" stroke="#d6e0ec" stroke-width="12" stroke-linecap="round"/>
+  <path d="M574 380 C 664 450, 704 600, 644 780" fill="none" stroke="#d6e0ec" stroke-width="12" stroke-linecap="round"/>
+  <!-- Wurzeln -->
+  <path d="M440 828 l -18 40 M480 832 l -8 46 M512 832 l 0 48 M544 832 l 8 46 M584 828 l 18 40" stroke="#e6edf5" stroke-width="12" stroke-linecap="round"/>
+</svg>

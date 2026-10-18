@@ -1,0 +1,12 @@
+{
+  "appId": "de.biovg.rettermayerwe",
+  "appName": "Rettermayer WE",
+  "webDir": "www",
+  "backgroundColor": "#1b5aa6",
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never"
+  }
+}

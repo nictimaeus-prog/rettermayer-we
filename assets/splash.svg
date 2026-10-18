@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732" width="2732" height="2732">
+  <rect width="2732" height="2732" fill="#1b5aa6"/>
+  <g transform="translate(1366 1250) scale(0.9) translate(-512 -560)">
+    <path d="M512 330 C 500 250, 470 190, 420 150" fill="none" stroke="#5cc27a" stroke-width="34" stroke-linecap="round"/>
+    <path d="M512 330 C 530 245, 575 185, 640 160" fill="none" stroke="#2b9348" stroke-width="34" stroke-linecap="round"/>
+    <path d="M512 300 C 470 300, 455 345, 430 375 C 330 430, 250 500, 250 610 C 250 745, 370 830, 512 830 C 654 830, 774 745, 774 610 C 774 500, 694 430, 594 375 C 569 345, 554 300, 512 300 Z" fill="#ffffff"/>
+    <path d="M512 320 C 470 420, 440 560, 470 810" fill="none" stroke="#c9d6e6" stroke-width="14" stroke-linecap="round"/>
+    <path d="M512 320 C 554 420, 584 560, 554 810" fill="none" stroke="#c9d6e6" stroke-width="14" stroke-linecap="round"/>
+  </g>
+  <text x="1366" y="1900" text-anchor="middle" font-family="Arial Narrow, Arial, sans-serif" font-weight="700" font-size="150" fill="#ffffff" letter-spacing="6">RETTERMAYER WE</text>
+</svg>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Rettermayer WE</string>
+    <string name="title_activity_main">Rettermayer WE</string>
+    <string name="package_name">de.biovg.rettermayerwe</string>
+    <string name="custom_url_scheme">de.biovg.rettermayerwe</string>
+</resources>

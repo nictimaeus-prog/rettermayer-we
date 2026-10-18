@@ -1,0 +1,81 @@
+# Cloud-Bau mit Codemagic (codemagic.io) – kein eigener Mac nötig.
+# Vorher in Codemagic anlegen (Anleitung: ANLEITUNG.md, Schritt 4):
+#   Umgebungsvariablen-Gruppe "supabase":  SUPABASE_URL, SUPABASE_ANON_KEY
+#   Android-Schlüssel (Code signing identities → Android keystores):  Referenzname "rettermayer_keystore"
+#   App-Store-Connect-API-Schlüssel (Integrations → Developer Portal):  Name "Rettermayer ASC"
+workflows:
+  android:
+    name: Android – Installationsdatei (APK)
+    instance_type: linux_x2
+    max_build_duration: 45
+    environment:
+      groups:
+        - supabase
+      android_signing:
+        - rettermayer_keystore
+      node: 22
+      java: 21
+    scripts:
+      - name: Abhängigkeiten
+        script: npm ci
+      - name: App-Dateien bauen
+        script: |
+          npm run build
+          npx cap sync android
+      - name: APK bauen
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+    artifacts:
+      - android/app/build/outputs/apk/release/*.apk
+    publishing:
+      email:
+        recipients:
+          - nicolai.timaeus@bio-vg.de
+        notify:
+          success: true
+          failure: true
+
+  ios:
+    name: iPhone – TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: Rettermayer ASC
+    environment:
+      groups:
+        - supabase
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: de.biovg.rettermayerwe
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Abhängigkeiten
+        script: npm ci
+      - name: App-Dateien bauen
+        script: |
+          npm run build
+          npx cap sync ios
+      - name: Signatur einrichten
+        script: xcode-project use-profiles
+      - name: Build-Nummer setzen
+        script: |
+          cd ios/App
+          agvtool new-version -all "$BUILD_NUMBER"
+          agvtool new-marketing-version "1.0"
+      - name: iPhone-App bauen
+        script: xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - nicolai.timaeus@bio-vg.de
+        notify:
+          success: true
+          failure: true
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
