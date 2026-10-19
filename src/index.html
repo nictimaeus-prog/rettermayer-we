@@ -1106,7 +1106,7 @@ function viewVorgaenge(){
   const ke=S.kEdit?`<div style="margin-bottom:14px"><div class="chips" style="margin-bottom:8px"><span class="pill p-info">Kisten für Charge ${esc(S.kEdit.charge)}</span></div>${kistenEditor(S.kEdit.liste,"ueb")}</div>`:"";
   return ke+`<h1>Vorgänge</h1><p class="lead">Offen = noch nicht an büro+ übergeben. Die CSV ist semikolongetrennt (UTF-8, Komma als Dezimalzeichen) und lässt sich über den büro+-Datenimport einlesen. Nach dem Export stehen die Vorgänge auf „CSV exportiert“.</p>
   <section class="card"><div class="sechead"><h2>Export für büro+</h2><span class="chips">${["alle",...PROD.map(p=>p.k)].map(k=>`<button class="btn small${filt===k?" dark":""}" data-act="filt" data-k="${k}">${k==="alle"?"Alle":esc(prod(k).name)}</button>`).join("")}</span></div>
-    <div class="chips"><button class="btn primary small" data-act="csv-neu" ${neu.length?"":"disabled"}>CSV offene Vorgänge (${neu.length})</button><button class="btn small" data-act="csv-alle" ${list.length?"":"disabled"}>CSV alle angezeigten (${list.length})</button></div>
+    <div class="chips"><button class="btn small dark" data-act="muster-mail" ${MUSTER_BUSY?"disabled":""}>${MUSTER_BUSY?"Sendet …":"Musterprotokoll per E-Mail"}</button><button class="btn primary small" data-act="csv-neu" ${neu.length?"":"disabled"}>CSV offene Vorgänge (${neu.length})</button><button class="btn small" data-act="csv-alle" ${list.length?"":"disabled"}>CSV alle angezeigten (${list.length})</button></div>
     ${demo?`<p class="hint">Ohne Server: Vorgänge nur bis zum Neuladen.</p>`:""}</section>
   ${list.length?`<div class="scrollhint" id="vg-hint" hidden>Tabelle nach rechts wischen für Status und Aktionen →</div><div class="tw vg" id="vg-tw"><table class="t"><thead><tr><th>Charge</th><th>Protokoll</th><th>Produkt</th><th>Erzeuger / Lieferant</th><th>Anlieferung</th><th class="n">Menge kg</th><th>Abw.</th><th>Status</th><th></th></tr></thead><tbody>
   ${list.map(v=>{ const st=STATUS[v.status]||STATUS.offen; const alt=(Date.now()-new Date(v.erstellt).getTime())/864e5;
@@ -1344,6 +1344,29 @@ function mailHtml(){
   <table style="border-collapse:collapse;font-size:14px">${row("Menge",S.menge?deNum(num(S.menge),num(S.menge)%1?3:0)+" kg":"–")}${row("Lieferschein-Nr.",S.keinLs?"kein Lieferschein":(S.lsNr||"–"))}${summaryRows().map(([a,b])=>row(a,b)).join("")}${row("Bemerkung",S.bem||"keine")}</table>
   <p style="color:#567a0e;font-size:13px;font-weight:bold;margin:12px 0 0">Elektronisch erstellt – ohne Unterschrift gültig.</p><p style="color:#707476;font-size:12px;margin:4px 0 0">Protokoll-PDF mit allen Fotos im Anhang.</p></div>
   ${CFG.disclaimer?`<p style="font-size:11px;color:#56687e;background:#f3f7fb;padding:8px 12px;border-radius:6px;margin-top:10px">${esc(CFG.disclaimer)}</p>`:""}</div>`;
+}
+/* ---------- Musterprotokoll per E-Mail ---------- */
+let MUSTER_BUSY=false;
+async function musterSenden(){
+  if(!mcp){ toast("E-Mail-Versand ist in dieser Ansicht nicht verfügbar. Bitte die App in claude.ai öffnen."); return; }
+  if(MUSTER_BUSY) return; MUSTER_BUSY=true; render();
+  const keep=S;
+  try{
+    const e=ERZ.find(x=>x.code==="BAC")||ERZ[0]||{id:"e-bac",name:"Bachner",code:"BAC",buero:"",verbaende:["Bioland"]};
+    S=fresh(); Object.assign(S,{prod:"KNT",erz:e,datum:isoDate(new Date()),menge:"2450",gebinde:"Großkiste",kisten:"6",lsNr:"LS-MUSTER",
+      noten:{q:2,v:2},sauber:true,temp:"ok",fallend:"mittel",trock:"gut",jn:{zert:true,schaed:true,fzg:true,beschr:true},verband:new Set(e.verbaende||["Bioland"]),
+      mg:{1:1},lsCheck:[{punkt:"Bioland",soll:"ja",ist:"ja",status:"ok"},{punkt:"Öko-Kontrollstelle",soll:e.oeko||"DE-ÖKO-006",ist:e.oeko||"DE-ÖKO-006",status:"ok"}],
+      kl:[{kal:"35–55 mm",kg:"402"},{kal:"35–55 mm",kg:"398,5"},{kal:"55–60 mm",kg:"405"},{kal:"55–65 mm",kg:"391"},{kal:"60+ mm",kg:"386"},{kal:"unsortiert",kg:"368"}],
+      bem:"Musterprotokoll – erfundene Werte zur Ansicht des Layouts.",charge:`${e.code} 00 KNT`,saved:true});
+    const pdf=pdfProtokoll(), html=mailHtml(), subj="[Muster] "+mailSubject();
+    const to=CFG.verteiler.length?[...CFG.verteiler]:["nicolai.timaeus@bio-vg.de"];
+    S=keep;
+    await mcp.callTool("Gmail","send_message",{to,subject:subj,htmlBody:html,body:"Musterprotokoll Wareneingang Knoblauch im VG-Bio-Design. PDF im Anhang.",
+      attachments:[{filename:"Musterprotokoll_Wareneingang_Knoblauch.pdf",mimeType:"application/pdf",content:ab64(pdf)}]},{cache:false});
+    toast("Musterprotokoll gesendet an "+to.join(", "));
+  }catch(err){ S=keep; const c=err?.code;
+    toast(c==="server_not_connected"?"Gmail ist nicht verbunden (claude.ai → Einstellungen → Connectors).":c==="approval_required"||c==="not_in_manifest"?"Bitte den Gmail-Zugriff erlauben und erneut tippen.":"Senden fehlgeschlagen. Bitte erneut versuchen."); }
+  MUSTER_BUSY=false; render();
 }
 async function sendMail(){
   const to=empfaenger(); if(!to.length){ toast("Bitte erst einen Verteiler in den Stammdaten hinterlegen"); return; }
@@ -1616,6 +1639,7 @@ document.addEventListener("click", ev=>{
   else if(a==="kl-save"){ klSave(); }
   else if(a==="kl-cancel"){ S.kEdit=null; render(); }
   else if(a==="filt"){ filt=b.dataset.k; render(); }
+  else if(a==="muster-mail"){ musterSenden(); }
   else if(a==="csv-neu"){ csvExport(vorgListe().filter(v=>v.status==="offen"),true); }
   else if(a==="csv-alle"){ csvExport(vorgListe(),true); }
   else if(a==="gebucht"){ setGebucht(b.dataset.id); }
