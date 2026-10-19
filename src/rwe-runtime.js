@@ -408,6 +408,11 @@
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         $("rwe-go").disabled = false; $("rwe-go").textContent = "Anmelden";
         if (error) { $("rwe-err").textContent = /Invalid login/i.test(error.message) ? "E-Mail oder Passwort stimmt nicht." : isNetErr(error) || /fetch/i.test(error.message) ? "Server nicht erreichbar. Bitte Netz prüfen und erneut versuchen." : "Anmeldung fehlgeschlagen: " + error.message; return; }
+        const { data: pr } = await sb.from("profiles").select("freigegeben").eq("id", data.session.user.id).maybeSingle();
+        if (!pr?.freigegeben) {
+          QUIET_SIGNOUT = true; await sb.auth.signOut({ scope: "local" }).catch(() => {});
+          $("rwe-err").textContent = "Dieses Konto ist nicht freigegeben. Bitte beim Admin melden."; return;
+        }
         session = data.session; await afterLogin(); ov.remove();
       });
     }
@@ -434,7 +439,8 @@
     updNet(); startRealtime(); flush();
     readyResolve();
   }
-  sb.auth.onAuthStateChange((ev) => { if (ev === "SIGNED_OUT") location.reload(); });
+  let QUIET_SIGNOUT = false;
+  sb.auth.onAuthStateChange((ev) => { if (ev === "SIGNED_OUT" && !QUIET_SIGNOUT) location.reload(); QUIET_SIGNOUT = false; });
   (async () => {
     const { data } = await sb.auth.getSession();
     session = data.session;

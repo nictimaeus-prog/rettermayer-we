@@ -41,8 +41,9 @@ export async function caller(req: Request): Promise<{ user: User; role: string }
   });
   const { data, error } = await client.auth.getUser();
   if (error || !data?.user) return null;
-  const { data: prof } = await adminClient().from("profiles").select("role").eq("id", data.user.id).maybeSingle();
-  return { user: data.user, role: prof?.role || "user" };
+  const { data: prof } = await adminClient().from("profiles").select("role,freigegeben").eq("id", data.user.id).maybeSingle();
+  if (!prof?.freigegeben) return null; // nicht vom Admin angelegt → kein Zugriff
+  return { user: data.user, role: prof.role || "user" };
 }
 
 export const isEmail = (s: unknown) => typeof s === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);

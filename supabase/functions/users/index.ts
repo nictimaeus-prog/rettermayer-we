@@ -32,8 +32,9 @@ export async function caller(req: Request): Promise<{ user: User; role: string }
   });
   const { data, error } = await client.auth.getUser();
   if (error || !data?.user) return null;
-  const { data: prof } = await adminClient().from("profiles").select("role").eq("id", data.user.id).maybeSingle();
-  return { user: data.user, role: prof?.role || "user" };
+  const { data: prof } = await adminClient().from("profiles").select("role,freigegeben").eq("id", data.user.id).maybeSingle();
+  if (!prof?.freigegeben) return null; // nicht vom Admin angelegt → kein Zugriff
+  return { user: data.user, role: prof.role || "user" };
 }
 
 export const isEmail = (s: unknown) => typeof s === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
@@ -69,9 +70,10 @@ Deno.serve(async (req) => {
     const name = String(b.name || "").trim().slice(0, 80);
     const { data, error } = await db.auth.admin.createUser({
       email: b.email!.trim().toLowerCase(), password: b.password, email_confirm: true, user_metadata: { name },
+      app_metadata: { freigegeben: "true", role },
     });
     if (error) return fail(400, "bad_request", /already/i.test(error.message) ? "Diese E-Mail hat schon ein Konto" : error.message);
-    const { error: pe } = await db.from("profiles").upsert({ id: data.user.id, name: name || b.email!.split("@")[0], role });
+    const { error: pe } = await db.from("profiles").upsert({ id: data.user.id, name: name || b.email!.split("@")[0], role, freigegeben: true });
     if (pe) return fail(500, "server_error", pe.message);
     return json({ ok: true, id: data.user.id });
   }

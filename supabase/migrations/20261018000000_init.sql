@@ -9,23 +9,33 @@ create table if not exists public.profiles (
   id         uuid primary key references auth.users(id) on delete cascade,
   name       text not null default '',
   role       text not null default 'user' check (role in ('user', 'admin')),
+  -- nur vom Admin (bzw. der Funktion "users") angelegte Konten sind freigegeben.
+  -- Selbst registrierte Konten sehen nichts, auch wenn die Registrierung offen ist.
+  freigegeben boolean not null default false,
   created_at timestamptz not null default now()
 );
 alter table public.profiles enable row level security;
 
+create or replace function public.is_member()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and freigegeben);
+$$;
+
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
+  select exists (select 1 from public.profiles where id = auth.uid() and freigegeben and role = 'admin');
 $$;
 
 -- neues Konto → Profil anlegen (Name aus den Anmeldedaten, sonst Teil vor dem @)
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, name, role)
+  -- app_metadata kann nur der Server (Service-Schlüssel) setzen, nie die Person selbst
+  insert into public.profiles (id, name, role, freigegeben)
   values (new.id,
           coalesce(nullif(new.raw_user_meta_data->>'name', ''), split_part(new.email, '@', 1)),
-          coalesce(nullif(new.raw_app_meta_data->>'role', ''), 'user'))
+          case when new.raw_app_meta_data->>'role' = 'admin' then 'admin' else 'user' end,
+          coalesce(new.raw_app_meta_data->>'freigegeben', '') = 'true')
   on conflict (id) do nothing;
   return new;
 end $$;
@@ -34,7 +44,7 @@ create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
 
 drop policy if exists "profiles lesen" on public.profiles;
-create policy "profiles lesen" on public.profiles for select to authenticated using (true);
+create policy "profiles lesen" on public.profiles for select to authenticated using (id = auth.uid() or public.is_member());
 drop policy if exists "profiles admin" on public.profiles;
 create policy "profiles admin" on public.profiles for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
@@ -57,11 +67,11 @@ create index if not exists docs_we_charge on public.docs ((data->>'charge')) whe
 
 create or replace function public.can_write(c text)
 returns boolean language sql stable as $$
-  select case when c in ('erzeuger', 'lieferanten', 'config') then public.is_admin() else auth.uid() is not null end;
+  select case when c in ('erzeuger', 'lieferanten', 'config') then public.is_admin() else public.is_member() end;
 $$;
 
 drop policy if exists "docs lesen" on public.docs;
-create policy "docs lesen" on public.docs for select to authenticated using (true);
+create policy "docs lesen" on public.docs for select to authenticated using (public.is_member());
 drop policy if exists "docs anlegen" on public.docs;
 create policy "docs anlegen" on public.docs for insert to authenticated with check (public.can_write(collection));
 drop policy if exists "docs aendern" on public.docs;
@@ -162,10 +172,10 @@ values ('files', 'files', false, 20971520)
 on conflict (id) do nothing;
 
 drop policy if exists "files lesen" on storage.objects;
-create policy "files lesen" on storage.objects for select to authenticated using (bucket_id = 'files');
+create policy "files lesen" on storage.objects for select to authenticated using (bucket_id = 'files' and public.is_member());
 drop policy if exists "files hochladen" on storage.objects;
-create policy "files hochladen" on storage.objects for insert to authenticated with check (bucket_id = 'files');
+create policy "files hochladen" on storage.objects for insert to authenticated with check (bucket_id = 'files' and public.is_member());
 drop policy if exists "files ersetzen" on storage.objects;
-create policy "files ersetzen" on storage.objects for update to authenticated using (bucket_id = 'files') with check (bucket_id = 'files');
+create policy "files ersetzen" on storage.objects for update to authenticated using (bucket_id = 'files' and public.is_member()) with check (bucket_id = 'files' and public.is_member());
 drop policy if exists "files loeschen" on storage.objects;
 create policy "files loeschen" on storage.objects for delete to authenticated using (bucket_id = 'files' and public.is_admin());

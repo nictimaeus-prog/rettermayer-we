@@ -29,5 +29,5 @@ on conflict (collection, id) do nothing;
 
 -- Ersten Admin festlegen: vorher unter Authentication → Users → "Add user" das Konto anlegen
 -- (E-Mail + Passwort, "Auto Confirm User" anhaken), dann E-Mail unten anpassen und ausführen:
-update public.profiles set role = 'admin', name = 'Nicolai Timaeus'
+update public.profiles set role = 'admin', freigegeben = true, name = 'Nicolai Timaeus'
  where id = (select id from auth.users where email = 'nicolai.timaeus@bio-vg.de');
