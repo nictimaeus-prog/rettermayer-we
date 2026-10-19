@@ -179,3 +179,14 @@ drop policy if exists "files ersetzen" on storage.objects;
 create policy "files ersetzen" on storage.objects for update to authenticated using (bucket_id = 'files' and public.is_member()) with check (bucket_id = 'files' and public.is_member());
 drop policy if exists "files loeschen" on storage.objects;
 create policy "files loeschen" on storage.objects for delete to authenticated using (bucket_id = 'files' and public.is_admin());
+
+-------------------------------------------------------------------------------
+-- Funktionen nicht unnötig öffentlich aufrufbar machen
+-------------------------------------------------------------------------------
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.we_charge_unique() from public, anon, authenticated;
+revoke execute on function public.zaehler_max() from public, anon, authenticated;
+revoke execute on function public.is_admin() from public, anon;
+revoke execute on function public.is_member() from public, anon;
+revoke execute on function public.can_write(text) from public, anon;
+revoke execute on function public.doc_merge(text, text, jsonb) from public, anon;

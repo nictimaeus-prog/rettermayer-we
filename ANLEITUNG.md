@@ -26,30 +26,15 @@ Android braucht kein Store-Konto, die App wird als Installationsdatei (APK) vert
 2. Unter developer.apple.com/programs/enroll als **Organisation** anmelden, mit einer Apple-ID mit Firmen-E-Mail, z. B. nicolai.timaeus@bio-vg.de.
 3. Nach der Freischaltung weiter mit Schritt 7.
 
-## Schritt 2 – Supabase-Projekt anlegen
+## Schritte 2 bis 4 – Supabase ✅ erledigt (19.10.2026)
 
-1. Auf supabase.com ein Konto anlegen und eine Organisation „VG Bio Bauern“ erstellen.
-2. **New project:** Name `rettermayer-we`, Region **Central EU (Frankfurt)**, ein sicheres Datenbank-Passwort vergeben und notieren.
-3. Unter **Authentication → Sign In / Providers** die Option **„Allow new users to sign up“ ausschalten**. Konten legt nur der Admin an.
-
-## Schritt 3 – Datenbank einrichten
-
-1. **SQL Editor → New query:** den Inhalt von `supabase/migrations/20261018000000_init.sql` einfügen und **Run** klicken.
-2. **Authentication → Users → Add user → Create new user:** deine E-Mail und ein Passwort eintragen, **Auto Confirm User** anhaken.
-3. **SQL Editor → New query:** den Inhalt von `supabase/seed.sql` einfügen. In der letzten Zeile die E-Mail prüfen, dann **Run**.
-   Damit sind die 18 Erzeuger, die 4 Pflanzgut-Lieferanten und die Grundeinstellungen angelegt, und du bist Admin.
-
-## Schritt 4 – Server-Funktionen anlegen
-
-Für jede der drei Dateien unter **Edge Functions → Deploy a new function → Via Editor**:
-
-| Name der Funktion (genau so) | Datei |
-|---|---|
-| `send-mail` | `supabase/functions/send-mail/index.ts` |
-| `read-ls` | `supabase/functions/read-ls/index.ts` |
-| `users` | `supabase/functions/users/index.ts` |
-
-Jeweils den Inhalt einfügen, „Verify JWT“ bzw. „Enforce JWT verification“ eingeschaltet lassen und **Deploy** klicken.
+- Projekt **rettermayer-we**, Region eu-west-3 (Paris, EU), Adresse `https://ofyiuxxpwfsnxxvoaqra.supabase.co`
+- Datenbank, Zeilenrechte, Chargen-Vergabe, Live-Abgleich und Dateiablage eingerichtet
+- 18 Erzeuger, 4 Pflanzgut-Lieferanten und Grundeinstellungen eingetragen
+- Admin-Konto **nicolai.timaeus@bio-vg.de** angelegt (Start-Passwort separat mitgeteilt, in der App unter Stammdaten → Benutzer änderbar)
+- Server-Funktionen `send-mail`, `read-ls`, `users` laufen
+- **Schutz:** Nur Konten, die der Admin in der App anlegt, sind freigegeben. Wer sich selbst registriert, sieht nichts.
+  Empfohlen trotzdem: in Supabase unter **Authentication → Sign In / Providers** „Allow new users to sign up“ ausschalten.
 
 ## Schritt 5 – Mailversand einrichten (vorerst über nic.timaeus@gmail.com)
 
@@ -66,15 +51,13 @@ Jeweils den Inhalt einfügen, „Verify JWT“ bzw. „Enforce JWT verification�
 
 **Später auf rettermayer@bio-vg.de umstellen:** Wenn geklärt ist, wer die Domain bio-vg.de verwaltet, dort ein Postfach rettermayer@bio-vg.de mit SMTP-Zugang einrichten lassen. Danach nur diese Secrets ändern: `SMTP_USER`, `SMTP_PASS`, `SMTP_HOST` (Mailserver des Anbieters) und gegebenenfalls `SMTP_PORT` (465). Supabase lässt Port 587 nicht zu. An der App ändert sich nichts.
 
-## Schritt 6 – Code zu GitHub und Codemagic
+## Schritt 6 – Codemagic (GitHub ✅ erledigt)
 
-1. Auf github.com ein **privates** Projekt `rettermayer-we` anlegen und den Inhalt dieses Pakets hochladen. Das übernehme ich gern, wenn GitHub mit Claude verbunden ist.
-2. Auf codemagic.io mit GitHub anmelden, **Add application**, das Projekt `rettermayer-we` wählen. Die Datei `codemagic.yaml` wird erkannt.
-3. In Codemagic unter **Environment variables** eine Gruppe **`supabase`** anlegen:
-   - `SUPABASE_URL`: in Supabase unter Project Settings → API (Project URL)
-   - `SUPABASE_ANON_KEY`: in Supabase unter Project Settings → API Keys (anon bzw. publishable key, **nicht** service_role/secret)
-4. **Team settings → Code signing identities → Android keystores → Add keystore:** die Datei `rettermayer-release.jks` hochladen, Referenzname **`rettermayer_keystore`**, Passwörter und Alias aus `Android-Schluessel.txt`.
-5. Workflow **„Android – Installationsdatei (APK)“** starten. Nach etwa 10 bis 15 Minuten kommt eine E-Mail mit dem Download-Link der APK.
+Der Code liegt im privaten GitHub-Projekt `nictimaeus-prog/rettermayer-we`. Die Supabase-Verbindung ist fest eingebaut (`src/config.prod.js`), eine Variablen-Gruppe ist nicht nötig.
+
+1. Auf codemagic.io **mit GitHub anmelden**, **Add application**, das Projekt `rettermayer-we` wählen. Die Datei `codemagic.yaml` wird erkannt.
+2. **Team settings → Code signing identities → Android keystores → Add keystore:** die Datei `rettermayer-release.jks` hochladen, Referenzname **`rettermayer_keystore`**, Passwörter und Alias aus `Android-Schluessel.txt`.
+3. Workflow **„Android – Installationsdatei (APK)“** starten. Nach etwa 10 bis 15 Minuten kommt eine E-Mail mit dem Download-Link der APK.
 
 ## Schritt 7 – iPhone über TestFlight (nach Freischaltung des Apple-Kontos)
 

@@ -1,6 +1,6 @@
 # Cloud-Bau mit Codemagic (codemagic.io) – kein eigener Mac nötig.
 # Vorher in Codemagic anlegen (Anleitung: ANLEITUNG.md, Schritt 4):
-#   Umgebungsvariablen-Gruppe "supabase":  SUPABASE_URL, SUPABASE_ANON_KEY
+#   Supabase-Verbindung steht in src/config.prod.js (optional überschreibbar mit SUPABASE_URL / SUPABASE_ANON_KEY)
 #   Android-Schlüssel (Code signing identities → Android keystores):  Referenzname "rettermayer_keystore"
 #   App-Store-Connect-API-Schlüssel (Integrations → Developer Portal):  Name "Rettermayer ASC"
 workflows:
@@ -9,8 +9,6 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 45
     environment:
-      groups:
-        - supabase
       android_signing:
         - rettermayer_keystore
       node: 22
@@ -44,8 +42,6 @@ workflows:
     integrations:
       app_store_connect: Rettermayer ASC
     environment:
-      groups:
-        - supabase
       ios_signing:
         distribution_type: app_store
         bundle_identifier: de.biovg.rettermayerwe

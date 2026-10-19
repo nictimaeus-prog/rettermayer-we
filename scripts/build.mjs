@@ -51,6 +51,8 @@ if (url && key) {
   fs.writeFileSync(path.join(www, "config.js"), `window.RWE_CONFIG=${JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key })};\n`);
 } else if (fs.existsSync(path.join(root, "src/config.js"))) {
   cp(path.join(root, "src/config.js"), path.join(www, "config.js"));
+} else if (fs.existsSync(path.join(root, "src/config.prod.js"))) {
+  cp(path.join(root, "src/config.prod.js"), path.join(www, "config.js"));
 } else {
   console.error("FEHLT: SUPABASE_URL und SUPABASE_ANON_KEY (oder src/config.js nach Vorlage src/config.example.js)");
   process.exit(1);
