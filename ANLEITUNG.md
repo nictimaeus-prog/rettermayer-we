@@ -56,7 +56,7 @@ Android braucht kein Store-Konto, die App wird als Installationsdatei (APK) vert
 Der Code liegt im privaten GitHub-Projekt `nictimaeus-prog/rettermayer-we`. Die Supabase-Verbindung ist fest eingebaut (`src/config.prod.js`), eine Variablen-Gruppe ist nicht nötig.
 
 1. Auf codemagic.io **mit GitHub anmelden**, **Add application**, das Projekt `rettermayer-we` wählen. Die Datei `codemagic.yaml` wird erkannt.
-2. **Team settings → Code signing identities → Android keystores → Add keystore:** die Datei `rettermayer-release.jks` hochladen, Referenzname **`rettermayer_keystore`**, Passwörter und Alias aus `Android-Schluessel.txt`.
+2. **Team settings → Code signing identities → Android keystores → Add keystore:** die Datei `rettermayer-release.jks` hochladen, Referenzname **`rettermayer_android`**, Passwörter und Alias aus `Android-Schluessel.txt`.
 3. Workflow **„Android – Installationsdatei (APK)“** starten. Nach etwa 10 bis 15 Minuten kommt eine E-Mail mit dem Download-Link der APK.
 
 ## Schritt 7 – iPhone über TestFlight (nach Freischaltung des Apple-Kontos)
