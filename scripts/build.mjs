@@ -21,6 +21,7 @@ cp(nm("jsbarcode/dist/JsBarcode.all.min.js"), path.join(www, "lib/JsBarcode.all.
 cp(nm("jspdf/dist/jspdf.umd.min.js"), path.join(www, "lib/jspdf.umd.min.js"));
 cp(nm("pdfjs-dist/build/pdf.min.js"), path.join(www, "lib/pdfjs/pdf.min.js"));
 cp(nm("pdfjs-dist/build/pdf.worker.min.js"), path.join(www, "lib/pdfjs/pdf.worker.min.js"));
+cp(nm("heic2any/dist/heic2any.min.js"), path.join(www, "lib/heic2any.min.js")); // HEIC-Fotos (iPhone) im Browser umwandeln
 
 // Schriften
 const fonts = [

@@ -719,7 +719,7 @@ function vLs(){
   <div class="two">
     <section class="card"><div class="sechead"><h2>Lieferschein</h2>${S.lsFoto?"":`<button class="btn small${S.keinLs?" dark":""}" data-act="kein-ls" aria-pressed="${!!S.keinLs}">${S.keinLs?"✓ Kein Lieferschein":"Kein Lieferschein"}</button>`}</div>
       ${S.lsFoto?`<div class="thumbs"><figure><img src="${S.lsFoto}" alt="Lieferschein"><button data-act="ls-del" aria-label="Lieferschein entfernen">×</button></figure></div>`
-      :S.keinLs?`<div class="warnbox${isPG()?" wbox":""}"><b>Kein Lieferschein vorhanden</b><br>${isPG()?"Wird im Protokoll vermerkt.":"Wird als Abweichung ins Protokoll übernommen."}</div>`:`<div class="uplrow"><label class="upl" for="f-ls-cam"><b style="color:var(--ink)">Lieferschein fotografieren</b><span>Kamera öffnen</span><input type="file" id="f-ls-cam" accept="image/*" capture="environment"></label><label class="upl" for="f-ls"><b style="color:var(--ink)">Galerie</b><span>vorhandenes Foto</span><input type="file" id="f-ls" accept="image/*"></label></div>`}
+      :S.keinLs?`<div class="warnbox${isPG()?" wbox":""}"><b>Kein Lieferschein vorhanden</b><br>${isPG()?"Wird im Protokoll vermerkt.":"Wird als Abweichung ins Protokoll übernommen."}</div>`:`<div class="uplrow"><label class="upl" for="f-ls-cam"><b style="color:var(--ink)">Lieferschein fotografieren</b><span>Kamera öffnen</span><input type="file" id="f-ls-cam" accept="image/*" capture="environment"></label><label class="upl" for="f-ls"><b style="color:var(--ink)">Galerie</b><span>vorhandenes Foto</span><input type="file" id="f-ls" accept="image/*,.heic,.heif"></label></div>`}
       ${S.lsFoto?`<div><button class="btn dark small" data-act="ls-read" ${S.lsBusy?"disabled":""}>${S.lsBusy?"Lieferschein wird gelesen …":"Deklaration automatisch auslesen"}</button></div>`:""}
       ${S.lsMsg?`<p class="hint">${esc(S.lsMsg)}</p>`:""}
     </section>
@@ -733,7 +733,7 @@ function vLs(){
   </div>
   <section class="card"><h2>Fotos der Ware</h2>
     <div class="thumbs">${S.fotos.map((f,i)=>`<figure><img src="${f}" alt="Warenfoto ${i+1}"><button data-act="foto-del" data-i="${i}" aria-label="Foto entfernen">×</button></figure>`).join("")}</div>
-    <div class="uplrow"><label class="upl" for="f-fotos-cam"><b style="color:var(--ink)">Foto aufnehmen</b><span>Kamera öffnen</span><input type="file" id="f-fotos-cam" accept="image/*" capture="environment"></label><label class="upl" for="f-fotos"><b style="color:var(--ink)">Galerie</b><span>mehrere möglich</span><input type="file" id="f-fotos" accept="image/*" multiple></label></div>
+    <div class="uplrow"><label class="upl" for="f-fotos-cam"><b style="color:var(--ink)">Foto aufnehmen</b><span>Kamera öffnen</span><input type="file" id="f-fotos-cam" accept="image/*" capture="environment"></label><label class="upl" for="f-fotos"><b style="color:var(--ink)">Galerie</b><span>mehrere möglich</span><input type="file" id="f-fotos" accept="image/*,.heic,.heif" multiple></label></div>
   </section>
   <section class="card"><h2>Bemerkungen</h2><textarea id="f-bem" rows="4" placeholder="z. B. 2 Großkisten mit Schimmelnestern aussortiert">${esc(S.bem)}</textarea></section>`;
 }
@@ -1261,10 +1261,27 @@ async function userSave(id){ const role=$("#u-role-"+id).value, pw=$("#u-pw-"+id
   try{ await RWE.users.update({id,role,password:pw||undefined}); toast("Gespeichert"); USERS=null; render(); }catch(e){ toast("Nicht gespeichert: "+(e.message||"")); } }
 
 /* ---------- Bilder ---------- */
-function readImg(file, max=1600, q=0.8){
-  return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onerror=rej; fr.onload=()=>{ const img=new Image(); img.onload=()=>{
-    const s=Math.min(1,max/Math.max(img.width,img.height)); const c=document.createElement("canvas"); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
-    c.getContext("2d").drawImage(img,0,0,c.width,c.height); res(c.toDataURL("image/jpeg",q)); }; img.onerror=rej; img.src=fr.result; }; fr.readAsDataURL(file); });
+// Foto einlesen, verkleinern, als JPEG liefern. HEIC/HEIF (iPhone, manche Samsung) wird vorher umgewandelt,
+// weil Chrome/Edge/Firefox unter Windows und Android es nicht öffnen können.
+const istHeic=f=>/hei[cf]/i.test(f.type||"")||/\.hei[cf]$/i.test(f.name||"");
+function bildLaden(blob, max, q){
+  return new Promise((res,rej)=>{ const url=URL.createObjectURL(blob); const img=new Image();
+    img.onload=()=>{ try{ const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)); const c=document.createElement("canvas"); c.width=Math.max(1,Math.round(img.naturalWidth*s)); c.height=Math.max(1,Math.round(img.naturalHeight*s));
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url); const d=c.toDataURL("image/jpeg",q); if(d.length<100) throw new Error("leer"); res(d); }catch(e){ URL.revokeObjectURL(url); rej(e); } };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("nicht lesbar")); }; img.src=url; });
+}
+let heicLib=null;
+function heicLaden(){ if(window.heic2any) return Promise.resolve(window.heic2any);
+  return heicLib||(heicLib=new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src="lib/heic2any.min.js"; sc.onload=()=>res(window.heic2any); sc.onerror=()=>{ heicLib=null; rej(new Error("Umwandlung nicht verfügbar")); }; document.head.appendChild(sc); })); }
+async function readImg(file, max=1600, q=0.8){
+  try{ return await bildLaden(file,max,q); }
+  catch(e){
+    if(!istHeic(file)) throw new Error(`Format ${file.type||(file.name||"").split(".").pop()||"unbekannt"} wird nicht unterstützt`);
+    toast("iPhone-Foto (HEIC) wird umgewandelt …");
+    const conv=await heicLaden();
+    const out=await conv({blob:file,toType:"image/jpeg",quality:0.85});
+    return bildLaden(Array.isArray(out)?out[0]:out,max,q);
+  }
 }
 function dataUrlToBlob(u){ const [h,b]=u.split(","); const bin=atob(b); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i); return new Blob([a],{type:h.match(/:(.*?);/)[1]}); }
 
@@ -1684,8 +1701,8 @@ document.addEventListener("change", async ev=>{
   else if(t.id==="pg-auftr"){ S.pg.auftrag=t.value; }
   else if(t.id.startsWith("kl-kal-")){ const l=curKL(); if(l&&l[+t.id.slice(7)]){ l[+t.id.slice(7)].kal=t.value; updKL(); } }
   else if(t.id==="cfg-logo" && t.files[0]){ logoHochladen(t.files[0]); }
-  else if((t.id==="f-ls"||t.id==="f-ls-cam") && t.files[0]){ try{ S.lsFoto=await readImg(t.files[0],1400,0.72); S.lsCheck=lsRows(); S.lsMsg=""; }catch(e){ toast("Bild konnte nicht gelesen werden"); } render(); }
-  else if((t.id==="f-fotos"||t.id==="f-fotos-cam") && t.files.length){ for(const f of t.files){ try{ S.fotos.push(await readImg(f,1100,0.68)); }catch(e){} } render(); }
+  else if((t.id==="f-ls"||t.id==="f-ls-cam") && t.files[0]){ try{ S.lsFoto=await readImg(t.files[0],1400,0.72); S.lsCheck=lsRows(); S.lsMsg=""; }catch(e){ console.error("Lieferschein",e); toast("Bild konnte nicht gelesen werden: "+(e?.message||"")); } t.value=""; render(); }
+  else if((t.id==="f-fotos"||t.id==="f-fotos-cam") && t.files.length){ let fehl=0; for(const f of t.files){ try{ S.fotos.push(await readImg(f,1100,0.68)); }catch(e){ fehl++; console.error("Foto",f.name,f.type,e); } } t.value=""; render(); if(fehl) toast(`${fehl} Foto${fehl>1?"s":""} konnte${fehl>1?"n":""} nicht gelesen werden`); }
 });
 
 /* ---------- Start ---------- */
