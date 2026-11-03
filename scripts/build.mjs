@@ -13,7 +13,7 @@ fs.rmSync(www, { recursive: true, force: true });
 fs.mkdirSync(www, { recursive: true });
 
 // App-Dateien
-for (const f of ["index.html", "rwe-runtime.js"]) cp(path.join(root, "src", f), path.join(www, f));
+for (const f of ["index.html", "rwe-runtime.js", "knt.js"]) cp(path.join(root, "src", f), path.join(www, f));
 
 // Bibliotheken
 cp(nm("@supabase/supabase-js/dist/umd/supabase.js"), path.join(www, "lib/supabase.js"));

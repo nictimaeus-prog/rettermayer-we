@@ -64,6 +64,15 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return fail(400, "bad_request", "Ungültige Anfrage"); }
   const to = (Array.isArray(body.to) ? body.to : String(body.to || "").split(/[;,]/)).map((s) => String(s).trim()).filter(Boolean);
   if (!to.length || to.length > 25 || !to.every(isEmail)) return fail(400, "bad_request", "Empfänger fehlen oder sind ungültig");
+  // Empfänger außerhalb des Verteilers (z. B. Erzeuger) nur mit Recht „Erzeuger-Versand“
+  const db = adminClient();
+  const [{ data: cfg }, { data: prof }] = await Promise.all([
+    db.from("docs").select("data").eq("collection", "config").eq("id", "allgemein").maybeSingle(),
+    db.from("profiles").select("erz_versand").eq("id", who.user.id).maybeSingle(),
+  ]);
+  const verteiler = new Set(((cfg?.data?.verteiler as string[]) || []).map((x) => String(x).trim().toLowerCase()));
+  const extern = to.filter((x) => !verteiler.has(x.toLowerCase()));
+  if (extern.length && !prof?.erz_versand) return fail(403, "permission_denied", "Versand an Erzeuger nur mit Recht „Erzeuger-Versand“");
   const subject = String(body.subject || "Wareneingang").slice(0, 300);
   const atts = (body.attachments || []).filter((a) => a && typeof a.content === "string").slice(0, 20);
 

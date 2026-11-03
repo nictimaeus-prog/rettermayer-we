@@ -391,27 +391,30 @@
         #rwe-login input[type=password]{font:inherit;font-size:18px;color:var(--ink);background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box}
       </style>
       <form id="rwe-login-f" novalidate>
-        <div><h1>Rettermayer WE</h1><p>Wareneingang Knoblauch · VG Bio Bauern</p></div>
-        <label class="f">E-Mail<input type="email" id="rwe-email" autocomplete="username" inputmode="email" required></label>
-        <label class="f">Passwort<input type="password" id="rwe-pw" autocomplete="current-password" required></label>
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><h1>Rettermayer WE</h1><p data-l="sub"></p></div>
+          <span class="chips" style="flex:none"><button type="button" class="btn small" data-lang="de">DE</button><button type="button" class="btn small" data-lang="ro">RO</button></span></div>
+        <label class="f"><span data-l="mail"></span><input type="email" id="rwe-email" autocomplete="username" inputmode="email" required></label>
+        <label class="f"><span data-l="pw"></span><input type="password" id="rwe-pw" autocomplete="current-password" required></label>
         <p class="err" id="rwe-err" role="alert"></p>
-        <button class="btn primary" id="rwe-go" type="submit">Anmelden</button>
-        <p>Zugang bekommst du von deinem Admin. Passwort vergessen? Admin fragen, er setzt es in der App neu.</p>
+        <button class="btn primary" id="rwe-go" type="submit" data-l="go"></button>
+        <p data-l="hint"></p>
       </form>`;
       document.body.appendChild(ov);
+      ov.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => { try { localStorage.setItem("rwe-lang", b.dataset.lang); } catch (_) {} loginTexte(); }));
+      loginTexte();
       $("rwe-login-f").addEventListener("submit", async (ev) => {
         ev.preventDefault();
         const email = $("rwe-email").value.trim(), password = $("rwe-pw").value;
-        if (!email || !password) { $("rwe-err").textContent = "Bitte E-Mail und Passwort eingeben."; return; }
-        if (!online()) { $("rwe-err").textContent = "Für die erste Anmeldung braucht das Handy Netz."; return; }
-        $("rwe-go").disabled = true; $("rwe-go").textContent = "Melde an …"; $("rwe-err").textContent = "";
+        if (!email || !password) { $("rwe-err").textContent = LT().fehlt; return; }
+        if (!online()) { $("rwe-err").textContent = LT().netz; return; }
+        $("rwe-go").disabled = true; $("rwe-go").textContent = LT().laeuft; $("rwe-err").textContent = "";
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
-        $("rwe-go").disabled = false; $("rwe-go").textContent = "Anmelden";
-        if (error) { $("rwe-err").textContent = /Invalid login/i.test(error.message) ? "E-Mail oder Passwort stimmt nicht." : isNetErr(error) || /fetch/i.test(error.message) ? "Server nicht erreichbar. Bitte Netz prüfen und erneut versuchen." : "Anmeldung fehlgeschlagen: " + error.message; return; }
+        $("rwe-go").disabled = false; $("rwe-go").textContent = LT().go;
+        if (error) { $("rwe-err").textContent = /Invalid login/i.test(error.message) ? LT().falsch : isNetErr(error) || /fetch/i.test(error.message) ? LT().server : LT().fehler + error.message; return; }
         const { data: pr } = await sb.from("profiles").select("freigegeben").eq("id", data.session.user.id).maybeSingle();
         if (!pr?.freigegeben) {
           QUIET_SIGNOUT = true; await sb.auth.signOut({ scope: "local" }).catch(() => {});
-          $("rwe-err").textContent = "Dieses Konto ist nicht freigegeben. Bitte beim Admin melden."; return;
+          $("rwe-err").textContent = LT().gesperrt; return;
         }
         session = data.session; await afterLogin(); ov.remove();
       });
@@ -419,16 +422,33 @@
     if (msg) $("rwe-err").textContent = msg;
     setTimeout(() => $("rwe-email")?.focus(), 50);
   }
+  const LOGIN_T = {
+    de: { sub: "Wareneingang Knoblauch · VG Bio Bauern", mail: "E-Mail", pw: "Passwort", go: "Anmelden", laeuft: "Melde an …",
+      hint: "Zugang bekommst du von deinem Admin. Passwort vergessen? Admin fragen, er setzt es in der App neu.",
+      fehlt: "Bitte E-Mail und Passwort eingeben.", netz: "Für die erste Anmeldung braucht das Handy Netz.", falsch: "E-Mail oder Passwort stimmt nicht.",
+      server: "Server nicht erreichbar. Bitte Netz prüfen und erneut versuchen.", fehler: "Anmeldung fehlgeschlagen: ", gesperrt: "Dieses Konto ist nicht freigegeben. Bitte beim Admin melden." },
+    ro: { sub: "Recepție usturoi · VG Bio Bauern", mail: "E-mail", pw: "Parolă", go: "Autentificare", laeuft: "Se autentifică …",
+      hint: "Accesul îl primești de la administrator. Ai uitat parola? Întreabă administratorul, o resetează în aplicație.",
+      fehlt: "Introdu e-mailul și parola.", netz: "Pentru prima autentificare telefonul are nevoie de internet.", falsch: "E-mailul sau parola nu sunt corecte.",
+      server: "Serverul nu răspunde. Verifică internetul și încearcă din nou.", fehler: "Autentificare eșuată: ", gesperrt: "Acest cont nu este activat. Te rog anunță administratorul." },
+  };
+  function LT() { let l = "de"; try { l = localStorage.getItem("rwe-lang") || "de"; } catch (_) {} return LOGIN_T[l] || LOGIN_T.de; }
+  function loginTexte() {
+    const t = LT(); let l = "de"; try { l = localStorage.getItem("rwe-lang") || "de"; } catch (_) {}
+    document.querySelectorAll("#rwe-login [data-l]").forEach((el) => (el.textContent = t[el.dataset.l]));
+    document.querySelectorAll("#rwe-login [data-lang]").forEach((b) => b.classList.toggle("dark", b.dataset.lang === l));
+  }
   async function loadProfile() {
     const cached = await kvGet("profile:" + session.user.id);
     if (cached) profile = cached;
     if (online()) {
       try {
-        const { data, error } = await sb.from("profiles").select("id,name,role").eq("id", session.user.id).maybeSingle();
+        const { data, error } = await sb.from("profiles").select("id,name,role,erz_versand").eq("id", session.user.id).maybeSingle();
         if (!error && data) { profile = data; kvSet("profile:" + session.user.id, data); }
       } catch (_) {}
     }
     if (!profile) profile = { id: session.user.id, name: session.user.email, role: "user" };
+    try { const sp = session.user.user_metadata?.sprache; if (sp && !localStorage.getItem("rwe-lang")) localStorage.setItem("rwe-lang", sp); } catch (_) {}
     NAMES[uid()] = profile.name || "";
   }
   let readyResolve; const ready = new Promise((r) => (readyResolve = r));
@@ -454,6 +474,8 @@
     native: isNative,
     profile: () => (profile ? { ...profile, email: session?.user?.email } : null),
     isAdmin: () => profile?.role === "admin",
+    canErzVersand: () => !!profile?.erz_versand,
+    sprache: () => session?.user?.user_metadata?.sprache || "",
     pending: () => OUT.length,
     async logout() {
       if (OUT.length && !confirmLogout()) return;

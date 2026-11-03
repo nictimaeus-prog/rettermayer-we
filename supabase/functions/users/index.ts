@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
   if (!who) return fail(401, "not_signed_in", "Bitte anmelden");
   if (who.role !== "admin") return fail(403, "permission_denied", "Nur für Admins");
 
-  let b: { action?: string; id?: string; email?: string; password?: string; name?: string; role?: string };
+  let b: { action?: string; id?: string; email?: string; password?: string; name?: string; role?: string; erzVersand?: boolean };
   try { b = await req.json(); } catch { return fail(400, "bad_request", "Ungültige Anfrage"); }
   const db = adminClient();
   const role = b.role === "admin" ? "admin" : "user";
@@ -55,10 +55,10 @@ Deno.serve(async (req) => {
   if (b.action === "list") {
     const { data, error } = await db.auth.admin.listUsers({ perPage: 1000 });
     if (error) return fail(500, "server_error", error.message);
-    const { data: profs } = await db.from("profiles").select("id,name,role");
+    const { data: profs } = await db.from("profiles").select("id,name,role,erz_versand");
     const pm = new Map((profs || []).map((p) => [p.id, p]));
     const users = data.users.map((u) => ({
-      id: u.id, email: u.email, name: pm.get(u.id)?.name || "", role: pm.get(u.id)?.role || "user",
+      id: u.id, email: u.email, name: pm.get(u.id)?.name || "", role: pm.get(u.id)?.role || "user", erzVersand: !!pm.get(u.id)?.erz_versand,
       lastSignIn: u.last_sign_in_at || null,
     })).sort((a, b) => a.name.localeCompare(b.name, "de"));
     return json({ users });
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       app_metadata: { freigegeben: "true", role },
     });
     if (error) return fail(400, "bad_request", /already/i.test(error.message) ? "Diese E-Mail hat schon ein Konto" : error.message);
-    const { error: pe } = await db.from("profiles").upsert({ id: data.user.id, name: name || b.email!.split("@")[0], role, freigegeben: true });
+    const { error: pe } = await db.from("profiles").upsert({ id: data.user.id, name: name || b.email!.split("@")[0], role, freigegeben: true, erz_versand: b.erzVersand === true });
     if (pe) return fail(500, "server_error", pe.message);
     return json({ ok: true, id: data.user.id });
   }
@@ -86,7 +86,8 @@ Deno.serve(async (req) => {
       const { error } = await db.auth.admin.updateUserById(b.id, { password: b.password });
       if (error) return fail(400, "bad_request", error.message);
     }
-    const patch: Record<string, string> = { role };
+    const patch: Record<string, string | boolean> = { role };
+    if (typeof b.erzVersand === "boolean") patch.erz_versand = b.erzVersand;
     if (typeof b.name === "string" && b.name.trim()) patch.name = b.name.trim().slice(0, 80);
     const { error } = await db.from("profiles").update(patch).eq("id", b.id);
     if (error) return fail(500, "server_error", error.message);
