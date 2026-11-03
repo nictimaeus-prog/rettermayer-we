@@ -384,6 +384,8 @@ function kalKlassen(p){ const g=(p.grenzen||[]).slice().sort((a,b)=>a-b); if(!g.
   for(let i=0;i<g.length-1;i++) out.push({t:`${g[i]}–${g[i+1]} g`,typ:g[i+1]<=ub?"unter":"normal"});
   out.push({t:`über ${g[g.length-1]} g`,typ:"ueber"}); return out; }
 function mangelListe(p){ return (p.maengel||[]).map(m=>({t:String(m).replace(/\*$/,"").trim(), info:/\*$/.test(String(m))})); }
+const KAL_AUS=[0,5,10,15,20,25,30,40,50];
+function kalFix(){ const kl=kalKlassen(P()||{}); const n=kl.findIndex(c=>c.typ==="normal"); if(n<0) return; let o=0; kl.forEach((c,i)=>{ if(c.typ!=="normal") o+=S.kal[i]||0; else if(i!==n) S.kal[i]=0; }); S.kal[n]=Math.max(0,100-o); }
 function kalSumme(){ return Object.values(S.kal).reduce((a,b)=>a+b,0); }
 function kalAusreisser(){ const kl=kalKlassen(P()); let u=0,o=0; kl.forEach((c,i)=>{ if(c.typ==="unter") u+=S.kal[i]||0; if(c.typ==="ueber") o+=S.kal[i]||0; }); return {u,o}; }
 function kalText(){ return kalKlassen(P()).map((c,i)=>`${c.t}: ${S.kal[i]||0} %`).join(" · "); }
@@ -502,7 +504,7 @@ function missing(){
     const m=[];
     if(isPG()){ /* Bonitur folgt im 2. Schritt */ } else {
       NOTEN.forEach(n=>{ if(!S.noten[n.id]) m.push(n.t); });
-      if(isFR()){ if(kalSumme()!==100) m.push(`Kaliber (Summe ${kalSumme()} %)`); if(P().ernteart && !S.ernte) m.push("Ernteart"); }
+      if(isFR()){ kalFix(); if(kalSumme()!==100) m.push(`Kaliber (Summe ${kalSumme()} %)`); if(P().ernteart && !S.ernte) m.push("Ernteart"); }
       if(isTR()){ if(!S.fallend) m.push("Sortierung fallend"); if(!S.trock) m.push("Abtrocknung"); }
       if(S.sauber===null) m.push("Sauberkeit");
       if(!S.temp) m.push("Temperatur");
@@ -727,12 +729,13 @@ function vLieferung(){
   </div><div id="plausi-box">${plausiBox()}</div></section>${isTR()?kistenEditor(S.kl,"erf"):""}`;
 }
 function vKaliber(){
-  const p=P(), kl=kalKlassen(p), sum=kalSumme(), {u,o}=kalAusreisser();
+  kalFix(); const p=P(), kl=kalKlassen(p), sum=kalSumme(), {u,o}=kalAusreisser();
   const sumPill = sum===100?`<span class="pill p-ok">Summe 100 %</span>`:sum>100?`<span class="pill p-bad">Summe ${sum} %, bitte reduzieren</span>`:`<span class="pill p-warn">Summe ${sum} %, noch ${100-sum} % verteilen</span>`;
   return `<section class="card"><div class="sechead"><h2>Kaliber</h2><span class="chips">${chip(sum===100,null,"kal")}${sumPill}${u+o>p.tol?`<span class="pill p-bad">Unter-/Übergröße ${u+o} %</span>`:""}</span></div>
-    <p class="hint">Ungefähren Anteil je Größe antippen. „Rest“ füllt die Zeile auf 100 %. Toleranz Unter- und Übergröße zusammen: ${p.tol} %.</p>
-    ${kl.map((c,i)=>`<div class="q"><div class="lbl">${esc(c.t)}${c.typ!=="normal"?`<small>${c.typ==="unter"?"Untergröße":"Übergröße"}</small>`:""}</div>
-      <div class="seg kal">${[0,10,20,30,40,50,60,70,80,90,100].map(v=>`<button data-act="kal" data-i="${i}" data-v="${v}" aria-pressed="${(S.kal[i]??null)===v}" class="${c.typ==="normal"?"g-sel":v===0?"g-good":"g-bad"}">${v}</button>`).join("")}<button data-act="kal-rest" data-i="${i}" class="g-sel">Rest</button></div></div>`).join("")}
+    <p class="hint">Voreingestellt: alles im Normalkaliber. Nur Unter- oder Übergröße antippen, der Rest wird automatisch berechnet. Toleranz Unter- und Übergröße zusammen: ${p.tol} %.</p>
+    ${kl.map((c,i)=>c.typ==="normal"?`<div class="q"><div class="lbl">${esc(c.t)}<small>automatisch</small></div><div><b class="calc" style="font-size:22px">${S.kal[i]||0} %</b></div></div>`
+      :`<div class="q"><div class="lbl">${esc(c.t)}<small>${c.typ==="unter"?"Untergröße":"Übergröße"}</small></div>
+      <div class="seg kal">${KAL_AUS.map(v=>`<button data-act="kal" data-i="${i}" data-v="${v}" aria-pressed="${(S.kal[i]||0)===v}" class="${v===0?"g-good":v>p.tol?"g-bad":"g-mid"}">${v}</button>`).join("")}</div></div>`).join("")}
   </section>`;
 }
 function vMaengel(){
@@ -1772,7 +1775,7 @@ document.addEventListener("click", ev=>{
   else if(a==="pp-geb"){ const x=S.pgPos[+b.dataset.i]; x.geb=b.dataset.v; pgSync(); render(); }
   else if(a==="set"){ const v=JSON.parse(b.dataset.v); const g=b.dataset.g; if(g.includes(".")){ const [o,kk]=g.split("."); S[o][kk]=v; } else S[g]=v; render(); }
   else if(a==="pgset"){ S.pg[b.dataset.f]=b.dataset.v; if(b.dataset.f==="qual") S.lsCheck=null; render(); }
-  else if(a==="kal"){ S.kal[+b.dataset.i]=+b.dataset.v; render(); }
+  else if(a==="kal"){ const i=+b.dataset.i, kl=kalKlassen(P()); const andere=kl.reduce((x,c,j)=>c.typ!=="normal"&&j!==i?x+(S.kal[j]||0):x,0); S.kal[i]=Math.min(+b.dataset.v,100-andere); kalFix(); render(); }
   else if(a==="kal-rest"){ const i=+b.dataset.i; S.kal[i]=Math.max(0,100-(kalSumme()-(S.kal[i]||0))); render(); }
   else if(a==="mg"){ S.mg[+b.dataset.i]=+b.dataset.r; render(); }
   else if(a==="ernte"){ S.ernte=b.dataset.v; render(); }
