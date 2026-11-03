@@ -104,3 +104,10 @@ supabase/functions/…      send-mail, read-ls, users
 android/, ios/            fertige Android- und iPhone-Projekte (Symbole, Kamera-Berechtigungen)
 assets/                   App-Symbol und Startbild
 ```
+
+## Browser-Version (Website)
+
+- Adresse: **https://rettermayer-we.pages.dev** (Cloudflare Pages, kostenlos, 500 Bauvorgänge/Monat)
+- Baut automatisch bei jeder Änderung auf GitHub (Branch `main`): Befehl `npm run build`, Ausgabe-Ordner `www`
+- Verwaltung: dash.cloudflare.com → Workers & Pages → rettermayer-we (Anmeldung nic.timaeus@gmail.com)
+- Die frühere Netlify-Adresse rettermayer-we.netlify.app wird nicht mehr aktualisiert (Netlify-Gratis-Kontingent des Teams GBB aufgebraucht).
