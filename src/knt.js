@@ -143,6 +143,8 @@ css.textContent = `
 .kls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.kls img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
 .kmic{border:2px solid var(--line);background:var(--panel);border-radius:10px;min-width:46px;min-height:46px;font-size:20px;cursor:pointer}.kmic.on{border-color:var(--bad);background:var(--bad-soft)}
 .kin{display:flex;gap:8px;align-items:center}.kin input{flex:1;min-width:0}
+.kpick{position:relative;overflow:hidden;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.kpick input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
 .kgroup{margin:0 0 18px}.kgroup>h3{font:700 15px var(--f-body);color:var(--muted);margin:0 0 8px;text-transform:uppercase;letter-spacing:.03em}
 .krow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px;margin-bottom:8px}
 .krow .kc{font:700 18px var(--f-mono);min-width:130px}.krow .ki{flex:1;min-width:180px;font-size:15px}.krow .ki small{display:block;color:var(--muted)}
@@ -232,10 +234,15 @@ async function openFile(b) {
     else save(b.name, await blob.arrayBuffer(), b.name);
   } catch (_) { toast("Datei nicht verfügbar (offline?)"); }
 }
+/* Datei-Auswahl als <label> mit echtem Eingabefeld: funktioniert zuverlässig auf iPhone, Android (auch in der App) und PC */
+function pick(cls, label, pend, opts = {}) {
+  return `<label class="${cls} kpick" data-kp="${esc(opts.kp || "")}">${label}<input type="file" data-kpick="${esc(JSON.stringify(pend))}" accept="${opts.accept || "image/*"}"${opts.capture ? ' capture="environment"' : ""}${opts.multiple ? " multiple" : ""}${opts.disabled ? " disabled" : ""} aria-label="${esc(String(label).replace(/<[^>]*>/g, ""))}"></label>`;
+}
+const ACC_ALL = "image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.heic,.heif";
 function belegeBlock(list, ctx) {
   return `<div class="kdrop" data-kdrop="${ctx}"><b>${T("drop")}</b><span class="hint" style="margin:0">·</span>
-    <button class="btn small dark" data-ka="pick-foto" data-ctx="${ctx}">📷 ${T("foto_btn")}</button>
-    <button class="btn small" data-ka="pick-file" data-ctx="${ctx}">📄 ${T("datei_btn")}</button></div>
+    ${pick("btn small dark", "📷 " + T("foto_btn"), { kind: "beleg", ctx }, { capture: true, kp: "pick-foto" })}
+    ${pick("btn small", "📄 " + T("datei_btn"), { kind: "beleg", ctx }, { accept: ACC_ALL, multiple: true, kp: "pick-file" })}</div>
   ${list.length ? `<ul class="kfiles">${list.map((b, i) => `<li>${/^image\//.test(b.type) && thumb(b.id) ? `<img src="${thumb(b.id)}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px">` : `<span style="flex:none;font-size:22px">${/pdf/i.test(b.type) ? "📕" : /^image\//.test(b.type) ? "🖼" : "📄"}</span>`}
     <span>${esc(b.name)}</span><button class="btn small" data-ka="file-open" data-ctx="${ctx}" data-i="${i}">↗</button><button class="btn small" data-ka="file-del" data-ctx="${ctx}" data-i="${i}" aria-label="${T("datei_del")}">✕</button></li>`).join("")}</ul>` : ""}`;
 }
@@ -244,7 +251,7 @@ function mangelChips(mg, keys, ctx, ci) {
   return `<div class="kchips">${keys.map((k) => `<button class="kchip bad" aria-pressed="${!!mg[k]}" data-ka="mg" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}">${esc(mName(k))}</button>`).join("")}</div>
   ${on.map((k) => { const m = mg[k], f = m.foto;
     return `<div class="kmlv"><b>${esc(mName(k))}</b><div class="kchips">${LV_DE.map((_, i) => `<button class="kchip lv" aria-pressed="${(m.lvl ?? 0) === i}" data-ka="mg-lvl" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}" data-v="${i}">${esc(lvT(i))}</button>`).join("")}
-      <button class="kcam${f ? " has" : ""}" data-ka="mg-foto" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}" aria-label="${T("foto")} ${esc(mName(k))}">${f ? "✓ " + T("foto") : "📷 " + T("foto")}</button></div>
+      ${pick("kcam" + (f ? " has" : ""), f ? "✓ " + T("foto") : "📷 " + T("foto"), { kind: "mg", ctx, ci, k }, { kp: "mg-foto" })}</div>
       ${f ? `<div class="kthumbs"><figure>${thumb(f) ? `<img src="${thumb(f)}" alt="${esc(mName(k))}">` : `<div style="width:76px;height:76px;border-radius:8px;background:var(--bg)"></div>`}<button data-ka="mg-foto-del" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}" aria-label="${T("foto_del")}">×</button></figure></div>` : ""}</div>`; }).join("")}`;
 }
 function mangelChipsAlt(mg, keys, ctx, ci) {
@@ -278,7 +285,7 @@ K.viewErf = function () {
   <h1>${T("erf_h1")}</h1><p class="lead">${T("erf_lead")}</p>
   <section class="card"><h2>${T("lief")}</h2>
     <div class="kls">${lsImg ? `<img src="${lsImg}" alt="">` : ""}
-      <button class="btn ${e.lsFotoId ? "" : "primary"}" data-ka="ls-foto" ${e.lsBusy ? "disabled" : ""}>📷 ${e.lsFotoId ? T("ls_neu") : T("ls_foto")}</button>
+      ${pick("btn " + (e.lsFotoId ? "" : "primary"), "📷 " + (e.lsFotoId ? T("ls_neu") : T("ls_foto")), { kind: "ls" }, { kp: "ls-foto", disabled: e.lsBusy })}
       <span class="hint" style="flex:1;min-width:180px;margin:0;${/nicht|nu a|nu e/.test(e.lsMsg || "") ? "color:var(--warn)" : ""}">${esc(e.lsBusy ? T("ls_lesen") : e.lsMsg || T("ls_h"))}</span></div>
     <div class="kgrid">
       <label class="f">${T("lsnr")}<input type="text" id="k-lsnr" value="${esc(e.lsNr)}" ${e.keinLs ? "disabled" : ""} autocomplete="off"></label>
@@ -816,6 +823,7 @@ document.addEventListener("input", (ev) => {
 });
 document.addEventListener("change", (ev) => {
   const t = ev.target, id = t.id || ""; let m;
+  if (t.dataset && t.dataset.kpick) { let p = null; try { p = JSON.parse(t.dataset.kpick); } catch (_) {} const files = [...(t.files || [])]; t.value = ""; if (p && files.length) { K.pend = p; onPicked(files); } return; }
   if (id === "k-datum") { K.ke.datum = t.value || today(); kePersist(); }
   else if ((m = id.match(/^k-erz-(\d+)$/))) { K.ke.chargen[+m[1]].erzId = t.value; kePersist(); keRefreshBar(); }
   else if ((m = id.match(/^k-sorte-(\d+)$/))) { K.ke.chargen[+m[1]].sorte = t.value; kePersist(); keRefreshBar(); }
