@@ -7,9 +7,17 @@
 "use strict";
 const LS_LANG = "rwe-lang", LS_KE = "rwe-knt-ke";
 const AVG = [200, 300, 400, 500, 600, 700, 800, 900];
-const M1 = ["feucht", "schalen", "weich", "sonst"];
-const M2 = ["feucht", "schalen", "weich", "besch", "trieb", "farbe", "sonst"];
+const M1 = ["schalen", "weich", "besch", "trieb", "farbe", "sonst"];
+const M2 = M1;
 const MDE = { feucht: "Feucht", schalen: "Lose Schalen", weich: "Weiche Zehen", besch: "Beschädigt", trieb: "Austrieb", farbe: "Verfärbung", sonst: "Sonstiges" };
+const LV_DE = ["vereinzelt", "0–5 %", "5–10 %", "10–20 %", "20–50 %", "50 %+"];
+const LV_RO = ["izolat", "0–5 %", "5–10 %", "10–20 %", "20–50 %", "50 %+"];
+const lvT = (i) => (lang() === "ro" ? LV_RO : LV_DE)[i] || "";
+const TROCK_K = ["gut", "leicht", "feucht"];
+const TROCK_DE = { gut: "gut abgetrocknet", leicht: "leicht feucht", feucht: "feucht" };
+const KF = ["zert", "schaed"];
+const KF_DE = { zert: "Bio-Zertifikat / Öko-Kontrollnummer auf Lieferschein", schaed: "Ware frei von Schädlingen" };
+const mTxt = (m) => (m.k === "sonst" && m.text ? m.text : MDE[m.k] || m.t) + (m.lvl != null ? ` (${LV_DE[m.lvl]})` : "");
 const SORTEN_DEFAULT = ["Chesnok", "European White", "Garcua", "Gardos", "Garpek", "Messidor", "Messidrom", "Sabagold", "Spring White", "Therador", "Theradrom"];
 const ABW_PCT = 15; // Abweichung Brutto 2 zu Brutto 1, ab der geprüft werden muss
 
@@ -26,9 +34,14 @@ const TX = {
     charge_n: (n) => `Charge ${n}`, erz: "Erzeuger", erz_w: "– Erzeuger wählen –", sorte: "Sorte", sorte_w: "– Sorte wählen –",
     kisten: "Anzahl Holz-Großkisten", kisten_k: "Kisten", gew: "Schätzgewicht", avg: "Ø je Kiste", ges: "Gesamtgewicht", kg_ges: "Gesamt kg",
     brutto1: "Brutto 1 (geschätzt)", beschr: "Kistenbeschriftung vorhanden und korrekt (BIO + QS)", ja: "Ja", nein: "Nein",
-    maengel: "Sichtbare Mängel", maengel_h: "antippen zum Auswählen, Kamera für ein Foto", keine: "keine Mängel",
+    maengel: "Sichtbare Mängel", maengel_h: "Mangel antippen, Ausmaß wählen, Kamera für ein Foto", keine: "keine Mängel",
     m_feucht: "Feucht", m_schalen: "Lose Schalen", m_weich: "Weiche Zehen", m_besch: "Beschädigt", m_trieb: "Austrieb", m_farbe: "Verfärbung", m_sonst: "Sonstiges",
     sonst_txt: "Welcher Mangel?", bem: "Bemerkung", add_charge: "+ Weitere Charge", del_charge: "Entfernen",
+    abtr: "Abtrocknung", tr_gut: "gut abgetrocknet", tr_leicht: "leicht feucht", tr_feucht: "feucht",
+    beschr_f: "Kisten nicht oder mangelhaft beschriftet", kontroll: "Kontrollfragen", kf_zert: "Bio-Zertifikat / Öko-Kontrollnummer auf Lieferschein", kf_schaed: "Ware frei von Schädlingen",
+    ls_foto: "Lieferschein fotografieren", ls_neu: "Neues Foto", ls_lesen: "Lieferschein wird gelesen …", ls_ok: "Daten vom Lieferschein übernommen – bitte kurz prüfen.",
+    ls_nc: "Automatisches Auslesen ist noch nicht eingerichtet – bitte von Hand eintragen.", ls_err: "Lieferschein konnte nicht gelesen werden – bitte von Hand eintragen.", ls_off: "Zum Auslesen braucht das Handy Netz – bitte von Hand eintragen.",
+    ls_h: "Zuerst fotografieren: Nummer, Datum, Erzeuger, Sorten und Mengen werden übernommen.", diktat: "Diktieren", diktat_an: "Ich höre zu …", diktat_nein: "Diktieren hier nicht möglich – bitte das Mikrofon der Tastatur nutzen.",
     save: "Speichern", saving: "Speichert …", summary: (n, kg) => `${n} Charge${n > 1 ? "n" : ""} · ≈ ${kg} kg`,
     miss_ls: "Lieferschein-Nr. eintragen oder „Kein Lieferschein“ wählen", miss_erz: (n) => `Charge ${n}: Erzeuger wählen`,
     miss_sorte: (n) => `Charge ${n}: Sorte wählen`, miss_kisten: (n) => `Charge ${n}: Anzahl Kisten eintragen`,
@@ -59,9 +72,14 @@ const TX = {
     charge_n: (n) => `Lot ${n}`, erz: "Producător", erz_w: "– alege producătorul –", sorte: "Soi", sorte_w: "– alege soiul –",
     kisten: "Număr lăzi mari din lemn", kisten_k: "lăzi", gew: "Greutate estimată", avg: "Medie pe ladă", ges: "Greutate totală", kg_ges: "Total kg",
     brutto1: "Brutto 1 (estimat)", beschr: "Etichetarea lăzilor există și e corectă (BIO + QS)", ja: "Da", nein: "Nu",
-    maengel: "Defecte vizibile", maengel_h: "atinge pentru a selecta, camera pentru poză", keine: "fără defecte",
+    maengel: "Defecte vizibile", maengel_h: "atinge defectul, alege gradul, camera pentru poză", keine: "fără defecte",
     m_feucht: "Umed", m_schalen: "Coji desprinse", m_weich: "Căței moi", m_besch: "Deteriorat", m_trieb: "Încolțit", m_farbe: "Decolorare", m_sonst: "Altele",
     sonst_txt: "Ce defect?", bem: "Observație", add_charge: "+ Încă un lot", del_charge: "Șterge",
+    abtr: "Uscare", tr_gut: "bine uscat", tr_leicht: "ușor umed", tr_feucht: "umed",
+    beschr_f: "Lăzi neetichetate sau etichetate greșit", kontroll: "Întrebări de control", kf_zert: "Certificat bio / nr. control ecologic pe aviz", kf_schaed: "Marfă fără dăunători",
+    ls_foto: "Fotografiază avizul", ls_neu: "Poză nouă", ls_lesen: "Se citește avizul …", ls_ok: "Datele de pe aviz au fost preluate – te rog verifică.",
+    ls_nc: "Citirea automată nu este încă configurată – completează manual.", ls_err: "Avizul nu a putut fi citit – completează manual.", ls_off: "Pentru citire telefonul are nevoie de internet – completează manual.",
+    ls_h: "Mai întâi fă poza: numărul, data, producătorul, soiurile și cantitățile sunt preluate.", diktat: "Dictează", diktat_an: "Ascult …", diktat_nein: "Dictarea nu e posibilă aici – folosește microfonul tastaturii.",
     save: "Salvează", saving: "Se salvează …", summary: (n, kg) => `${n} ${n > 1 ? "loturi" : "lot"} · ≈ ${kg} kg`,
     miss_ls: "Introdu nr. avizului sau alege „Fără aviz”", miss_erz: (n) => `Lot ${n}: alege producătorul`,
     miss_sorte: (n) => `Lot ${n}: alege soiul`, miss_kisten: (n) => `Lot ${n}: introdu numărul de lăzi`,
@@ -115,6 +133,12 @@ css.textContent = `
 .kstep{display:inline-flex;align-items:center;gap:6px}.kstep input{width:90px;text-align:center;font-size:20px;font-weight:700}
 .kb1{font:700 22px var(--f-mono);color:var(--ink)}
 .klang{border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;border-radius:10px;padding:6px 12px;font:700 15px var(--f-body);cursor:pointer;margin-left:auto}
+.kmlv{border-left:4px solid var(--bad);background:var(--bad-soft);border-radius:0 10px 10px 0;padding:8px 10px;margin-top:8px}
+.kmlv>b{display:block;margin-bottom:6px}.kmlv .kchip.lv{padding:6px 11px;min-height:38px;font-size:15px}.kmlv .kchip.lv[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.kmlv .kcam{border:2px solid var(--bad);background:var(--panel);color:var(--bad);border-radius:999px;padding:6px 12px;font:700 15px var(--f-body);cursor:pointer;min-height:38px}.kmlv .kcam.has{border-color:var(--ok);color:var(--ok)}
+.kls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.kls img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.kmic{border:2px solid var(--line);background:var(--panel);border-radius:10px;min-width:46px;min-height:46px;font-size:20px;cursor:pointer}.kmic.on{border-color:var(--bad);background:var(--bad-soft)}
+.kin{display:flex;gap:8px;align-items:center}.kin input{flex:1;min-width:0}
 .kgroup{margin:0 0 18px}.kgroup>h3{font:700 15px var(--f-body);color:var(--muted);margin:0 0 8px;text-transform:uppercase;letter-spacing:.03em}
 .krow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px;margin-bottom:8px}
 .krow .kc{font:700 18px var(--f-mono);min-width:130px}.krow .ki{flex:1;min-width:180px;font-size:15px}.krow .ki small{display:block;color:var(--muted)}
@@ -156,8 +180,8 @@ const K = { on: false, ke: null, kd: null, vw: null, vwFilt: "offen", ev: null, 
 window.K = K;
 K.T = T; K.lang = lang;
 const today = () => isoDate(new Date());
-function newCharge(prev) { return { erzId: prev ? prev.erzId : "", sorte: prev ? prev.sorte : "", kisten: "", modus: "avg", avg: 700, gesamt: "", mg: {}, sonst: "", beschr: null, bem: "" }; }
-function newKE() { return { datum: today(), lsNr: "", keinLs: false, bweNr: "", sauber: "ok", temp: "ok", belege: [], chargen: [newCharge()], started: Date.now() }; }
+function newCharge(prev) { return { erzId: prev ? prev.erzId : "", sorte: prev ? prev.sorte : "", kisten: "", modus: "avg", avg: 700, gesamt: "", mg: {}, sonst: "", trock: "gut", beschrFehler: false, bem: "" }; }
+function newKE() { return { datum: today(), lsNr: "", keinLs: false, bweNr: "", kontrolle: { zert: true, schaed: true }, belege: [], lsFotoId: null, lsMsg: "", lsBusy: false, chargen: [newCharge()], started: Date.now() }; }
 function kePersist() { if (!K.ke) return; clearTimeout(kePersist.t); kePersist.t = setTimeout(() => { try { localStorage.setItem(LS_KE, JSON.stringify(K.ke)); } catch (_) {} }, 250); }
 function keLoad() { try { const s = localStorage.getItem(LS_KE); if (s) { const o = JSON.parse(s); if (o && Array.isArray(o.chargen)) return o; } } catch (_) {} return null; }
 function keClear() { try { localStorage.removeItem(LS_KE); } catch (_) {} }
@@ -212,13 +236,23 @@ function belegeBlock(list, ctx) {
     <span>${esc(b.name)}</span><button class="btn small" data-ka="file-open" data-ctx="${ctx}" data-i="${i}">↗</button><button class="btn small" data-ka="file-del" data-ctx="${ctx}" data-i="${i}" aria-label="${T("datei_del")}">✕</button></li>`).join("")}</ul>` : ""}`;
 }
 function mangelChips(mg, keys, ctx, ci) {
+  const on = keys.filter((k) => mg[k]);
+  return `<div class="kchips">${keys.map((k) => `<button class="kchip bad" aria-pressed="${!!mg[k]}" data-ka="mg" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}">${esc(mName(k))}</button>`).join("")}</div>
+  ${on.map((k) => { const m = mg[k], f = m.foto;
+    return `<div class="kmlv"><b>${esc(mName(k))}</b><div class="kchips">${LV_DE.map((_, i) => `<button class="kchip lv" aria-pressed="${(m.lvl ?? 0) === i}" data-ka="mg-lvl" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}" data-v="${i}">${esc(lvT(i))}</button>`).join("")}
+      <button class="kcam${f ? " has" : ""}" data-ka="mg-foto" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}" aria-label="${T("foto")} ${esc(mName(k))}">${f ? "✓ " + T("foto") : "📷 " + T("foto")}</button></div>
+      ${f ? `<div class="kthumbs"><figure>${thumb(f) ? `<img src="${thumb(f)}" alt="${esc(mName(k))}">` : `<div style="width:76px;height:76px;border-radius:8px;background:var(--bg)"></div>`}<button data-ka="mg-foto-del" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}" aria-label="${T("foto_del")}">×</button></figure></div>` : ""}</div>`; }).join("")}`;
+}
+function mangelChipsAlt(mg, keys, ctx, ci) {
   return `<div class="kchips">${keys.map((k) => { const on = !!mg[k]; const f = on && mg[k].foto;
     return `<span class="kmg"><button class="kchip bad" aria-pressed="${on}" data-ka="mg" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}">${esc(mName(k))}</button>${on ? `<button class="kcam${f ? " has" : ""}" data-ka="mg-foto" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}" aria-label="${T("foto")} ${esc(mName(k))}">${f ? "✓" : "📷"}</button>` : ""}</span>`; }).join("")}</div>
   ${keys.some((k) => mg[k]?.foto) ? `<div class="kthumbs">${keys.filter((k) => mg[k]?.foto).map((k) => `<figure>${thumb(mg[k].foto) ? `<img src="${thumb(mg[k].foto)}" alt="${esc(mName(k))}">` : `<div style="width:76px;height:76px;border-radius:8px;background:var(--bg)"></div>`}<figcaption>${esc(mName(k))}</figcaption><button data-ka="mg-foto-del" data-ctx="${ctx}" data-ci="${ci}" data-k="${k}" aria-label="${T("foto_del")}">×</button></figure>`).join("")}</div>` : ""}`;
 }
 
 /* ---------------- Stufe 1: Ersterfassung ---------------- */
-K.start = function () { K.on = true; K.kd = null; const s = keLoad(); if (s && s.chargen.length) { K.ke = s; setTimeout(() => toast(T("resume")), 50); } else K.ke = newKE(); };
+K.start = function () { K.on = true; K.kd = null; const s = keLoad();
+  if (s && s.chargen.length) { K.ke = { ...newKE(), ...s, lsBusy: false, saving: false, kontrolle: { zert: true, schaed: true, ...(s.kontrolle || {}) }, chargen: s.chargen.map((c) => ({ ...newCharge(), ...c })) }; setTimeout(() => toast(T("resume")), 50); }
+  else K.ke = newKE(); };
 K.stop = function () { K.on = false; };
 function keMissing() {
   const e = K.ke, out = [];
@@ -226,7 +260,7 @@ function keMissing() {
   e.chargen.forEach((c, i) => { const n = i + 1;
     if (!c.erzId) out.push(T("miss_erz", n)); if (!c.sorte) out.push(T("miss_sorte", n));
     if (!(parseInt(c.kisten, 10) > 0)) out.push(T("miss_kisten", n)); else if (c.modus === "ges" && !(num(c.gesamt) > 0)) out.push(T("miss_gew", n));
-    if (c.beschr === null) out.push(T("miss_beschr", n)); });
+  });
   return out;
 }
 function keSummary() { const e = K.ke; const kg = e.chargen.reduce((a, c) => a + (brutto1(c) || 0), 0); return T("summary", e.chargen.length, fmtKg(kg)); }
@@ -234,23 +268,27 @@ K.viewErf = function () {
   if (K.kd) return viewErfDone();
   const e = K.ke; const miss = keMissing();
   const erzOpts = [...ERZ].sort((a, b) => a.name.localeCompare(b.name, "de"));
-  const seg2 = (key, val) => `<div class="kchips"><button class="kchip good" data-ka="ke-set" data-f="${key}" data-v="ok" aria-pressed="${val === "ok"}">${T("ok")}</button><button class="kchip bad" data-ka="ke-set" data-f="${key}" data-v="nok" aria-pressed="${val === "nok"}">${T("nok")}</button></div>`;
+  const mic = (id) => `<button class="kmic${K.dict === id ? " on" : ""}" data-ka="dict" data-for="${id}" aria-label="${T("diktat")}" title="${T("diktat")}">🎤</button>`;
+  const lsImg = e.lsFotoId ? thumb(e.lsFotoId) : "";
   return `<div class="chips" style="margin-bottom:6px"><button class="btn small" data-ka="back-prod">${T("back_prod")}</button></div>
   <h1>${T("erf_h1")}</h1><p class="lead">${T("erf_lead")}</p>
   <section class="card"><h2>${T("lief")}</h2>
+    <div class="kls">${lsImg ? `<img src="${lsImg}" alt="">` : ""}
+      <button class="btn ${e.lsFotoId ? "" : "primary"}" data-ka="ls-foto" ${e.lsBusy ? "disabled" : ""}>📷 ${e.lsFotoId ? T("ls_neu") : T("ls_foto")}</button>
+      <span class="hint" style="flex:1;min-width:180px;margin:0;${/nicht|nu a|nu e/.test(e.lsMsg || "") ? "color:var(--warn)" : ""}">${esc(e.lsBusy ? T("ls_lesen") : e.lsMsg || T("ls_h"))}</span></div>
     <div class="kgrid">
-      <label class="f">${T("datum")}<input type="date" id="k-datum" value="${esc(e.datum)}"></label>
       <label class="f">${T("lsnr")}<input type="text" id="k-lsnr" value="${esc(e.lsNr)}" ${e.keinLs ? "disabled" : ""} autocomplete="off"></label>
+      <label class="f">${T("datum")}<input type="date" id="k-datum" value="${esc(e.datum)}"></label>
       <label class="f">${T("bwe")}<span class="h">${T("opt")}</span><input type="text" id="k-bwe" value="${esc(e.bweNr)}" inputmode="numeric" autocomplete="off"></label>
     </div>
     <div class="kchips"><button class="kchip" data-ka="ke-keinls" aria-pressed="${e.keinLs}">${T("keinls")}</button></div>
-    <div><b>${T("belege")}</b> <span class="hint">${T("belege_h")}</span>${belegeBlock(e.belege, "ke")}</div>
+    <details ${e.belege.length > 1 ? "open" : ""}><summary><b>${T("belege")}</b> <span class="hint">${T("belege_h")} (${e.belege.length})</span></summary>${belegeBlock(e.belege, "ke")}</details>
   </section>
-  <section class="card"><h2>${T("pruef")}</h2><div class="kgrid"><div><b>${T("sauber")}</b>${seg2("sauber", e.sauber)}</div><div><b>${T("temp")}</b>${seg2("temp", e.temp)}</div></div></section>
+  <section class="card"><h2>${T("kontroll")}</h2>${KF.map((k) => `<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>${T("kf_" + k)}</span><span class="kchips"><button class="kchip good" data-ka="kf" data-k="${k}" data-v="1" aria-pressed="${e.kontrolle[k] !== false}">${T("ja")}</button><button class="kchip bad" data-ka="kf" data-k="${k}" data-v="0" aria-pressed="${e.kontrolle[k] === false}">${T("nein")}</button></span></div>`).join("")}</section>
   ${e.chargen.map((c, i) => { const b1 = brutto1(c);
     return `<section class="card kcard"><div class="sechead"><h2>${T("charge_n", i + 1)}</h2>${e.chargen.length > 1 ? `<button class="btn small" data-ka="ch-del" data-ci="${i}">${T("del_charge")}</button>` : ""}</div>
     <div class="kgrid">
-      <label class="f">${T("erz")}<select id="k-erz-${i}"><option value="">${T("erz_w")}</option>${erzOpts.map((x) => `<option value="${esc(x.id)}" ${c.erzId === x.id ? "selected" : ""}>${esc(x.name)} (${esc(x.code)})</option>`).join("")}</select></label>
+      <label class="f">${T("erz")}<select id="k-erz-${i}"><option value="">${T("erz_w")}</option>${erzOpts.map((x) => `<option value="${esc(x.id)}" ${c.erzId === x.id ? "selected" : ""}>${esc(x.name)} · ${esc(x.code)}</option>`).join("")}</select></label>
       <label class="f">${T("sorte")}<select id="k-sorte-${i}"><option value="">${T("sorte_w")}</option>${sorten().map((s) => `<option ${c.sorte === s ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
       <label class="f">${T("kisten")}<span class="kstep"><button class="btn small" data-ka="ki-minus" data-ci="${i}" aria-label="−">−</button><input type="number" inputmode="numeric" min="1" id="k-kisten-${i}" value="${esc(c.kisten)}"><button class="btn small" data-ka="ki-plus" data-ci="${i}" aria-label="+">+</button></span></label>
     </div>
@@ -260,10 +298,11 @@ K.viewErf = function () {
         : `<div class="kavg">${AVG.map((v) => `<button class="kchip" data-ka="ch-avg" data-ci="${i}" data-v="${v}" aria-pressed="${(c.avg || 700) === v}">${v} kg</button>`).join("")}</div>`}
       <p style="margin:8px 0 0">${T("brutto1")}: <span class="kb1" id="k-b1-${i}">${b1 ? "≈ " + fmtKg(b1) + " kg" : "–"}</span></p>
     </div>
-    <div><b>${T("beschr")}</b><div class="kchips" style="margin-top:6px"><button class="kchip good" data-ka="ch-beschr" data-ci="${i}" data-v="1" aria-pressed="${c.beschr === true}">${T("ja")}</button><button class="kchip bad" data-ka="ch-beschr" data-ci="${i}" data-v="0" aria-pressed="${c.beschr === false}">${T("nein")}</button></div></div>
+    <div><b>${T("abtr")}</b><div class="kchips" style="margin-top:6px">${TROCK_K.map((k) => `<button class="kchip ${k === "gut" ? "good" : "bad"}" data-ka="ch-trock" data-ci="${i}" data-v="${k}" aria-pressed="${(c.trock || "gut") === k}">${T("tr_" + k)}</button>`).join("")}</div></div>
     <div><b>${T("maengel")}</b> <span class="hint">${T("maengel_h")}</span>${mangelChips(c.mg, M1, "ke", i)}
-      ${c.mg.sonst ? `<label class="f" style="margin-top:8px">${T("sonst_txt")}<input type="text" id="k-sonst-${i}" value="${esc(c.sonst)}"></label>` : ""}</div>
-    <label class="f">${T("bem")} <span class="h">${T("opt")}</span><input type="text" id="k-bem-${i}" value="${esc(c.bem)}"></label>
+      ${c.mg.sonst ? `<label class="f" style="margin-top:8px">${T("sonst_txt")}<span class="kin"><input type="text" id="k-sonst-${i}" value="${esc(c.sonst)}">${mic("k-sonst-" + i)}</span></label>` : ""}</div>
+    <div class="kchips"><button class="kchip bad" data-ka="ch-beschrf" data-ci="${i}" aria-pressed="${!!c.beschrFehler}">⚠ ${T("beschr_f")}</button></div>
+    <label class="f">${T("bem")} <span class="h">${T("opt")}</span><span class="kin"><input type="text" id="k-bem-${i}" value="${esc(c.bem)}">${mic("k-bem-" + i)}</span></label>
     </section>`; }).join("")}
   <div class="chips"><button class="btn dark" data-ka="ch-add">${T("add_charge")}</button><button class="btn small" data-ka="ke-reset">${T("verwerfen")}</button></div>
   <div class="kbar"><div class="msg" id="k-msg"><b id="k-sum">${keSummary()}</b><br>${miss.length ? esc(miss[0]) : ""}</div>
@@ -283,9 +322,11 @@ async function nextCharge(erz, datum) {
 const bcOf = (charge) => ascii(charge).replace(/[^A-Z0-9]/g, "");
 function abw1(r) {
   const a = [];
-  if (!r.sauber) a.push("Sauberkeit nicht in Ordnung"); if (r.temperatur !== "ok") a.push("Temperatur nicht in Ordnung");
-  if (r.beschriftung === false) a.push("Kistenbeschriftung (BIO/QS) fehlt oder nicht korrekt");
-  (r.maengel1 || []).forEach((m) => a.push("Mangel Anlieferung: " + (m.k === "sonst" && m.text ? m.text : MDE[m.k])));
+  if (r.sauber === false) a.push("Sauberkeit nicht in Ordnung"); if (r.temperatur && r.temperatur !== "ok") a.push("Temperatur nicht in Ordnung");
+  Object.entries(r.kontrolle || {}).forEach(([k, v]) => { if (v === false) a.push("Kontrollfrage mit Nein: " + (KF_DE[k] || k)); });
+  if (r.abtrocknung && r.abtrocknung !== "gut") a.push("Abtrocknung: " + TROCK_DE[r.abtrocknung]);
+  if (r.beschriftung === false) a.push("Kisten nicht oder mangelhaft beschriftet (BIO/QS)");
+  (r.maengel1 || []).forEach((m) => a.push("Mangel Anlieferung: " + mTxt(m)));
   if (r.keinLieferschein) a.push("Kein Lieferschein");
   return a;
 }
@@ -296,13 +337,13 @@ async function keSave() {
   try {
     for (const c of e.chargen) {
       const erz = erzById(c.erzId); const { charge, sj } = await nextCharge(erz, e.datum);
-      const mg = M1.filter((k) => c.mg[k]).map((k) => ({ k, t: MDE[k], text: k === "sonst" ? c.sonst : "", foto: c.mg[k].foto || null }));
+      const mg = M1.filter((k) => c.mg[k]).map((k) => ({ k, t: MDE[k], lvl: c.mg[k].lvl ?? 0, text: k === "sonst" ? c.sonst : "", foto: c.mg[k].foto || null }));
       const rec = { charge, barcode: bcOf(charge), produkt: "KNT", produktName: p.name, artNr: p.artNr || "", saison: saisonLabel(p, sj),
         erzeugerId: erz.id, erzeuger: erz.name, code: erz.code, bueroNr: erz.buero || "", oeko: erz.oeko || "", qs: erz.qs || "", auslobung: (erz.verbaende || []).join(", ") || "kein Verband", verband: erz.verbaende || [],
         datum: e.datum, stufe: "erfasst", auftragId, lieferscheinNr: e.keinLs ? "" : e.lsNr.trim(), keinLieferschein: !!e.keinLs, bueroWeNr: e.bweNr.trim(), belege: e.belege.slice(),
-        sauber: e.sauber === "ok", temperatur: e.temp === "ok" ? "ok" : "nok", sorte: c.sorte, gebinde: "Holz-Großkiste", kisten: parseInt(c.kisten, 10),
+        kontrolle: { ...e.kontrolle }, abtrocknung: c.trock || "gut", lsFoto: e.lsFotoId || null, sorte: c.sorte, gebinde: "Holz-Großkiste", kisten: parseInt(c.kisten, 10),
         brutto1: brutto1(c), brutto1Art: c.modus === "ges" ? "gesamt" : "schnitt", avgKg: c.modus === "ges" ? null : c.avg || 700,
-        maengel1: mg, beschriftung: c.beschr, bemerkung: c.bem.trim(), mengeKg: null, kistenListe: [], sortierung: "unsortiert",
+        maengel1: mg, beschriftung: !c.beschrFehler, bemerkung: c.bem.trim(), mengeKg: null, kistenListe: [], sortierung: "unsortiert",
         status: "offen", erfasstVon: ME, erfasstVonName: meName(), erstellt: new Date().toISOString() };
       rec.abweichungen = abw1(rec);
       if (db) { const ref = await db.collection("wareneingaenge").add(rec); rec.id = ref.id; } else { rec.id = "l" + Date.now() + created.length; VORG.unshift(rec); }
@@ -334,6 +375,45 @@ function viewErfDone() {
     <div class="chips">${kd.mail === "error" ? `<button class="btn" data-ka="erst-mail">${T("mail_retry")}</button>` : ""}<button class="btn dark" data-ka="erst-pdf">${T("pdf_view")}</button><button class="btn" data-ka="go-vw">${T("to_vw")}</button><button class="btn primary" data-ka="ke-new">${T("neu")}</button></div></section>`;
 }
 
+/* ---------------- Lieferschein: Foto zuerst, Daten übernehmen ---------------- */
+const normS = (x) => ascii(String(x || "")).replace(/[^A-Z0-9]/g, "");
+async function lsFoto(file) {
+  const e = K.ke; let r;
+  try { r = await uploadFile(file, true); } catch (err) { toast("Foto konnte nicht gelesen werden"); return; }
+  if (!r) return; r.name = "Lieferschein.jpg"; e.lsFotoId = r.id; e.belege = [r, ...e.belege.filter((b) => b.id !== r.id)]; kePersist();
+  if (!sample) { e.lsMsg = T("ls_nc"); render(); return; }
+  e.lsBusy = true; e.lsMsg = ""; render();
+  const prompt = `Du liest das Foto eines Lieferscheins für Bio-Knoblauch (trocken) eines landwirtschaftlichen Erzeugers in Deutschland. Antworte NUR mit JSON in genau dieser Form:
+{"lieferscheinNr":"oder null","datum":"JJJJ-MM-TT oder null","erzeuger":"Name des Erzeugers/Absenders oder null","oekoKontrollstelle":"DE-ÖKO-0xx oder null","verbaende":["Bioland"|"Naturland"],"positionen":[{"sorte":"oder null","kisten":Zahl oder null,"mengeKg":Zahl oder null}]}
+Je Sorte bzw. Partie eine Position. Bekannte Sorten: ${sorten().join(", ")}. Nur was auf dem Lieferschein steht, nichts erfinden.`;
+  try {
+    const blob = await (await fetch("/_blob/" + r.id)).blob();
+    const j = await sample.json(prompt, { images: [blob], modelTier: "default" });
+    if (j?.lieferscheinNr && !e.lsNr) { e.lsNr = String(j.lieferscheinNr); e.keinLs = false; }
+    if (j?.datum && /^\d{4}-\d{2}-\d{2}$/.test(j.datum)) e.datum = j.datum;
+    const en = normS(j?.erzeuger); const erz = en ? ERZ.find((x) => { const n = normS(x.name); return n && (en.includes(n) || n.includes(en)); }) : null;
+    const sortOf = (x) => { const n = normS(x); return n ? sorten().find((s) => { const m = normS(s); return m === n || n.includes(m) || m.includes(n); }) || "" : ""; };
+    const pos = Array.isArray(j?.positionen) ? j.positionen.filter((p) => p && (p.sorte || p.kisten || p.mengeKg)) : [];
+    const leer = e.chargen.every((c) => !c.erzId && !c.sorte && !c.kisten);
+    if (pos.length && leer) e.chargen = pos.map((p) => ({ ...newCharge(), erzId: erz?.id || "", sorte: sortOf(p.sorte), kisten: p.kisten ? String(Math.round(p.kisten)) : "", modus: p.mengeKg ? "ges" : "avg", gesamt: p.mengeKg ? String(p.mengeKg) : "" }));
+    else if (erz) e.chargen.forEach((c) => { if (!c.erzId) c.erzId = erz.id; });
+    e.lsMsg = T("ls_ok");
+  } catch (err) { e.lsMsg = err?.code === "not_configured" ? T("ls_nc") : err?.code === "offline" ? T("ls_off") : T("ls_err"); }
+  e.lsBusy = false; kePersist(); render();
+}
+let REC = null;
+function diktat(id) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast(T("diktat_nein")); return; }
+  if (REC) { try { REC.stop(); } catch (_) {} REC = null; K.dict = null; render(); return; }
+  const rec = new SR(); rec.lang = lang() === "ro" ? "ro-RO" : "de-DE"; rec.interimResults = false; rec.maxAlternatives = 1;
+  rec.onresult = (ev) => { const txt = [...ev.results].map((x) => x[0].transcript).join(" ").trim(); const el = document.getElementById(id);
+    if (el && txt) { el.value = (el.value ? el.value.trim() + " " : "") + txt; el.dispatchEvent(new Event("input", { bubbles: true })); } };
+  rec.onerror = (ev) => { if (ev.error === "not-allowed" || ev.error === "service-not-allowed") toast(T("diktat_nein")); };
+  rec.onend = () => { REC = null; K.dict = null; render(); };
+  try { rec.start(); REC = rec; K.dict = id; toast(T("diktat_an")); render(); } catch (_) { toast(T("diktat_nein")); }
+}
+
 /* ---------------- Stufe 2: Verwiegung ---------------- */
 const kntRecs = () => VORG.filter((v) => v.produkt === "KNT" && v.stufe);
 K.viewVw = function () {
@@ -349,7 +429,7 @@ K.viewVw = function () {
   ${keys.length ? keys.map((k) => { const g = groups[k], r0 = g[0];
     return `<div class="kgroup"><h3>${T("we")} ${deDate(r0.datum)} · ${r0.keinLieferschein ? T("keinls") : esc(T("lsnr")) + " " + esc(r0.lieferscheinNr || "–")} · ${T("alter", ageDays(r0.datum))}</h3>
     ${g.map((v) => { const st = v.erzVersand ? ["p-ok", T("st_ges")] : v.stufe === "verwogen" ? ["p-info", T("st_verw")] : [ageDays(v.datum) > 7 ? "p-bad" : "p-warn", T("st_offen")];
-      return `<div class="krow"><span class="kc">${esc(v.charge)}</span><span class="ki"><b>${esc(v.erzeuger)}</b> · ${esc(v.sorte || "")}<small>${v.kisten || "–"} ${T("kisten_k")} · ${T("brutto1")} ≈ ${fmtKg(v.brutto1)} kg${v.brutto2 != null ? ` · <b>Brutto 2 ${fmtKg(v.brutto2, 1)} kg</b>` : ""}${(v.maengel1 || []).length ? ` · ${v.maengel1.map((m) => esc(mName(m.k))).join(", ")}` : ""}</small></span>
+      return `<div class="krow"><span class="kc">${esc(v.charge)}</span><span class="ki"><b>${esc(v.erzeuger)}</b> · ${esc(v.sorte || "")}<small>${v.kisten || "–"} ${T("kisten_k")} · ${T("brutto1")} ≈ ${fmtKg(v.brutto1)} kg${v.brutto2 != null ? ` · <b>Brutto 2 ${fmtKg(v.brutto2, 1)} kg</b>` : ""}${(v.maengel1 || []).length ? ` · ${v.maengel1.map((m) => esc(mName(m.k)) + (m.lvl != null ? " " + esc(lvT(m.lvl)) : "")).join(", ")}` : ""}</small></span>
         <span class="pill ${st[0]}">${st[1]}</span>
         <span class="chips">${v.stufe === "erfasst" ? `<button class="btn primary small" data-ka="vw-open" data-id="${esc(v.id)}">${T("btn_verw")}</button>` : `<button class="btn small" data-ka="vw-open" data-id="${esc(v.id)}">${T("btn_verw")}</button><button class="btn small" data-ka="eti-all" data-id="${esc(v.id)}">${T("btn_eti")}</button><button class="btn small dark" data-ka="prot" data-id="${esc(v.id)}">${T("btn_prot")}</button>${canSend() && !v.erzVersand ? `<button class="btn small primary" data-ka="ev-open" data-id="${esc(v.id)}">${T("btn_erz")}</button>` : ""}`}</span></div>`; }).join("")}</div>`; }).join("")
     : `<div class="empty"><p class="hint">${T("none")}</p></div>`}`;
@@ -358,7 +438,7 @@ function vwOpen(id) {
   const v = VORG.find((x) => x.id === id); if (!v) return;
   const vw = v.verwiegung || {};
   const kl = (v.kistenListe || []).map((x) => ({ kal: x.kal || "", kg: x.kg != null ? String(x.kg).replace(".", ",") : "" }));
-  const mg = {}; (vw.maengel || []).forEach((m) => (mg[m.k] = { foto: m.foto || null }));
+  const mg = {}; (vw.maengel || []).forEach((m) => (mg[m.k] = { lvl: m.lvl ?? 0, foto: m.foto || null }));
   K.vw = { id, kl: kl.length ? kl : [{ kal: "", kg: "" }], mg, sonst: (vw.maengel || []).find((m) => m.k === "sonst")?.text || "", bem: vw.bem || "", belege: (vw.belege || []).slice(), busy: false, mail: "", msg: "" };
   render(); window.scrollTo(0, 0);
 }
@@ -382,8 +462,8 @@ function viewVwEdit() {
   <div class="chips"><button class="btn" data-ka="kv-add">${T("add_kiste")}</button><button class="btn dark" data-ka="eti-cur" ${b2 ? "" : "disabled"}>${T("eti_all")}</button></div>
   <p style="margin:6px 0 0;font-size:18px">${T("summe")}: <b class="kb1" id="kv-sum">${b2 ? fmtKg(b2, 1) + " kg" : "–"}</b> · ${T("diff")}: <span class="kdiff ${di ? di.cls : ""}" id="kv-diff">${di ? `${di.d >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.d), 1)} kg (${di.pct >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.pct), 1)} %)` : "–"}</span></p></section>
   <section class="card"><h2>${T("m2")}</h2>${mangelChips(w.mg, M2, "vw", 0)}
-    ${w.mg.sonst ? `<label class="f" style="margin-top:8px">${T("sonst_txt")}<input type="text" id="kv-sonst" value="${esc(w.sonst)}"></label>` : ""}
-    <label class="f">${T("bem")} <span class="h">${T("opt")}</span><input type="text" id="kv-bem" value="${esc(w.bem)}"></label>
+    ${w.mg.sonst ? `<label class="f" style="margin-top:8px">${T("sonst_txt")}<span class="kin"><input type="text" id="kv-sonst" value="${esc(w.sonst)}"><button class="kmic${K.dict === "kv-sonst" ? " on" : ""}" data-ka="dict" data-for="kv-sonst" aria-label="${T("diktat")}">🎤</button></span></label>` : ""}
+    <label class="f">${T("bem")} <span class="h">${T("opt")}</span><span class="kin"><input type="text" id="kv-bem" value="${esc(w.bem)}"><button class="kmic${K.dict === "kv-bem" ? " on" : ""}" data-ka="dict" data-for="kv-bem" aria-label="${T("diktat")}">🎤</button></span></label>
     <div><b>${T("belege")}</b> <span class="hint">${T("belege_h")}</span>${belegeBlock(w.belege, "vw")}</div></section>
   ${w.msg ? `<p class="hint" style="color:${w.mail === "error" ? "var(--bad)" : "var(--ok)"}">${esc(w.msg)}</p>` : ""}
   <div class="kbar"><div class="msg">${b2 ? "" : T("miss_kg")}</div><button class="btn" data-ka="vw-save" ${w.busy ? "disabled" : ""}>${T("zwisch")}</button><button class="btn primary" data-ka="vw-done" ${w.busy || !b2 ? "disabled" : ""}>${w.busy ? T("saving") : T("abschl")}</button></div>`;
@@ -398,11 +478,11 @@ function vwRefresh() {
 }
 function vwPayload(final) {
   const w = K.vw, v = vwRec(); const kl = klValid(w.kl); const b2 = kl.reduce((a, x) => a + x.kg, 0);
-  const mg = M2.filter((k) => w.mg[k]).map((k) => ({ k, t: MDE[k], text: k === "sonst" ? w.sonst : "", foto: w.mg[k].foto || null }));
+  const mg = M2.filter((k) => w.mg[k]).map((k) => ({ k, t: MDE[k], lvl: w.mg[k].lvl ?? 0, text: k === "sonst" ? w.sonst : "", foto: w.mg[k].foto || null }));
   const vwd = { ...(v.verwiegung || {}), datum: today(), von: ME, vonName: meName(), maengel: mg, bem: w.bem.trim(), belege: w.belege.slice() };
   const out = { kistenListe: kl, verwiegung: vwd };
   if (final) { const di = diffInfo(v.brutto1, b2); const ab = abw1(v);
-    mg.forEach((m) => ab.push("Mangel Verwiegung: " + (m.k === "sonst" && m.text ? m.text : MDE[m.k])));
+    mg.forEach((m) => ab.push("Mangel Verwiegung: " + mTxt(m)));
     if (di && Math.abs(di.pct) > ABW_PCT) ab.push(`Brutto 2 weicht ${fmtKg(di.pct, 1)} % von Brutto 1 ab`);
     Object.assign(out, { stufe: "verwogen", brutto2: Math.round(b2 * 10) / 10, mengeKg: Math.round(b2 * 10) / 10, mengeErfasst: Math.round(b2 * 10) / 10,
       schwundKg: v.brutto1 ? Math.round((v.brutto1 - b2) * 10) / 10 : null, schwundProzent: di ? Math.round(-di.pct * 10) / 10 : null, abweichungen: ab, verwogen: new Date().toISOString() }); }
@@ -437,7 +517,8 @@ function plausiErz(v) {
   if (v.stufe !== "verwogen") out.push({ blk: true, t: "Charge ist noch nicht verwogen." });
   const di = diffInfo(v.brutto1, v.brutto2); if (di && Math.abs(di.pct) > ABW_PCT) out.push({ t: `Brutto 2 weicht stark von Brutto 1 ab: ${di.pct >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.pct), 1)} % (${fmtKg(v.brutto1)} → ${fmtKg(v.brutto2, 1)} kg).` });
   const ohneFoto = [...(v.maengel1 || []), ...(v.verwiegung?.maengel || [])].filter((m) => !m.foto); if (ohneFoto.length) out.push({ t: `Mängel ohne Foto: ${[...new Set(ohneFoto.map((m) => MDE[m.k]))].join(", ")}.` });
-  if (v.beschriftung === false) out.push({ t: "Kistenbeschriftung (BIO/QS) war bei Anlieferung nicht korrekt." });
+  if (v.beschriftung === false) out.push({ t: "Kisten waren bei Anlieferung nicht oder mangelhaft beschriftet." });
+  Object.entries(v.kontrolle || {}).forEach(([k, x]) => { if (x === false) out.push({ t: "Kontrollfrage mit Nein: " + (KF_DE[k] || k) + "." }); });
   if (!e.qs) out.push({ t: "QS-ID beim Erzeuger fehlt (Stammdaten)." });
   if (!e.oeko) out.push({ t: "Öko-Kontrollnummer beim Erzeuger fehlt (Stammdaten)." });
   if ((v.kistenListe || []).some((k) => !(k.kg > 0))) out.push({ t: "Mindestens eine Kiste ohne Gewicht." });
@@ -522,30 +603,32 @@ async function pdfKnt(recs, mode) {
   sec("Anlieferung");
   kv([["Datum Wareneingang", deDate(r0.datum)], ["Lieferschein-Nr.", r0.keinLieferschein ? "kein Lieferschein" : r0.lieferscheinNr || "-", r0.keinLieferschein],
     ...(mode !== "erz" && r0.bueroWeNr ? [["büro+ WE-Nr.", r0.bueroWeNr]] : []),
-    ["Sauberkeit Fahrzeug / Ware", r0.sauber ? "in Ordnung" : "nicht in Ordnung", !r0.sauber], ["Temperatur", r0.temperatur === "ok" ? "in Ordnung" : "nicht in Ordnung", r0.temperatur !== "ok"],
+    ...(r0.kontrolle ? Object.entries(r0.kontrolle).map(([k, x]) => [{ zert: "Zertifikat / Öko-Nr. auf LS", schaed: "Frei von Schädlingen" }[k] || k, x === false ? "nein" : "ja", x === false]) : [["Sauberkeit Fahrzeug / Ware", r0.sauber ? "in Ordnung" : "nicht in Ordnung", !r0.sauber], ["Temperatur", r0.temperatur === "ok" ? "in Ordnung" : "nicht in Ordnung", r0.temperatur !== "ok"]]),
     ["Erfasst von", r0.erfasstVonName || "-"]]);
   if (mode === "erst" || recs.length > 1) {
     sec("Chargen");
-    table([["Charge", 30], ["Erzeuger", 40], ["Sorte", 28], ["Kisten", 16, 1], ["Brutto 1 ca. kg", 24, 1], ["BIO/QS", 14], ["Mängel", 28]],
-      recs.map((r) => [r.charge, `${r.erzeuger} (${r.code})`, r.sorte || "-", String(r.kisten ?? "-"), fmtKg(r.brutto1), r.beschriftung ? "ja" : "nein", (r.maengel1 || []).map((m) => (m.k === "sonst" && m.text ? m.text : MDE[m.k])).join(", ") || "keine"]));
+    table([["Charge", 24], ["Erzeuger", 30], ["Sorte", 22], ["Kisten", 13, 1], ["Brutto 1 ca. kg", 21, 1], ["Abtrocknung", 22], ["Beschriftung", 23], ["Mängel", 25]],
+      recs.map((r) => [r.charge, `${r.erzeuger} (${r.code})`, r.sorte || "-", String(r.kisten ?? "-"), fmtKg(r.brutto1), TROCK_DE[r.abtrocknung] || "-", r.beschriftung === false ? "mangelhaft" : "ok", (r.maengel1 || []).map(mTxt).join(", ") || "keine"]));
   } else {
     const r = r0, e = erzById(r.erzeugerId) || {};
     sec("Charge");
     kv([["Charge", r.charge], ["Erzeuger", `${r.erzeuger} (${r.code})${e.ort ? " · " + e.ort : ""}`], ["Verband", r.auslobung || "-"], ["Öko-Kontrollnummer", e.oeko || r.oeko || "-"], ["QS-ID", e.qs || r.qs || "-"],
       ["Sorte", r.sorte || "-"], ["Anlieferung", `${r.kisten} Holz-Großkisten · Brutto 1 ca. ${fmtKg(r.brutto1)} kg (${r.brutto1Art === "gesamt" ? "Gesamtgewicht" : "Ø " + fmtKg(r.avgKg) + " kg je Kiste"})`],
-      ["Kistenbeschriftung BIO/QS", r.beschriftung ? "vorhanden und korrekt" : "fehlt / nicht korrekt", r.beschriftung === false],
-      ["Mängel bei Anlieferung", (r.maengel1 || []).map((m) => (m.k === "sonst" && m.text ? m.text : MDE[m.k])).join(", ") || "keine", (r.maengel1 || []).length > 0]]);
+      ["Abtrocknung", TROCK_DE[r.abtrocknung] || "-", r.abtrocknung && r.abtrocknung !== "gut"],
+      ["Kistenbeschriftung BIO/QS", r.beschriftung === false ? "nicht oder mangelhaft beschriftet" : "in Ordnung", r.beschriftung === false],
+      ["Mängel bei Anlieferung", (r.maengel1 || []).map(mTxt).join(", ") || "keine", (r.maengel1 || []).length > 0]]);
     if (r.stufe === "verwogen") { const vw = r.verwiegung || {}; const di = diffInfo(r.brutto1, r.brutto2);
       sec("Verwiegung nach Vorputzen und Bürsten");
       kv([["Datum Verwiegung", deDate(vw.datum) + (vw.vonName ? " · " + vw.vonName : "")], ["Brutto 2 gesamt", `${fmtKg(r.brutto2, 1)} kg in ${(r.kistenListe || []).length} Kisten`],
         ["Abweichung zu Brutto 1", di ? `${di.d >= 0 ? "+" : "-"}${fmtKg(Math.abs(di.d), 1)} kg (${di.pct >= 0 ? "+" : "-"}${fmtKg(Math.abs(di.pct), 1)} %)` : "-", di && Math.abs(di.pct) > ABW_PCT],
-        ["Mängel bei Verwiegung", (vw.maengel || []).map((m) => (m.k === "sonst" && m.text ? m.text : MDE[m.k])).join(", ") || "keine", (vw.maengel || []).length > 0], ...(vw.bem ? [["Bemerkung", vw.bem]] : [])]);
+        ["Mängel bei Verwiegung", (vw.maengel || []).map(mTxt).join(", ") || "keine", (vw.maengel || []).length > 0], ...(vw.bem ? [["Bemerkung", vw.bem]] : [])]);
       table([["Kiste", 20], ["Kaliber", 60], ["Brutto 2 kg", 40, 1], ["Barcode", 60]], (r.kistenListe || []).map((k, i) => [String(i + 1), k.kal || "-", fmtKg(k.kg, 1), `${r.barcode}K${String(i + 1).padStart(2, "0")}`]));
     }
     if (r.bemerkung) kv([["Bemerkung Anlieferung", r.bemerkung]]);
   }
   // Fotos zu Mängeln
-  const fotos = []; recs.forEach((r) => { (r.maengel1 || []).forEach((m) => m.foto && fotos.push({ id: m.foto, cap: `${r.charge} · Anlieferung · ${MDE[m.k]}` })); (r.verwiegung?.maengel || []).forEach((m) => m.foto && fotos.push({ id: m.foto, cap: `${r.charge} · Verwiegung · ${MDE[m.k]}` })); });
+  const fotos = []; recs.forEach((r) => { if (r.lsFoto && mode !== "erz") fotos.push({ id: r.lsFoto, cap: `Lieferschein ${r.lieferscheinNr || ""}` }); (r.maengel1 || []).forEach((m) => m.foto && fotos.push({ id: m.foto, cap: `${r.charge} · Anlieferung · ${MDE[m.k]}` })); (r.verwiegung?.maengel || []).forEach((m) => m.foto && fotos.push({ id: m.foto, cap: `${r.charge} · Verwiegung · ${MDE[m.k]}` })); });
+  { const seen = new Set(); for (let i = fotos.length - 1; i >= 0; i--) { if (seen.has(fotos[i].id)) fotos.splice(i, 1); else seen.add(fotos[i].id); } }
   if (fotos.length) { sec("Fotos"); const w = (W - 8) / 3, h = w * 0.75; let col = 0;
     for (const f of fotos.slice(0, 18)) { const data = await imgData(f.id); if (!data) continue; if (col === 0) need(h + 8);
       try { d.addImage(data, "JPEG", L + col * (w + 4), y, w, h); } catch (_) {} font("normal", 7.5, C.grey); d.text(pt(f.cap), L + col * (w + 4), y + h + 3.6, { maxWidth: w });
@@ -643,6 +726,7 @@ const listOf = (ctx) => (ctx === "vw" ? K.vw.belege : K.ke.belege);
 const mgOf = (ctx, ci) => (ctx === "vw" ? K.vw.mg : K.ke.chargen[ci].mg);
 async function onPicked(files) {
   const p = K.pend; K.pend = null; if (!p || !files.length) return;
+  if (p.kind === "ls") { await lsFoto(files[0]); return; }
   if (p.kind === "mg") { const mg = mgOf(p.ctx, p.ci); try { toast(T("foto_load")); const r = await uploadFile(files[0], true); if (r && mg[p.k]) mg[p.k].foto = r.id; } catch (e) { console.error(e); toast("Foto konnte nicht gelesen werden"); } kePersist(); render(); }
   else await addBelege([...files], listOf(p.ctx));
 }
@@ -663,7 +747,13 @@ document.addEventListener("click", (ev) => {
     case "ch-modus": e.chargen[ci].modus = b.dataset.v; kePersist(); render(); break;
     case "ch-avg": e.chargen[ci].avg = +b.dataset.v; kePersist(); render(); break;
     case "ch-beschr": e.chargen[ci].beschr = b.dataset.v === "1"; kePersist(); render(); break;
-    case "mg": { const mg = mgOf(ctx, ci), k = b.dataset.k; if (mg[k]) delete mg[k]; else mg[k] = { foto: null }; kePersist(); render(); break; }
+    case "mg": { const mg = mgOf(ctx, ci), k = b.dataset.k; if (mg[k]) delete mg[k]; else mg[k] = { lvl: 0, foto: null }; kePersist(); render(); break; }
+    case "mg-lvl": { const mg = mgOf(ctx, ci); if (mg[b.dataset.k]) mg[b.dataset.k].lvl = +b.dataset.v; kePersist(); render(); break; }
+    case "ch-trock": e.chargen[ci].trock = b.dataset.v; kePersist(); render(); break;
+    case "ch-beschrf": e.chargen[ci].beschrFehler = !e.chargen[ci].beschrFehler; kePersist(); render(); break;
+    case "kf": e.kontrolle[b.dataset.k] = b.dataset.v === "1"; kePersist(); render(); break;
+    case "ls-foto": K.pend = { kind: "ls" }; fileFoto.click(); break;
+    case "dict": diktat(b.dataset.for); break;
     case "mg-foto": K.pend = { kind: "mg", ctx, ci, k: b.dataset.k }; fileFoto.click(); break;
     case "mg-foto-del": { const mg = mgOf(ctx, ci); if (mg[b.dataset.k]) mg[b.dataset.k].foto = null; kePersist(); render(); break; }
     case "pick-foto": K.pend = { kind: "beleg", ctx }; fileFoto.click(); break;
