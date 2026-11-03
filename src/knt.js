@@ -538,7 +538,7 @@ function plausiErz(v) {
 function viewEv() {
   const ev = K.ev, v = VORG.find((x) => x.id === ev.id); if (!v) { K.ev = null; return ""; }
   const pl = plausiErz(v), blk = pl.some((x) => x.blk), e = erzById(v.erzeugerId) || {};
-  const to = [e.email, ...(CFG.verteiler || [])].filter(Boolean);
+  const to = [...new Set([e.email, ...(CFG.verteiler || [])].filter(Boolean).map((x) => x.trim().toLowerCase()))];
   return `<section class="card kev"><div class="sechead"><h2>Protokoll an Erzeuger senden</h2><button class="btn small" data-ka="ev-close">Schließen</button></div>
    <p><b style="font-family:var(--f-mono)">${esc(v.charge)}</b> · ${esc(v.erzeuger)} · Brutto 2 [kg] <b>${fmtKg(v.brutto2, 1)}</b> (${(v.kistenListe || []).length} Kisten)</p>
    <b>Plausibilitätsprüfung</b>${pl.length ? `<ul>${pl.map((x) => `<li class="${x.blk ? "blk" : "wrn"}">${x.blk ? "⛔ " : "⚠ "}${esc(x.t)}</li>`).join("")}</ul>` : `<div class="warnbox okbox"><b>Keine Auffälligkeiten</b></div>`}
@@ -550,7 +550,7 @@ function viewEv() {
 async function evSend() {
   const ev = K.ev, v = VORG.find((x) => x.id === ev.id); if (!v || ev.sending) return;
   if (!canSend()) { toast("Keine Berechtigung für den Erzeuger-Versand"); return; }
-  const e = erzById(v.erzeugerId) || {}; const to = [e.email, ...(CFG.verteiler || [])].filter(Boolean);
+  const e = erzById(v.erzeugerId) || {}; const to = [...new Set([e.email, ...(CFG.verteiler || [])].filter(Boolean).map((x) => x.trim().toLowerCase()))];
   ev.sending = true; ev.msg = ""; render();
   try { const pdf = await pdfKnt([v], "erz");
     await sendMailK(to, `Wareneingangsprotokoll ${v.charge} – Knoblauch trocken – ${deDate(v.datum)}`, mailHtmlK([v], "erz"), `Wareneingangsprotokoll ${v.charge}, Brutto 2 [kg] ${fmtKg(v.brutto2, 1)}. PDF im Anhang.`, pdf, `Wareneingang_${v.barcode}_${v.datum}.pdf`);
