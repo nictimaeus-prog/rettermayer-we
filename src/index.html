@@ -257,6 +257,7 @@ table.bon tr.okrow td{color:var(--ok);font-weight:700}
 .drow .sub{color:var(--muted);font-size:13px}.drow .btn.small{padding:6px 10px;min-height:34px;box-shadow:none}
 .dlist details summary{cursor:pointer;padding:8px 0;font-size:14px;color:var(--muted)}
 @media (max-width:560px){.ptiles .tile{display:grid;grid-template-columns:52px 1fr;column-gap:12px;row-gap:2px;min-height:0;padding:12px 44px 12px 12px}.ptiles .tile .badge{grid-row:1/4;width:52px;height:50px;font-size:17px;border-radius:14px}.ptiles .tile .name{font-size:18px}.ptiles .tile .meta{font-size:13px}}
+.ppos{border:2px solid var(--line);border-radius:14px;padding:10px 12px;margin:10px 0}.pphead{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 </style>
 
 <header class="top">
@@ -336,7 +337,16 @@ const STEPS_STD = ["Produkt","Erzeuger","Lieferung","Prüfung","Fotos","Fertig"]
 const STEPS_PG  = ["Produkt","Lieferant","Lieferung","Bonitur","Fotos","Fertig"];
 const steps=()=>isPG()?STEPS_PG:STEPS_STD;
 function freshPg(){ return {auftrag:"VG Bio", probennehmer:"", probeDatum:isoDate(new Date()), land:"", sorte:"", kaliber:"", form:null, brech:"", gewicht:"", anzahl:"", eindruck:"", cnt:{}, anm:{}, qual:"konv"}; }
-function fresh(){ return {prod:null, erz:null, datum:isoDate(new Date()), menge:"", gebinde:null, kisten:"", paletten:"", etiAnz:null, lsNr:"",
+const PG_KAL=["50–60 mm","40–50 mm","55–65 mm","65+ mm"], PG_GEB_R=["Einwegkiste","Big Bag","Sack"], PG_SACK_KG=20, PG_SACK_PAL=40;
+const isRainbow=s=>/rainbow/i.test(s||"");
+function newPgPos(){ return {sorte:"", lot:"", kal:PG_KAL[0], geb:"Sack", pal:"", sack:"", anz:"", kg:""}; }
+function posCalc(x){ if(x.geb==="Sack"){ const n=(num(x.pal)||0)*PG_SACK_PAL+(num(x.sack)||0); return {n, kg:n*PG_SACK_KG}; } return {n:num(x.anz)||0, kg:num(x.kg)||0}; }
+function pgTotals(){ const l=(S.pgPos||[]).map(posCalc); return {n:l.reduce((a,x)=>a+x.n,0), kg:l.reduce((a,x)=>a+x.kg,0)}; }
+function pgGebText(x){ const c=posCalc(x); if(!c.n) return ""; return x.geb==="Sack"?`${c.n} Sack à 20 kg${num(x.pal)?` (${num(x.pal)} Pal.${num(x.sack)?` + ${num(x.sack)} Sack`:""})`:""}`:`${c.n} × ${x.geb}`; }
+function pgSync(){ if(!isPG()) return; const t=pgTotals(); S.menge=t.kg?String(t.kg):""; S.kisten=t.n?String(t.n):""; const g=[...new Set((S.pgPos||[]).map(x=>x.geb))]; S.gebinde=g.length?g.join(" / "):"Sack";
+  S.paletten=String((S.pgPos||[]).reduce((a,x)=>a+(x.geb==="Sack"?(num(x.pal)||0):0),0)||""); const so=[...new Set((S.pgPos||[]).map(x=>x.sorte).filter(Boolean))]; if(so.length===1&&!S.pg.sortePick) S.pg.sorte=so[0]; }
+const pgSorten=()=>[...new Set((S.pgPos||[]).map(x=>x.sorte).filter(Boolean))];
+function fresh(){ return {pgPos:[newPgPos()], prod:null, erz:null, datum:isoDate(new Date()), menge:"", gebinde:null, kisten:"", paletten:"", etiAnz:null, lsNr:"",
   noten:{}, kal:{}, mg:{}, ernte:null, sauber:null, temp:null, jn:{}, verband:new Set(), fallend:null, trock:null, pg:freshPg(),
   lsFoto:null, lsCheck:null, lsBusy:false, lsMsg:"", fotos:[], bem:"", charge:null, saved:false, celebrated:false, saving:false, sdEdit:null, q:"", seen:new Set(), gain:null, kl:[], keinLs:false}; }
 let S = fresh();
@@ -432,7 +442,8 @@ function plausiBox(){ const p=plausi(); return p.length?`<div class="warnbox wbo
 function missing(){
   if(step===0) return S.prod?null:"Bitte ein Produkt wählen";
   if(step===1) return S.erz?null:(isPG()?"Bitte einen Lieferanten wählen":"Bitte einen Erzeuger wählen");
-  if(step===2){ if(!S.datum) return "Bitte Anliefertag angeben"; if(!S.gebinde) return "Bitte Gebinde wählen"; return null; }
+  if(step===2){ if(!S.datum) return "Bitte Anliefertag angeben";
+    if(isPG()){ const bad=S.pgPos.findIndex(x=>!x.sorte); if(bad>=0) return `Bitte Sorte ${bad+1} wählen`; const z=S.pgPos.findIndex(x=>!(posCalc(x).kg>0)); if(z>=0) return `Bitte Menge für Sorte ${z+1} angeben`; return null; } if(!S.gebinde) return "Bitte Gebinde wählen"; return null; }
   if(step===3){
     const m=[];
     if(isPG()){
@@ -616,8 +627,34 @@ function vHerkunft(){
   : `<div class="empty"><h2>${loaded||demo?(src.length?"Keine Treffer":(pg?"Noch keine Lieferanten":"Noch keine Erzeuger")):"Stammdaten werden geladen …"}</h2><p class="hint">${src.length?"Suche anpassen.":`Unter <b>Stammdaten</b> ${pg?"Pflanzgut-Lieferanten":"Erzeuger"} mit 3-stelligem Kürzel und büro+-Nr. anlegen.`}</p></div>`}`;
 }
 function seg(group, val, opts){ return `<div class="seg${opts.txt?" txt":""}">${opts.items.map(it=>`<button data-act="set" data-g="${group}" data-v="${esc(JSON.stringify(it.v))}" aria-pressed="${JSON.stringify(val)===JSON.stringify(it.v)}" class="${it.c||"g-sel"}">${esc(it.t)}</button>`).join("")}</div>`; }
+function vPgPos(){
+  const so=K.sorten(); const t=pgTotals();
+  return `<section class="card"><div class="sechead"><h2>Sorten</h2><span class="pill p-info" id="pp-tot">${deNum(t.n)} Gebinde · ${deNum(t.kg)} kg</span></div>
+   <p class="hint">Je Sorte bzw. LOT eine Zeile. Sack = 20 kg, Palette = 40 Sack = 800 kg. Bei Rainbow Standard Einwegkiste.</p>
+   ${S.pgPos.map((x,i)=>{ const c=posCalc(x), rb=isRainbow(x.sorte);
+    return `<div class="ppos"><div class="pphead"><b>Sorte ${i+1}</b>${S.pgPos.length>1?`<button class="btn small" data-act="pp-del" data-i="${i}" aria-label="Sorte ${i+1} entfernen">✕</button>`:""}</div>
+     <div class="form">
+      <label class="f">Sorte<select id="pp-sorte-${i}"><option value="">Sorte wählen</option>${so.map(o=>`<option ${x.sorte===o?"selected":""}>${esc(o)}</option>`).join("")}${x.sorte&&!so.includes(x.sorte)?`<option selected>${esc(x.sorte)}</option>`:""}</select></label>
+      <label class="f">LOT-Nr.<input type="text" id="pp-lot-${i}" value="${esc(x.lot)}" autocomplete="off" placeholder="laut Etikett / Pflanzenpass"></label></div>
+     <div class="q"><div class="lbl">Kaliber</div><div class="seg txt">${PG_KAL.map(k=>`<button data-act="pp-kal" data-i="${i}" data-v="${esc(k)}" aria-pressed="${x.kal===k}" class="g-sel">${esc(k)}</button>`).join("")}</div></div>
+     ${rb?`<div class="q"><div class="lbl">Gebinde<small>Rainbow</small></div><div class="seg txt">${PG_GEB_R.map(g=>`<button data-act="pp-geb" data-i="${i}" data-v="${esc(g)}" aria-pressed="${x.geb===g}" class="g-sel">${g==="Sack"?"Sack 20 kg":esc(g)}</button>`).join("")}</div></div>`:""}
+     <div class="form">${x.geb==="Sack"
+       ?`<label class="f">Paletten<span class="h">je 40 Sack = 800 kg</span><input type="number" inputmode="numeric" min="0" id="pp-pal-${i}" value="${esc(x.pal)}"></label>
+         <label class="f">einzelne Säcke<span class="h">zusätzlich, je 20 kg</span><input type="number" inputmode="numeric" min="0" id="pp-sack-${i}" value="${esc(x.sack)}"></label>`
+       :`<label class="f">Anzahl ${esc(x.geb)}<input type="number" inputmode="numeric" min="0" id="pp-anz-${i}" value="${esc(x.anz)}"></label>
+         <label class="f">Gewicht gesamt (kg)<input type="number" inputmode="decimal" min="0" id="pp-kg-${i}" value="${esc(x.kg)}"></label>`}
+      <div class="kpi"><span>Menge</span><b class="calc" id="pp-sum-${i}">${c.kg?deNum(c.kg)+" kg":"–"}</b></div></div></div>`; }).join("")}
+   <div class="chips"><button class="btn" data-act="pp-add">+ weitere Sorte</button></div></section>`;
+}
+function updPp(){ pgSync(); const t=pgTotals(); const el=$("#pp-tot"); if(el) el.textContent=`${deNum(t.n)} Gebinde · ${deNum(t.kg)} kg`;
+  S.pgPos.forEach((x,i)=>{ const e=$("#pp-sum-"+i), c=posCalc(x); if(e) e.textContent=c.kg?deNum(c.kg)+" kg":"–"; }); const pb=$("#plausi-box"); if(pb) pb.innerHTML=plausiBox(); }
 function vLieferung(){
   const pg=isPG();
+  if(pg){ pgSync(); return headerSel()+`<h1>Anlieferung Pflanzgut</h1><p class="lead">Anliefertag, Sorten mit LOT-Nr. und Kaliber. Die Menge rechnet die App aus Paletten und Säcken.</p>
+  <section class="card"><div class="form">
+    <label class="f">Anliefertag<input type="date" id="f-datum" value="${esc(S.datum)}"></label>
+    <label class="f">Lieferschein-Nr.<input type="text" id="f-lsnr" value="${esc(S.lsNr)}"></label>
+  </div><div id="plausi-box">${plausiBox()}</div></section>${vPgPos()}`; }
   return headerSel()+`<h1>Anlieferung</h1><p class="lead">Anliefertag und Gebinde sind Pflicht. Unplausible Angaben werden gelb markiert und kommen als Hinweis ins Protokoll.</p>
   <section class="card"><div class="form">
     <label class="f">Anliefertag<input type="date" id="f-datum" value="${esc(S.datum)}"></label>
@@ -672,6 +709,7 @@ function vPruefung(){
   </section>`;
 }
 function vBonitur(){
+  pgSync(); if(!pgSorten().includes(S.pg.sorte)) S.pg.sorte=pgSorten()[0]||""; if(!S.pg.kaliber) S.pg.kaliber=(S.pgPos.find(x=>x.sorte===S.pg.sorte)||{}).kal||"";
   const c=pgCalc(), p=P();
   const opts=["VG Bio",...ERZ.slice().sort((a,b)=>a.name.localeCompare(b.name,"de")).map(e=>e.name)];
   return headerSel()+`<h1>Knoblauchbonitur</h1><p class="lead">Aufbau wie die Feldfunk-Bonitur. Anteile und Ø Zehengewicht rechnet die App. Toleranz Mängel gesamt ${p.tol} %, Fusarium gesamt ${p.ftol??10} %.</p>
@@ -682,8 +720,8 @@ function vBonitur(){
       <label class="f">Probennehmer<input type="text" id="pg-prob" value="${esc(S.pg.probennehmer)}" placeholder="z. B. Bogner"></label>
       <label class="f">Datum Probennahme<input type="date" id="pg-probd" value="${esc(S.pg.probeDatum)}"></label>
       <label class="f">Herkunftsland<input type="text" id="pg-land" value="${esc(S.pg.land||S.erz.land||"")}" placeholder="z. B. Spanien"></label>
-      <label class="f">Sorte<input type="text" id="pg-sorte" list="sorten-dl" value="${esc(S.pg.sorte)}" placeholder="z. B. Garcua"></label>
-      <label class="f">Kaliber<input type="text" id="pg-kal" value="${esc(S.pg.kaliber)}" placeholder="z. B. 45–50 mm oder unbekannt"></label>
+      <label class="f">Sorte der Probe<select id="pg-sorte-sel">${pgSorten().map(o=>`<option ${S.pg.sorte===o?"selected":""}>${esc(o)}</option>`).join("")}</select></label>
+      <label class="f">Kaliber<input type="text" id="pg-kal" value="${esc(S.pg.kaliber||(S.pgPos.find(x=>x.sorte===S.pg.sorte)||S.pgPos[0]||{}).kal||"")}" placeholder="z. B. 50–60 mm"></label>
     </div>
     <div class="q"><div class="lbl">Probe</div><div class="seg txt">${[{v:"ganz",t:"ganze Knollen"},{v:"gebrochen",t:"gebrochen"}].map(x=>`<button data-act="pgset" data-f="form" data-v="${x.v}" aria-pressed="${S.pg.form===x.v}" class="g-sel">${x.t}</button>`).join("")}</div></div>
     <div class="form">
@@ -718,7 +756,7 @@ function updPg(){
 
 function lsRows(){
   const e=S.erz; const rows=[];
-  if(isPG()){ rows.push({punkt:"Qualität", soll:qualText()}); rows.push({punkt:"Pflanzenpass", soll:"vorhanden"}); rows.push({punkt:"Sorte", soll:S.pg.sorte||"–"}); }
+  if(isPG()){ rows.push({punkt:"Qualität", soll:qualText()}); rows.push({punkt:"Pflanzenpass", soll:"vorhanden"}); rows.push({punkt:"Sorte", soll:pgSorten().join(", ")||S.pg.sorte||"–"}); }
   else { (e.verbaende||[]).forEach(v=>rows.push({punkt:v, soll:"ja"})); rows.push({punkt:"Öko-Kontrollstelle", soll:e.oeko||"–"}); }
   return rows.map(r=>({...r, ist:"", status:"offen"}));
 }
@@ -750,7 +788,7 @@ function vLs(){
 
 function chargeText(){ if(S.charge) return S.charge; return `${S.erz.code} ${String((CNT[counterKey()]||0)+1).padStart(2,"0")} ${P().k}`; }
 function barcodeVal(){ return ascii(chargeText()).replace(/[^A-Z0-9]/g,""); }
-function kolliText(){ const a=[]; if(num(S.kisten)) a.push(num(S.kisten)+" × "+(S.gebinde||"Gebinde")); else if(S.gebinde) a.push(S.gebinde); if(num(S.paletten)) a.push(num(S.paletten)+" Paletten"); return a.join(" / "); }
+function kolliText(){ if(isPG()&&S.pgPos?.length) return S.pgPos.map(pgGebText).filter(Boolean).join(" · "); const a=[]; if(num(S.kisten)) a.push(num(S.kisten)+" × "+(S.gebinde||"Gebinde")); else if(S.gebinde) a.push(S.gebinde); if(num(S.paletten)) a.push(num(S.paletten)+" Paletten"); return a.join(" / "); }
 function etiCount(){ const kc=klCount(S.kl); if(isTR()&&kc) return kc; if(S.etiAnz) return S.etiAnz; const k=parseInt(S.kisten,10); return k>0?Math.min(999,k):1; }
 function labelTag(){ return isPG()? (S.pg.qual==="bio"?"BIO":"KONV. UNBEH.") : ([...S.verband].map(v=>v.toUpperCase()).join(" + ")||"OHNE VERBAND"); }
 function summaryRows(){
@@ -812,7 +850,7 @@ function relZeit(iso){ const d=new Date(iso), m=(Date.now()-d)/6e4; if(m<1) retu
   return k===t?"heute "+hhmm(d):k===isoDate(y)?"gestern "+hhmm(d):deDate(k)+" "+hhmm(d); }
 function draftData(){
   const d={prod:S.prod, erz:S.erz?{...S.erz}:null, step:Math.min(step,4), datum:S.datum, menge:S.menge, gebinde:S.gebinde, kisten:S.kisten, paletten:S.paletten, lsNr:S.lsNr,
-    noten:S.noten, kal:S.kal, mg:S.mg, ernte:S.ernte, sauber:S.sauber, temp:S.temp, jn:S.jn, verband:[...S.verband], fallend:S.fallend, trock:S.trock, pg:S.pg,
+    noten:S.noten, kal:S.kal, mg:S.mg, ernte:S.ernte, sauber:S.sauber, temp:S.temp, jn:S.jn, verband:[...S.verband], fallend:S.fallend, trock:S.trock, pg:S.pg, pgPos:S.pgPos,
     lsCheck:S.lsCheck, bem:S.bem, kl:S.kl, etiAnz:S.etiAnz, keinLs:!!S.keinLs};
   const all=[S.lsFoto,...S.fotos].filter(Boolean).join("").length;
   if(all<700000){ d.lsFoto=S.lsFoto; d.fotos=S.fotos; d.fotosWeg=0; }
@@ -834,7 +872,7 @@ function resumeDraft(id){
   clearTimeout(draftTimer); S=fresh();
   Object.assign(S,{prod:d.prod, erz:src.find(x=>x.id===d.erz?.id)||d.erz, datum:d.datum||S.datum, menge:d.menge||"", gebinde:d.gebinde||null, kisten:d.kisten||"", paletten:d.paletten||"", lsNr:d.lsNr||"",
     noten:d.noten||{}, kal:d.kal||{}, mg:d.mg||{}, ernte:d.ernte??null, sauber:d.sauber??null, temp:d.temp??null, jn:d.jn||{}, verband:new Set(d.verband||[]), fallend:d.fallend??null, trock:d.trock??null,
-    pg:{...freshPg(),...(d.pg||{})}, lsFoto:d.lsFoto||null, lsCheck:d.lsCheck||null, fotos:d.fotos||[], bem:d.bem||"", kl:d.kl||[], etiAnz:d.etiAnz??null, keinLs:!!d.keinLs, draftId:d.id, resumedWeg:d.fotosWeg||0});
+    pg:{...freshPg(),...(d.pg||{})}, pgPos:(d.pgPos&&d.pgPos.length)?d.pgPos:[newPgPos()], lsFoto:d.lsFoto||null, lsCheck:d.lsCheck||null, fotos:d.fotos||[], bem:d.bem||"", kl:d.kl||[], etiAnz:d.etiAnz??null, keinLs:!!d.keinLs, draftId:d.id, resumedWeg:d.fotosWeg||0});
   draftLast=""; step=Math.max(1,Math.min(d.step||1,4)); view="erf"; render(); window.scrollTo(0,0); toast("Weiter bei „"+steps()[step]+"“");
 }
 async function deleteDraft(id){
@@ -916,7 +954,8 @@ function stateFromRec(v){
   const st=fresh(); const str=x=>x==null?"":String(x);
   Object.assign(st,{prod:v.produkt, erz:e, datum:v.datum, menge:str(v.mengeKg), gebinde:v.gebinde||null, kisten:str(v.kisten), paletten:str(v.paletten), lsNr:v.lieferscheinNr||"",
     jn:v.kontrolle||{}, lsCheck:v.lieferscheinAbgleich||[], bem:v.bemerkung||"", charge:v.charge, saved:true, noten:v.noten||{}, sauber:v.sauber??null, temp:v.temperatur??null,
-    verband:new Set(v.verband||[]), ernte:v.ernteart??null, trock:v.abtrocknung??null, etiAnz:v.etiketten||null, keinLs:!!v.keinLieferschein, kl:(v.kistenListe||[]).map(x=>({kal:x.kal||"",kg:str(x.kg)}))});
+    verband:new Set(v.verband||[]), ernte:v.ernteart??null, trock:v.abtrocknung??null, etiAnz:v.etiketten||null, keinLs:!!v.keinLieferschein, kl:(v.kistenListe||[]).map(x=>({kal:x.kal||"",kg:str(x.kg)})), pgPos:(v.positionen||[]).map(x=>({sorte:x.sorte||"",lot:x.lot||"",kal:x.kaliber||PG_KAL[0],geb:x.gebinde||"Sack",pal:str(x.paletten),sack:str(x.saecke),anz:x.gebinde==="Sack"?"":str(x.anzahl),kg:x.gebinde==="Sack"?"":str(x.mengeKg)}))});
+  if(!st.pgPos.length) st.pgPos=[newPgPos()];
   (v.kaliber||[]).forEach((k,i)=>st.kal[i]=k.prozent||0);
   if(p&&v.maengel&&p.typ!=="pflanzgut"){ const ml=mangelListe(p); v.maengel.forEach(m=>{ const i=ml.findIndex(x=>x.t===m.mangel); const ri=RANGES.findIndex(x=>x.von===m.von&&x.bis===m.bis); if(i>=0&&ri>0) st.mg[i]=ri; }); }
   const f=FALLEND.find(x=>(v.sortierung||"").includes(x.t)); if(f) st.fallend=f.v;
@@ -1128,7 +1167,7 @@ function viewVorgaenge(){
 }
 const CSV_COLS=[["Belegart",v=>"WE"],["bueroplus_WE_Nr",v=>v.bueroWeNr||""],["Datum",v=>deDate(v.datum)],["Charge",v=>v.charge],["Barcode",v=>v.barcode],["Lieferant_Nr",v=>v.bueroNr],["Lieferant",v=>v.erzeuger],["Kuerzel",v=>v.code],
   ["Artikel_Nr",v=>v.artNr],["Artikel",v=>v.produktName],["Menge",v=>v.mengeKg!=null?deNum(v.mengeKg,v.mengeKg%1?3:0).replace(/\./g,""):""],["Einheit",v=>"kg"],["Gebinde",v=>v.gebinde||""],["Anzahl_Gebinde",v=>v.kisten??""],["Paletten",v=>v.paletten??""],
-  ["Brutto1_geschaetzt",v=>v.brutto1!=null?deNum(v.brutto1).replace(/\./g,""):""],["Sorte",v=>v.sorte||v.bonitur?.sorte||""],["Stufe",v=>v.stufe||""],["Verband_Qualitaet",v=>v.auslobung],["Lieferschein_Nr",v=>v.lieferscheinNr],["Saison",v=>v.saison],["Sortierung",v=>v.sortierung||""],["Mangelanteil_Prozent",v=>v.mangelProzent??""],["Zehengewicht_g",v=>v.zehengewicht!=null?deNum(v.zehengewicht,2):""],
+  ["Brutto1_geschaetzt",v=>v.brutto1!=null?deNum(v.brutto1).replace(/\./g,""):""],["Sorte",v=>v.sorte||v.bonitur?.sorte||""],["LOT_Nr",v=>v.lot||""],["Stufe",v=>v.stufe||""],["Verband_Qualitaet",v=>v.auslobung],["Lieferschein_Nr",v=>v.lieferscheinNr],["Saison",v=>v.saison],["Sortierung",v=>v.sortierung||""],["Mangelanteil_Prozent",v=>v.mangelProzent??""],["Zehengewicht_g",v=>v.zehengewicht!=null?deNum(v.zehengewicht,2):""],
   ["Menge_erfasst",v=>v.mengeErfasst!=null?deNum(v.mengeErfasst,1).replace(/\./g,""):""],["Kisten_erfasst",v=>(v.kistenListe||[]).length||""],["Schwund_kg",v=>v.schwundKg!=null?deNum(v.schwundKg,1).replace(/\./g,""):""],["Schwund_Prozent",v=>v.schwundProzent!=null?deNum(v.schwundProzent,1):""],
   ["Anzahl_Abweichungen",v=>(v.abweichungen||[]).length],["Abweichungen",v=>(v.abweichungen||[]).join(" | ")],["Bemerkung",v=>v.bemerkung||""]];
 function csvField(x){ const s=String(x??"").replace(/\r?\n/g," "); return /[;"]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; }
@@ -1349,7 +1388,9 @@ async function speichern(){
     const rec={charge:S.charge, barcode:barcodeVal(), produkt:p.k, produktName:p.name, artNr:p.artNr||"", saison:saisonLabel(p,sj), erzeugerId:e.id, erzeuger:e.name, code:e.code, bueroNr:e.buero||"",
       datum:S.datum, mengeKg:num(S.menge), gebinde:S.gebinde, kisten:num(S.kisten), paletten:num(S.paletten), etiketten:etiCount(), lieferscheinNr:S.lsNr,
       auslobung:auslobText(), punkte:pk.sum, erfasstVon:ME, kontrolle:S.jn, lieferscheinAbgleich:S.keinLs?[]:(S.lsCheck||[]), keinLieferschein:!!S.keinLs, fotos:S.fotos.length, bemerkung:S.bem, abweichungen:abweichungen(), status:"offen", erstellt:new Date().toISOString()};
-    if(isPG()){ Object.assign(rec,{qualitaet:S.pg.qual, mangelProzent:c.sumPct, zehengewicht:c.zg,
+    if(isPG()){ pgSync(); rec.positionen=S.pgPos.map(x=>{ const c=posCalc(x); return {sorte:x.sorte, lot:x.lot.trim(), kaliber:x.kal, gebinde:x.geb, paletten:x.geb==="Sack"?(num(x.pal)||0):null, saecke:x.geb==="Sack"?(num(x.sack)||0):null, anzahl:c.n, mengeKg:c.kg}; });
+      rec.sorte=pgSorten().join(", "); rec.lot=S.pgPos.map(x=>x.lot.trim()).filter(Boolean).join(", "); rec.mengeKg=pgTotals().kg; rec.kisten=pgTotals().n; rec.gebinde=S.gebinde;
+      Object.assign(rec,{qualitaet:S.pg.qual, mangelProzent:c.sumPct, zehengewicht:c.zg,
       bonitur:{auftraggeber:S.pg.auftrag, probennehmer:S.pg.probennehmer, probeDatum:S.pg.probeDatum, herkunftsland:S.pg.land, sorte:S.pg.sorte, kaliber:S.pg.kaliber, form:S.pg.form, brechstelle:S.pg.brech,
         gesamtgewichtKg:num(S.pg.gewicht), anzahlZehen:c.n, ohneMangel:c.ohne, eindruck:S.pg.eindruck, maengel:c.ml.map((m,i)=>({mangel:m.t,anzahl:c.cnts[i],prozent:c.pct(c.cnts[i]),anmerkung:S.pg.anm[i]||""})), summe:c.sum, summeProzent:c.sumPct, fusariumProzent:c.fusPct}}); }
     else { Object.assign(rec,{verband:[...S.verband], noten:S.noten, sauber:S.sauber, temperatur:S.temp,
@@ -1524,6 +1565,10 @@ function pdfProtokoll(){
 
   if(isPG()){
     const c=pgCalc();
+    if(S.pgPos?.some(x=>x.sorte)){ sec("Sorten"); const tt=pgTotals();
+      table([{t:"Sorte",w:44},{t:"LOT-Nr.",w:36},{t:"Kaliber",w:26},{t:"Gebinde",w:W-150},{t:"Menge kg",w:44,r:1}],[
+        ...S.pgPos.map(x=>({c:[x.sorte||"-",x.lot||"-",x.kal||"-",pgGebText(x)||"-",deNum(posCalc(x).kg)]})),
+        {c:["Summe","","",`${deNum(tt.n)} Gebinde`,deNum(tt.kg)],o:{b:1,f:C.tintB}}]); }
     sec("Probe");
     two([["Auftraggeber",S.pg.auftrag],["Probennehmer",`${S.pg.probennehmer||"-"} · ${deDate(S.pg.probeDatum)}`],["Herkunftsland",S.pg.land||"-"],["Sorte",S.pg.sorte||"-"],["Kaliber",S.pg.kaliber||"-"]],
         [["Qualität",qualText()],["Probe",S.pg.form==="ganz"?"ganze Knollen":"gebrochen"],["Brechstelle",S.pg.brech||"-"],["Gewicht / Zehen",`${deNum(num(S.pg.gewicht),3)} kg · ${c.n} Zehen`],["Ø Zehengewicht",c.zg!==null?deNum(c.zg,2)+" g":"-"]],32,32);
@@ -1643,6 +1688,10 @@ document.addEventListener("click", ev=>{
   if(a==="prod"&&b.dataset.k==="KNT"){ K.start(); render(); window.scrollTo(0,0); return; }
   if(a==="prod"){ if(S.prod!==b.dataset.k){ const keep=S.datum; S=fresh(); S.datum=keep; S.prod=b.dataset.k; S.gebinde=isFR()?"Kiste":isPG()?"Sack":null; } render(); }
   else if(a==="erz"){ const src=isPG()?LIEF:ERZ; const e=src.find(x=>x.id===b.dataset.id); if(S.erz?.id!==e.id){ S.erz=e; S.lsCheck=null; S.verband=new Set(isPG()?[]:(e.verbaende||[])); if(isPG()&&e.land&&!S.pg.land) S.pg.land=e.land; } render(); }
+  else if(a==="pp-add"){ const l=S.pgPos[S.pgPos.length-1]; const n=newPgPos(); if(l){ n.sorte=""; n.kal=l.kal; } S.pgPos.push(n); render(); }
+  else if(a==="pp-del"){ S.pgPos.splice(+b.dataset.i,1); if(!S.pgPos.length) S.pgPos=[newPgPos()]; pgSync(); render(); }
+  else if(a==="pp-kal"){ S.pgPos[+b.dataset.i].kal=b.dataset.v; render(); }
+  else if(a==="pp-geb"){ const x=S.pgPos[+b.dataset.i]; x.geb=b.dataset.v; pgSync(); render(); }
   else if(a==="set"){ const v=JSON.parse(b.dataset.v); const g=b.dataset.g; if(g.includes(".")){ const [o,kk]=g.split("."); S[o][kk]=v; } else S[g]=v; render(); }
   else if(a==="pgset"){ S.pg[b.dataset.f]=b.dataset.v; if(b.dataset.f==="qual") S.lsCheck=null; render(); }
   else if(a==="kal"){ S.kal[+b.dataset.i]=+b.dataset.v; render(); }
@@ -1698,6 +1747,7 @@ document.addEventListener("input", ev=>{
   const t=ev.target, id=t.id;
   if(id==="erz-q"){ S.q=t.value; const pos=t.selectionStart; render(); const n=$("#erz-q"); n.focus(); n.setSelectionRange(pos,pos); return; }
   if(PGF[id]){ S.pg[PGF[id]]=t.value; if(id==="pg-gew"||id==="pg-anz") updPg(); else if(id==="pg-sorte") S.lsCheck=null; }
+  else if(/^pp-(lot|pal|sack|anz|kg)-\d+$/.test(id)){ const [,f,i]=id.split("-"); const x=S.pgPos[+i]; if(x){ x[f]=t.value; if(f!=="lot") updPp(); } }
   else if(id.startsWith("pg-c-")){ S.pg.cnt[+id.slice(5)]=t.value; updPg(); }
   else if(id.startsWith("pg-a-")){ S.pg.anm[+id.slice(5)]=t.value; }
   else if(id.startsWith("kl-kg-")){ const l=curKL(), i=+id.slice(6); if(l&&l[i]){ const v=num(t.value); if(v!==null&&(v>KISTE_MAX||v<0)){ t.value=l[i].kg??""; t.style.borderColor="var(--bad)"; setTimeout(()=>t.style.borderColor="",1500); toast(v<0?"Gewicht kann nicht negativ sein":"Eine Kiste kann höchstens 1.000 kg haben"); return; } l[i].kg=t.value; updKL(); } }
@@ -1721,6 +1771,8 @@ document.addEventListener("change", async ev=>{
   else if(t.id==="aw-v"){ AW.vgl=t.value; render(); }
   else if(t.id==="aw-gleich"){ AW.gleich=t.checked; render(); }
   else if(t.id==="aw-demo"){ AW.demo=t.checked; AW.saison=null; render(); }
+  else if(t.id.startsWith("pp-sorte-")){ const x=S.pgPos[+t.id.slice(9)]; if(x){ const was=isRainbow(x.sorte); x.sorte=t.value; const rb=isRainbow(x.sorte); if(rb&&!was) x.geb="Einwegkiste"; if(!rb) x.geb="Sack"; S.lsCheck=null; pgSync(); render(); scheduleDraft(); } }
+  else if(t.id==="pg-sorte-sel"){ S.pg.sorte=t.value; S.pg.sortePick=true; S.pg.kaliber=(S.pgPos.find(x=>x.sorte===t.value)||{}).kal||S.pg.kaliber; S.lsCheck=null; render(); scheduleDraft(); }
   else if(t.id==="pg-probd"){ S.pg.probeDatum=t.value; }
   else if(t.id==="pg-auftr"){ S.pg.auftrag=t.value; }
   else if(t.id.startsWith("kl-kal-")){ const l=curKL(); if(l&&l[+t.id.slice(7)]){ l[+t.id.slice(7)].kal=t.value; updKL(); } }

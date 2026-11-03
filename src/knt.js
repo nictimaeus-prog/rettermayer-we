@@ -18,7 +18,7 @@ const TROCK_DE = { gut: "gut abgetrocknet", leicht: "leicht feucht", feucht: "fe
 const KF = ["zert", "schaed"];
 const KF_DE = { zert: "Bio-Zertifikat / Öko-Kontrollnummer auf Lieferschein", schaed: "Ware frei von Schädlingen" };
 const mTxt = (m) => (m.k === "sonst" && m.text ? m.text : MDE[m.k] || m.t) + (m.lvl != null ? ` (${LV_DE[m.lvl]})` : "");
-const SORTEN_DEFAULT = ["Chesnok", "European White", "Garcua", "Gardos", "Garpek", "Messidor", "Messidrom", "Sabagold", "Spring White", "Therador", "Theradrom"];
+const SORTEN_DEFAULT = ["Chesnok", "European White", "Garcua", "Gardos", "Garpek", "Messidor", "Messidrom", "Rainbow", "Sabagold", "Spring White", "Therador", "Theradrom"];
 const ABW_PCT = 15;
 const firmaOhneKurz = () => { const k = String(CFG.kurz || "").trim(); let f = String(CFG.firma || "").trim();
   if (k) f = f.replace(new RegExp("\\s*[·,-]?\\s*(Betrieb\\s+)?" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*$", "i"), "").trim(); return f; };
