@@ -251,6 +251,12 @@ table.bon tr.okrow td{color:var(--ok);font-weight:700}
 .awtip{position:fixed;z-index:30;background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:8px;font-size:13px;font-weight:600;pointer-events:none;max-width:280px}
 @media (max-width:560px){.q{grid-template-columns:1fr}.seg{justify-content:flex-start}.charge{font-size:40px}h1{font-size:28px}.row-btn{grid-template-columns:56px 1fr}.row-btn .nx{grid-column:2}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.win.anim .chk{animation:none}}
+.dlist{margin-top:18px;border-top:2px solid var(--line);padding-top:10px}.dlist h3{margin:0 0 6px;font-size:16px;display:flex;gap:8px;align-items:center}
+.drow{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.drow .dcode{font:700 12px var(--f-mono);padding:3px 6px;border-radius:6px}.drow .dtx{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.drow .sub{color:var(--muted);font-size:13px}.drow .btn.small{padding:6px 10px;min-height:34px;box-shadow:none}
+.dlist details summary{cursor:pointer;padding:8px 0;font-size:14px;color:var(--muted)}
+@media (max-width:560px){.ptiles .tile{display:grid;grid-template-columns:52px 1fr;column-gap:12px;row-gap:2px;min-height:0;padding:12px 44px 12px 12px}.ptiles .tile .badge{grid-row:1/4;width:52px;height:50px;font-size:17px;border-radius:14px}.ptiles .tile .name{font-size:18px}.ptiles .tile .meta{font-size:13px}}
 </style>
 
 <header class="top">
@@ -585,13 +591,13 @@ function prodBadge(p){ const c="--c-"+p.k.toLowerCase(); return `<span class="ba
 
 function vProdukt(){
   const info={frisch:"Kaliber in g, Mängel, Ernteart", trocken:"Gebinde, Sortierung fallend, Abtrocknung", pflanzgut:"Bonitur nach Feldfunk-Schema, Qualität konv. unbehandelt"};
-  return draftList()+`<h1>${K.T("prod_h1")}</h1><p class="lead">${K.lang()==="ro"?"Knoblauch trocken: recepție inițială la descărcare, cântărire ulterior.":"Knoblauch trocken: Ersterfassung beim Abladen, Verwiegung später. Erzeuger standardmäßig Bioland, Naturland optional."}</p>
-  <div class="grid">${PROD.map(p=>{ const ins=inSaison(p,S.datum);
+  return `<h1>${K.T("prod_h1")}</h1><p class="lead">${K.lang()==="ro"?"Knoblauch trocken: recepție inițială la descărcare, cântărire ulterior.":"Knoblauch trocken: Ersterfassung beim Abladen, Verwiegung später. Erzeuger standardmäßig Bioland, Naturland optional."}</p>
+  <div class="grid ptiles">${PROD.map(p=>{ const ins=inSaison(p,S.datum);
     return `<button class="tile" data-act="prod" data-k="${esc(p.k)}" aria-pressed="${S.prod===p.k}">
       ${prodBadge(p)}<span class="name">${esc(p.name)}</span>
       <span class="meta">Saison ${MON[p.von]}–${MON[p.bis]}<br>${esc(info[p.typ])}</span>
       <span>${ins?`<span class="pill p-ok">in Saison ${saisonLabel(p,saisonJahr(p,S.datum))}</span>`:`<span class="pill p-warn">außerhalb Saison</span>`}</span>
-    </button>`;}).join("")}</div>`;
+    </button>`;}).join("")}</div>${draftList()}`;
 }
 function nextNr(e){ const p=P(); if(!p) return 1; return (CNT[e.code+"_"+p.k+"_"+saisonJahr(p,S.datum)]||0)+1; }
 function vHerkunft(){
@@ -839,12 +845,13 @@ function draftList(){
   if(!DRAFTS.length) return "";
   const rows=DRAFTS.slice().sort((a,b)=>String(b.geaendert).localeCompare(String(a.geaendert)));
   resolveNames([...new Set(rows.map(d=>d.von).filter(v=>v&&v!==ME&&String(v).startsWith("u_")))]);
-  return `<section class="card" style="border-color:var(--warn)"><div class="sechead"><h2>Angefangene Wareneingänge</h2><span class="pill p-warn">${rows.length}</span></div>
-    <div class="list">${rows.map(d=>{ const p=prod(d.prod); const st=(p?.typ==="pflanzgut"?STEPS_PG:STEPS_STD)[d.step||1]; const wer=d.von&&d.von!==ME?(NAMES[d.von]||"Teammitglied"):"";
-      return `<div class="row-btn" style="cursor:default;padding-right:14px">
-        <span class="code" style="background:var(--c-${String(d.prod||"").toLowerCase()},var(--field));color:${d.prod==="KNT"?"var(--c-dark)":"var(--c-light)"}">${esc(d.prod)}</span>
-        <span><b>${esc(d.erz?.name||"–")}</b> · ${esc(p?.name||"")}<br><span class="sub">Anlieferung ${deDate(d.datum)} · zuletzt bei „${esc(st)}“ · ${esc(relZeit(d.geaendert))}${wer?" · "+esc(wer):""}${d.fotosWeg?` · ${d.fotosWeg} Foto${d.fotosWeg>1?"s":""} neu aufnehmen`:""}</span></span>
-        <span class="chips nx" style="justify-content:flex-end"><button class="btn small primary" data-act="draft-go" data-id="${esc(d.id)}">Weitermachen</button><button class="btn small" data-act="draft-del" data-id="${esc(d.id)}">${S.delAsk===d.id?"Wirklich verwerfen?":"Verwerfen"}</button></span></div>`; }).join("")}</div></section>`;
+  const row=d=>{ const p=prod(d.prod); const st=(p?.typ==="pflanzgut"?STEPS_PG:STEPS_STD)[d.step||1]; const wer=d.von&&d.von!==ME?(NAMES[d.von]||"Team"):"";
+    return `<div class="drow"><span class="dcode" style="background:var(--c-${String(d.prod||"").toLowerCase()},var(--field));color:${d.prod==="KNT"?"var(--c-dark)":"var(--c-light)"}">${esc(d.prod)}</span>
+      <span class="dtx"><b>${esc(d.erz?.name||"–")}</b> <span class="sub">${deDate(d.datum)} · „${esc(st)}“ · ${esc(relZeit(d.geaendert))}${wer?" · "+esc(wer):""}${d.fotosWeg?` · ${d.fotosWeg} Foto${d.fotosWeg>1?"s":""} fehlt`:""}</span></span>
+      <button class="btn small primary" data-act="draft-go" data-id="${esc(d.id)}">Weiter</button><button class="btn small${S.delAsk===d.id?" dark":""}" data-act="draft-del" data-id="${esc(d.id)}" aria-label="Verwerfen">${S.delAsk===d.id?"Verwerfen?":"✕"}</button></div>`; };
+  const top=rows.slice(0,3), rest=rows.slice(3);
+  return `<section class="dlist"><h3>Angefangen <span class="pill p-warn">${rows.length}</span></h3>
+    ${top.map(row).join("")}${rest.length?`<details><summary>${rest.length} weitere anzeigen</summary>${rest.map(row).join("")}</details>`:""}</section>`;
 }
 
 /* ---------- Kisten nach Kalibrierung und Bürsten (KNT) ---------- */
