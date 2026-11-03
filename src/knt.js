@@ -37,7 +37,7 @@ const TX = {
     pruef: "Prüfung Anlieferung", sauber: "Sauberkeit Fahrzeug und Ware", temp: "Temperatur", ok: "in Ordnung", nok: "nicht in Ordnung",
     charge_n: (n) => `Charge ${n}`, erz: "Erzeuger", erz_w: "– Erzeuger wählen –", sorte: "Sorte", sorte_w: "– Sorte wählen –",
     kisten: "Anzahl Holz-Großkisten", kisten_k: "Kisten", gew: "Schätzgewicht", avg: "Ø je Kiste", ges: "Gesamtgewicht", kg_ges: "Gesamt kg",
-    brutto1: "Brutto 1 (geschätzt)", beschr: "Kistenbeschriftung vorhanden und korrekt (BIO + QS)", ja: "Ja", nein: "Nein",
+    brutto1: "Brutto 1 [kg] (geschätzt)", beschr: "Kistenbeschriftung vorhanden und korrekt (BIO + QS)", ja: "Ja", nein: "Nein",
     maengel: "Sichtbare Mängel", maengel_h: "Mangel antippen, Ausmaß wählen, Kamera für ein Foto", keine: "keine Mängel",
     m_feucht: "Feucht", m_schalen: "Lose Schalen", m_weich: "Weiche Zehen", m_besch: "Beschädigt", m_trieb: "Austrieb", m_farbe: "Verfärbung", m_sonst: "Sonstiges",
     sonst_txt: "Welcher Mangel?", bem: "Bemerkung", add_charge: "+ Weitere Charge", del_charge: "Entfernen",
@@ -59,8 +59,8 @@ const TX = {
     alter: (d) => (d <= 0 ? "heute" : d === 1 ? "gestern" : `vor ${d} Tagen`),
     btn_verw: "Verwiegen", btn_eti: "Etiketten", btn_prot: "Protokoll", btn_erz: "Prüfen & an Erzeuger senden",
     st_offen: "Verwiegung offen", st_verw: "verwogen", st_ges: "an Erzeuger gesendet",
-    kiste: "Kiste", kal: "Kaliber", brutto2: "Brutto 2 kg", add_kiste: "+ Kiste", eti1: "Etikett", eti_all: "Alle Etiketten (A6)",
-    summe: "Summe Brutto 2", diff: "Abweichung zu Brutto 1", m2: "Mängel bei der Verwiegung", zwisch: "Zwischenspeichern", abschl: "Verwiegung abschließen",
+    kiste: "Kiste", kal: "Kaliber", brutto2: "Brutto 2 [kg]", add_kiste: "+ Kiste", eti1: "Etikett", eti_all: "Alle Etiketten (A6)",
+    summe: "Summe Brutto 2 [kg]", diff: "Abweichung zu Brutto 1", m2: "Mängel bei der Verwiegung", zwisch: "Zwischenspeichern", abschl: "Verwiegung abschließen",
     max_kiste: "Eine Kiste kann höchstens 1.000 kg haben", zurueck: "← Zurück zur Liste", abgeschl: "Verwiegung abgeschlossen",
     miss_kg: "Mindestens eine Kiste mit Gewicht eintragen", gemeldet: "gemeldet", we: "Wareneingang", gespeichert: "Gespeichert",
     lang_btn: "RO", lang_title: "Limba română",
@@ -75,7 +75,7 @@ const TX = {
     pruef: "Verificare la livrare", sauber: "Curățenie vehicul și marfă", temp: "Temperatură", ok: "în regulă", nok: "nu e în regulă",
     charge_n: (n) => `Lot ${n}`, erz: "Producător", erz_w: "– alege producătorul –", sorte: "Soi", sorte_w: "– alege soiul –",
     kisten: "Număr lăzi mari din lemn", kisten_k: "lăzi", gew: "Greutate estimată", avg: "Medie pe ladă", ges: "Greutate totală", kg_ges: "Total kg",
-    brutto1: "Brutto 1 (estimat)", beschr: "Etichetarea lăzilor există și e corectă (BIO + QS)", ja: "Da", nein: "Nu",
+    brutto1: "Brutto 1 [kg] (estimat)", beschr: "Etichetarea lăzilor există și e corectă (BIO + QS)", ja: "Da", nein: "Nu",
     maengel: "Defecte vizibile", maengel_h: "atinge defectul, alege gradul, camera pentru poză", keine: "fără defecte",
     m_feucht: "Umed", m_schalen: "Coji desprinse", m_weich: "Căței moi", m_besch: "Deteriorat", m_trieb: "Încolțit", m_farbe: "Decolorare", m_sonst: "Altele",
     sonst_txt: "Ce defect?", bem: "Observație", add_charge: "+ Încă un lot", del_charge: "Șterge",
@@ -97,8 +97,8 @@ const TX = {
     alter: (d) => (d <= 0 ? "azi" : d === 1 ? "ieri" : `acum ${d} zile`),
     btn_verw: "Cântărește", btn_eti: "Etichete", btn_prot: "Proces-verbal", btn_erz: "Verifică și trimite producătorului",
     st_offen: "cântărire deschisă", st_verw: "cântărit", st_ges: "trimis producătorului",
-    kiste: "Ladă", kal: "Calibru", brutto2: "Brutto 2 kg", add_kiste: "+ Ladă", eti1: "Etichetă", eti_all: "Toate etichetele (A6)",
-    summe: "Total Brutto 2", diff: "Diferență față de Brutto 1", m2: "Defecte la cântărire", zwisch: "Salvează intermediar", abschl: "Finalizează cântărirea",
+    kiste: "Ladă", kal: "Calibru", brutto2: "Brutto 2 [kg]", add_kiste: "+ Ladă", eti1: "Etichetă", eti_all: "Toate etichetele (A6)",
+    summe: "Total Brutto 2 [kg]", diff: "Diferență față de Brutto 1", m2: "Defecte la cântărire", zwisch: "Salvează intermediar", abschl: "Finalizează cântărirea",
     max_kiste: "O ladă poate avea maxim 1.000 kg", zurueck: "← Înapoi la listă", abgeschl: "Cântărire finalizată",
     miss_kg: "Introdu cel puțin o ladă cu greutate", gemeldet: "declarat", we: "Recepție", gespeichert: "Salvat",
     lang_btn: "DE", lang_title: "Deutsch",
@@ -300,7 +300,7 @@ K.viewErf = function () {
       <div class="kchips" style="margin:6px 0"><button class="kchip" data-ka="ch-modus" data-ci="${i}" data-v="avg" aria-pressed="${c.modus !== "ges"}">${T("avg")}</button><button class="kchip" data-ka="ch-modus" data-ci="${i}" data-v="ges" aria-pressed="${c.modus === "ges"}">${T("ges")}</button></div>
       ${c.modus === "ges" ? `<label class="f" style="max-width:240px">${T("kg_ges")}<input type="number" inputmode="decimal" id="k-ges-${i}" value="${esc(c.gesamt)}"></label>`
         : `<div class="kavg">${AVG.map((v) => `<button class="kchip" data-ka="ch-avg" data-ci="${i}" data-v="${v}" aria-pressed="${(c.avg || 700) === v}">${v} kg</button>`).join("")}</div>`}
-      <p style="margin:8px 0 0">${T("brutto1")}: <span class="kb1" id="k-b1-${i}">${b1 ? "≈ " + fmtKg(b1) + " kg" : "–"}</span></p>
+      <p style="margin:8px 0 0">${T("brutto1")}: <span class="kb1" id="k-b1-${i}">${b1 ? "≈ " + fmtKg(b1) : "–"}</span></p>
     </div>
     <div><b>${T("abtr")}</b><div class="kchips" style="margin-top:6px">${TROCK_K.map((k) => `<button class="kchip ${k === "gut" ? "good" : "bad"}" data-ka="ch-trock" data-ci="${i}" data-v="${k}" aria-pressed="${(c.trock || "gut") === k}">${T("tr_" + k)}</button>`).join("")}</div></div>
     <div><b>${T("maengel")}</b> <span class="hint">${T("maengel_h")}</span>${mangelChips(c.mg, M1, "ke", i)}
@@ -315,7 +315,7 @@ K.viewErf = function () {
 function keRefreshBar() {
   const miss = keMissing(); const m = $("#k-msg"); if (m) m.innerHTML = `<b id="k-sum">${keSummary()}</b><br>${miss.length ? esc(miss[0]) : ""}`;
   const b = document.querySelector('[data-ka="ke-save"]'); if (b) b.disabled = !!miss.length || K.ke.saving;
-  K.ke.chargen.forEach((c, i) => { const el = $("#k-b1-" + i); if (el) { const b1 = brutto1(c); el.textContent = b1 ? "≈ " + fmtKg(b1) + " kg" : "–"; } });
+  K.ke.chargen.forEach((c, i) => { const el = $("#k-b1-" + i); if (el) { const b1 = brutto1(c); el.textContent = b1 ? "≈ " + fmtKg(b1) : "–"; } });
 }
 async function nextCharge(erz, datum) {
   const p = prod("KNT"), sj = saisonJahr(p, datum), key = `${erz.code}_KNT_${sj}`; let n;
@@ -374,7 +374,7 @@ function viewErfDone() {
   return `<div class="win anim"><span class="chk">✓</span><span style="flex:1;min-width:0"><b>${T("saved_h")}</b><span class="hint">${T("saved_lead")}</span></span></div>
   <h1>${kd.recs.map((r) => `<span style="font-family:var(--f-mono)">${esc(r.charge)}</span>`).join(" · ")}</h1>
   <section class="card"><div class="tw"><table class="t"><thead><tr><th>Charge</th><th>${T("erz")}</th><th>${T("sorte")}</th><th class="n">${T("kisten")}</th><th class="n">${T("brutto1")}</th></tr></thead><tbody>
-    ${kd.recs.map((r) => `<tr><td style="font-family:var(--f-mono);font-weight:700">${esc(r.charge)}</td><td>${esc(r.erzeuger)}</td><td>${esc(r.sorte)}</td><td class="n">${r.kisten}</td><td class="n">≈ ${fmtKg(r.brutto1)} kg</td></tr>`).join("")}</tbody></table></div>
+    ${kd.recs.map((r) => `<tr><td style="font-family:var(--f-mono);font-weight:700">${esc(r.charge)}</td><td>${esc(r.erzeuger)}</td><td>${esc(r.sorte)}</td><td class="n">${r.kisten}</td><td class="n">≈ ${fmtKg(r.brutto1)}</td></tr>`).join("")}</tbody></table></div>
     <p class="hint" style="color:${kd.mail === "error" ? "var(--bad)" : kd.mail === "sent" ? "var(--ok)" : "var(--muted)"}">${kd.mail === "sending" ? T("mail_sending") : kd.mail === "sent" ? T("mail_ok") + ": " + esc(kd.msg) : kd.mail === "error" ? T("mail_err") + ": " + esc(kd.msg) : ""}</p>
     <div class="chips">${kd.mail === "error" ? `<button class="btn" data-ka="erst-mail">${T("mail_retry")}</button>` : ""}<button class="btn dark" data-ka="erst-pdf">${T("pdf_view")}</button><button class="btn" data-ka="go-vw">${T("to_vw")}</button><button class="btn primary" data-ka="ke-new">${T("neu")}</button></div></section>`;
 }
@@ -433,7 +433,7 @@ K.viewVw = function () {
   ${keys.length ? keys.map((k) => { const g = groups[k], r0 = g[0];
     return `<div class="kgroup"><h3>${T("we")} ${deDate(r0.datum)} · ${r0.keinLieferschein ? T("keinls") : esc(T("lsnr")) + " " + esc(r0.lieferscheinNr || "–")} · ${T("alter", ageDays(r0.datum))}</h3>
     ${g.map((v) => { const st = v.erzVersand ? ["p-ok", T("st_ges")] : v.stufe === "verwogen" ? ["p-info", T("st_verw")] : [ageDays(v.datum) > 7 ? "p-bad" : "p-warn", T("st_offen")];
-      return `<div class="krow"><span class="kc">${esc(v.charge)}</span><span class="ki"><b>${esc(v.erzeuger)}</b> · ${esc(v.sorte || "")}<small>${v.kisten || "–"} ${T("kisten_k")} · ${T("brutto1")} ≈ ${fmtKg(v.brutto1)} kg${v.brutto2 != null ? ` · <b>Brutto 2 ${fmtKg(v.brutto2, 1)} kg</b>` : ""}${(v.maengel1 || []).length ? ` · ${v.maengel1.map((m) => esc(mName(m.k)) + (m.lvl != null ? " " + esc(lvT(m.lvl)) : "")).join(", ")}` : ""}</small></span>
+      return `<div class="krow"><span class="kc">${esc(v.charge)}</span><span class="ki"><b>${esc(v.erzeuger)}</b> · ${esc(v.sorte || "")}<small>${v.kisten || "–"} ${T("kisten_k")} · ${T("brutto1")} ≈ ${fmtKg(v.brutto1)}${v.brutto2 != null ? ` · <b>${T("brutto2")} ${fmtKg(v.brutto2, 1)}</b>` : ""}${(v.maengel1 || []).length ? ` · ${v.maengel1.map((m) => esc(mName(m.k)) + (m.lvl != null ? " " + esc(lvT(m.lvl)) : "")).join(", ")}` : ""}</small></span>
         <span class="pill ${st[0]}">${st[1]}</span>
         <span class="chips">${v.stufe === "erfasst" ? `<button class="btn primary small" data-ka="vw-open" data-id="${esc(v.id)}">${T("btn_verw")}</button>` : `<button class="btn small" data-ka="vw-open" data-id="${esc(v.id)}">${T("btn_verw")}</button><button class="btn small" data-ka="eti-all" data-id="${esc(v.id)}">${T("btn_eti")}</button><button class="btn small dark" data-ka="prot" data-id="${esc(v.id)}">${T("btn_prot")}</button>${canSend() && !v.erzVersand ? `<button class="btn small primary" data-ka="ev-open" data-id="${esc(v.id)}">${T("btn_erz")}</button>` : ""}`}</span></div>`; }).join("")}</div>`; }).join("")
     : `<div class="empty"><p class="hint">${T("none")}</p></div>`}`;
@@ -455,7 +455,7 @@ function viewVwEdit() {
   const b2 = klValid(w.kl).reduce((a, x) => a + x.kg, 0); const di = diffInfo(v.brutto1, b2);
   return `<div class="chips" style="margin-bottom:6px"><button class="btn small" data-ka="vw-back">${T("zurueck")}</button></div>
   <h1><span style="font-family:var(--f-mono)">${esc(v.charge)}</span></h1>
-  <p class="lead"><b>${esc(v.erzeuger)}</b> · ${esc(v.sorte || "")} · ${T("we")} ${deDate(v.datum)} (${T("alter", ageDays(v.datum))}) · ${v.kisten || "–"} ${T("kisten_k")} ${T("gemeldet")} · ${T("brutto1")} ≈ ${fmtKg(v.brutto1)} kg
+  <p class="lead"><b>${esc(v.erzeuger)}</b> · ${esc(v.sorte || "")} · ${T("we")} ${deDate(v.datum)} (${T("alter", ageDays(v.datum))}) · ${v.kisten || "–"} ${T("kisten_k")} ${T("gemeldet")} · ${T("brutto1")} ≈ ${fmtKg(v.brutto1)}
   ${(v.maengel1 || []).length ? `<br>${T("maengel")}: ${v.maengel1.map((m) => esc(mName(m.k))).join(", ")}` : ""}</p>
   <section class="card"><h2>${T("brutto2")}</h2><div class="kkh"><span>${T("kiste")} · ${T("kal")} · ${T("brutto2")}</span></div><div class="krows">
     ${w.kl.map((x, i) => `<div class="kkr"><span class="nr">${i + 1}</span>
@@ -464,7 +464,7 @@ function viewVwEdit() {
       <span class="ka"><button class="btn small dark" data-ka="eti-one" data-i="${i}" ${num(x.kg) > 0 ? "" : "disabled"}>🏷 ${T("eti1")}</button>${w.kl.length > 1 ? `<button class="btn small" data-ka="kv-del" data-i="${i}" aria-label="${T("datei_del")}">✕</button>` : ""}</span></div>`).join("")}
   </div>
   <div class="chips"><button class="btn" data-ka="kv-add">${T("add_kiste")}</button><button class="btn dark" data-ka="eti-cur" ${b2 ? "" : "disabled"}>${T("eti_all")}</button></div>
-  <p style="margin:6px 0 0;font-size:18px">${T("summe")}: <b class="kb1" id="kv-sum">${b2 ? fmtKg(b2, 1) + " kg" : "–"}</b> · ${T("diff")}: <span class="kdiff ${di ? di.cls : ""}" id="kv-diff">${di ? `${di.d >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.d), 1)} kg (${di.pct >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.pct), 1)} %)` : "–"}</span></p></section>
+  <p style="margin:6px 0 0;font-size:18px">${T("summe")}: <b class="kb1" id="kv-sum">${b2 ? fmtKg(b2, 1) : "–"}</b> · ${T("diff")}: <span class="kdiff ${di ? di.cls : ""}" id="kv-diff">${di ? `${di.d >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.d), 1)} kg (${di.pct >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.pct), 1)} %)` : "–"}</span></p></section>
   <section class="card"><h2>${T("m2")}</h2>${mangelChips(w.mg, M2, "vw", 0)}
     ${w.mg.sonst ? `<label class="f" style="margin-top:8px">${T("sonst_txt")}<span class="kin"><input type="text" id="kv-sonst" value="${esc(w.sonst)}"><button class="kmic${K.dict === "kv-sonst" ? " on" : ""}" data-ka="dict" data-for="kv-sonst" aria-label="${T("diktat")}">🎤</button></span></label>` : ""}
     <label class="f">${T("bem")} <span class="h">${T("opt")}</span><span class="kin"><input type="text" id="kv-bem" value="${esc(w.bem)}"><button class="kmic${K.dict === "kv-bem" ? " on" : ""}" data-ka="dict" data-for="kv-bem" aria-label="${T("diktat")}">🎤</button></span></label>
@@ -474,7 +474,7 @@ function viewVwEdit() {
 }
 function vwRefresh() {
   const w = K.vw, v = vwRec(); if (!w || !v) return; const b2 = klValid(w.kl).reduce((a, x) => a + x.kg, 0); const di = diffInfo(v.brutto1, b2);
-  const s = $("#kv-sum"); if (s) s.textContent = b2 ? fmtKg(b2, 1) + " kg" : "–";
+  const s = $("#kv-sum"); if (s) s.textContent = b2 ? fmtKg(b2, 1) : "–";
   const d = $("#kv-diff"); if (d) { d.className = "kdiff " + (di ? di.cls : ""); d.textContent = di ? `${di.d >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.d), 1)} kg (${di.pct >= 0 ? "+" : "−"}${fmtKg(Math.abs(di.pct), 1)} %)` : "–"; }
   w.kl.forEach((x, i) => { const b = document.querySelector(`[data-ka="eti-one"][data-i="${i}"]`); if (b) b.disabled = !(num(x.kg) > 0); });
   const done = document.querySelector('[data-ka="vw-done"]'); if (done) done.disabled = w.busy || !b2;
@@ -506,7 +506,7 @@ async function vwSave(final) {
     if (assets) { try { const a = await assets.upload(new Blob([pdf], { type: "application/pdf" })); if (db) await db.doc("wareneingaenge/" + v.id).update({ protokollPdf: a.id }); v.protokollPdf = a.id; } catch (_) {} }
     const to = [...(CFG.verteiler || [])];
     if (to.length) { w.mail = "sending"; w.msg = T("mail_sending"); render();
-      await sendMailK(to, `Verwiegung ${v.charge} – Knoblauch trocken – ${v.erzeuger} – Brutto 2 ${fmtKg(v.brutto2, 1)} kg`, mailHtmlK([v], "verw"), `Verwiegung ${v.charge}: ${v.kistenListe.length} Kisten, Brutto 2 ${fmtKg(v.brutto2, 1)} kg.`, pdf, `WE_Verwiegung_${v.barcode}_${today()}.pdf`);
+      await sendMailK(to, `Verwiegung ${v.charge} – Knoblauch trocken – ${v.erzeuger} – Brutto 2 [kg] ${fmtKg(v.brutto2, 1)}`, mailHtmlK([v], "verw"), `Verwiegung ${v.charge}: ${v.kistenListe.length} Kisten, Brutto 2 [kg] ${fmtKg(v.brutto2, 1)}.`, pdf, `WE_Verwiegung_${v.barcode}_${today()}.pdf`);
       w.mail = "sent"; w.msg = T("mail_ok") + ": " + to.join(", ");
       if (db) try { await db.doc("wareneingaenge/" + v.id).update({ meldungIntern2: new Date().toISOString() }); } catch (_) {} }
   } catch (err) { w.mail = "error"; w.msg = T("mail_err") + ": " + mailErrText(err); }
@@ -533,7 +533,7 @@ function viewEv() {
   const pl = plausiErz(v), blk = pl.some((x) => x.blk), e = erzById(v.erzeugerId) || {};
   const to = [e.email, ...(CFG.verteiler || [])].filter(Boolean);
   return `<section class="card kev"><div class="sechead"><h2>Protokoll an Erzeuger senden</h2><button class="btn small" data-ka="ev-close">Schließen</button></div>
-   <p><b style="font-family:var(--f-mono)">${esc(v.charge)}</b> · ${esc(v.erzeuger)} · Brutto 2 <b>${fmtKg(v.brutto2, 1)} kg</b> (${(v.kistenListe || []).length} Kisten)</p>
+   <p><b style="font-family:var(--f-mono)">${esc(v.charge)}</b> · ${esc(v.erzeuger)} · Brutto 2 [kg] <b>${fmtKg(v.brutto2, 1)}</b> (${(v.kistenListe || []).length} Kisten)</p>
    <b>Plausibilitätsprüfung</b>${pl.length ? `<ul>${pl.map((x) => `<li class="${x.blk ? "blk" : "wrn"}">${x.blk ? "⛔ " : "⚠ "}${esc(x.t)}</li>`).join("")}</ul>` : `<div class="warnbox okbox"><b>Keine Auffälligkeiten</b></div>`}
    <div class="copyline"><code>An: ${esc(to.join("; "))}</code></div>
    ${!blk && pl.length ? `<label style="display:flex;gap:10px;align-items:center;margin:8px 0"><input type="checkbox" id="ev-ack" ${ev.ack ? "checked" : ""} style="width:24px;height:24px"> Hinweise geprüft, Protokoll trotzdem senden</label>` : ""}
@@ -546,7 +546,7 @@ async function evSend() {
   const e = erzById(v.erzeugerId) || {}; const to = [e.email, ...(CFG.verteiler || [])].filter(Boolean);
   ev.sending = true; ev.msg = ""; render();
   try { const pdf = await pdfKnt([v], "erz");
-    await sendMailK(to, `Wareneingangsprotokoll ${v.charge} – Knoblauch trocken – ${deDate(v.datum)}`, mailHtmlK([v], "erz"), `Wareneingangsprotokoll ${v.charge}, Brutto 2 ${fmtKg(v.brutto2, 1)} kg. PDF im Anhang.`, pdf, `Wareneingang_${v.barcode}_${v.datum}.pdf`);
+    await sendMailK(to, `Wareneingangsprotokoll ${v.charge} – Knoblauch trocken – ${deDate(v.datum)}`, mailHtmlK([v], "erz"), `Wareneingangsprotokoll ${v.charge}, Brutto 2 [kg] ${fmtKg(v.brutto2, 1)}. PDF im Anhang.`, pdf, `Wareneingang_${v.barcode}_${v.datum}.pdf`);
     const rec = { erzVersand: { am: new Date().toISOString(), von: ME, vonName: meName(), an: to }, gesendet: new Date().toISOString(), gesendetAn: to };
     if (db) await db.doc("wareneingaenge/" + v.id).update(rec); Object.assign(v, rec);
     ev.sending = false; ev.err = false; ev.msg = "Gesendet an " + to.join(", "); toast("An Erzeuger gesendet");
@@ -575,7 +575,7 @@ function mailHtmlK(recs, mode) {
   <div style="font-size:24px;font-weight:bold;font-family:Courier New,monospace">${esc(recs.map((r) => r.charge).join(" · "))}</div><div>${mode === "erst" ? "Anlieferung" : "Wareneingang"} ${deDate(r0.datum)}${mode !== "erst" ? " · " + esc(r0.erzeuger) : ""}</div></div>
   <div style="border:1px solid #dde2e5;border-top:0;padding:12px 16px;border-radius:0 0 8px 8px">
   <table style="border-collapse:collapse;font-size:14px">${row("Erfasst", dtDE(r0.erstellt) + " · " + (r0.erfasstVonName || "-"))}${r0.verwiegung?.vonName ? row("Verwogen", dtDE(r0.verwogen) + " · " + r0.verwiegung.vonName) : ""}${row("Lieferschein-Nr.", r0.keinLieferschein ? "kein Lieferschein" : r0.lieferscheinNr || "–")}${mode !== "erz" && r0.bueroWeNr ? row("büro+ WE-Nr.", r0.bueroWeNr) : ""}
-  ${recs.map((r) => row(r.charge, `${r.erzeuger} · ${r.sorte || "–"} · ${r.kisten} Kisten · Brutto 1 ca. ${fmtKg(r.brutto1)} kg${r.brutto2 != null ? " · Brutto 2 " + fmtKg(r.brutto2, 1) + " kg" : ""}`)).join("")}</table>
+  ${recs.map((r) => row(r.charge, `${r.erzeuger} · ${r.sorte || "–"} · ${r.kisten} Kisten · Brutto 1 [kg] ca. ${fmtKg(r.brutto1)}${r.brutto2 != null ? " · Brutto 2 [kg] " + fmtKg(r.brutto2, 1) : ""}`)).join("")}</table>
   ${ab.length ? `<p style="margin:10px 0 4px;font-weight:bold;color:#b3261e">${ab.length} Hinweis${ab.length > 1 ? "e" : ""}</p><ul style="color:#b3261e;margin:0;padding-left:18px">${ab.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>` : `<p style="color:#567a0e;font-weight:bold">Keine Auffälligkeiten</p>`}
   <p style="font-weight:bold;margin:12px 0 0;padding:8px 10px;background:#edf6fb;border-left:4px solid #1c6c9e">${HINWEIS_ABR}</p><p style="color:#567a0e;font-size:13px;font-weight:bold;margin:10px 0 0">Elektronisch erstellt – ohne Unterschrift gültig.</p><p style="color:#707476;font-size:12px;margin:4px 0 0">Protokoll-PDF im Anhang.</p></div>
   ${mode === "erz" && CFG.disclaimer ? `<p style="font-size:11px;color:#56687e;background:#f3f7fb;padding:8px 12px;border-radius:6px;margin-top:10px">${esc(CFG.disclaimer)}</p>` : ""}</div>`;
@@ -613,22 +613,22 @@ async function pdfKnt(recs, mode) {
   ]);
   if (mode === "erst" || recs.length > 1) {
     sec("Chargen");
-    table([["Charge", 24], ["Erzeuger", 30], ["Sorte", 22], ["Kisten", 13, 1], ["Brutto 1 ca. kg", 21, 1], ["Abtrocknung", 22], ["Beschriftung", 23], ["Mängel", 25]],
+    table([["Charge", 24], ["Erzeuger", 30], ["Sorte", 22], ["Kisten", 13, 1], ["Brutto 1 ca. [kg]", 21, 1], ["Abtrocknung", 22], ["Beschriftung", 23], ["Mängel", 25]],
       recs.map((r) => [r.charge, `${r.erzeuger} (${r.code})`, r.sorte || "-", String(r.kisten ?? "-"), fmtKg(r.brutto1), TROCK_DE[r.abtrocknung] || "-", r.beschriftung === false ? "mangelhaft" : "ok", (r.maengel1 || []).map(mTxt).join(", ") || "keine"]));
   } else {
     const r = r0, e = erzById(r.erzeugerId) || {};
     sec("Charge");
     kv([["Charge", r.charge], ["Erzeuger", `${r.erzeuger} (${r.code})${e.ort ? " · " + e.ort : ""}`], ["Verband", r.auslobung || "-"], ["Öko-Kontrollnummer", e.oeko || r.oeko || "-"], ["QS-ID", e.qs || r.qs || "-"],
-      ["Sorte", r.sorte || "-"], ["Anlieferung", `${r.kisten} Holz-Großkisten · Brutto 1 ca. ${fmtKg(r.brutto1)} kg (${r.brutto1Art === "gesamt" ? "Gesamtgewicht" : "Ø " + fmtKg(r.avgKg) + " kg je Kiste"})`],
+      ["Sorte", r.sorte || "-"], ["Anlieferung", `${r.kisten} Holz-Großkisten · Brutto 1 [kg] ca. ${fmtKg(r.brutto1)} (${r.brutto1Art === "gesamt" ? "Gesamtgewicht" : "Ø " + fmtKg(r.avgKg) + " kg je Kiste"})`],
       ["Abtrocknung", TROCK_DE[r.abtrocknung] || "-", r.abtrocknung && r.abtrocknung !== "gut"],
       ["Kistenbeschriftung BIO/QS", r.beschriftung === false ? "nicht oder mangelhaft beschriftet" : "in Ordnung", r.beschriftung === false],
       ["Mängel bei Anlieferung", (r.maengel1 || []).map(mTxt).join(", ") || "keine", (r.maengel1 || []).length > 0]]);
     if (r.stufe === "verwogen") { const vw = r.verwiegung || {}; const di = diffInfo(r.brutto1, r.brutto2);
       sec("Verwiegung nach Vorputzen und Bürsten");
-      kv([["Datum Verwiegung", deDate(vw.datum) + (vw.vonName ? " · " + vw.vonName : "")], ["Brutto 2 gesamt", `${fmtKg(r.brutto2, 1)} kg in ${(r.kistenListe || []).length} Kisten`],
+      kv([["Datum Verwiegung", deDate(vw.datum) + (vw.vonName ? " · " + vw.vonName : "")], ["Brutto 2 gesamt [kg]", `${fmtKg(r.brutto2, 1)} (${(r.kistenListe || []).length} Kisten)`],
         ["Abweichung zu Brutto 1", di ? `${di.d >= 0 ? "+" : "-"}${fmtKg(Math.abs(di.d), 1)} kg (${di.pct >= 0 ? "+" : "-"}${fmtKg(Math.abs(di.pct), 1)} %)` : "-", di && Math.abs(di.pct) > ABW_PCT],
         ["Mängel bei Verwiegung", (vw.maengel || []).map(mTxt).join(", ") || "keine", (vw.maengel || []).length > 0], ...(vw.bem ? [["Bemerkung", vw.bem]] : [])]);
-      table([["Kiste", 20], ["Kaliber", 60], ["Brutto 2 kg", 40, 1], ["Barcode", 60]], (r.kistenListe || []).map((k, i) => [String(i + 1), k.kal || "-", fmtKg(k.kg, 1), `${r.barcode}K${String(i + 1).padStart(2, "0")}`]));
+      table([["Kiste", 20], ["Kaliber", 60], ["Brutto 2 [kg]", 40, 1], ["Barcode", 60]], (r.kistenListe || []).map((k, i) => [String(i + 1), k.kal || "-", fmtKg(k.kg, 1), `${r.barcode}K${String(i + 1).padStart(2, "0")}`]));
     }
     if (r.bemerkung) kv([["Bemerkung Anlieferung", r.bemerkung]]);
   }
@@ -668,7 +668,7 @@ function etiPdf(v, kl, only) {
     d.setFontSize(9.5); const tw = d.getTextWidth(tag) + 4; d.setFillColor(0, 0, 0); d.rect(99 - tw, 4.6, tw, 6, "F"); d.setTextColor(255, 255, 255); d.text(pt(tag), 97, 9, { align: "right" }); d.setTextColor(0, 0, 0);
     d.setFont("helvetica", "normal"); d.setFontSize(10); d.text(pt(`Knoblauch trocken · ${v.sorte || "-"}`), 6, 16);
     d.setLineWidth(0.4); d.line(6, 19, 99, 19);
-    d.setFontSize(9); d.text("Brutto 2", 6, 25); d.setFont("helvetica", "bold"); d.setFontSize(38); d.text(pt(fmtKg(k.kg, 1) + " kg"), 6, 40);
+    d.setFontSize(9); d.text("Brutto 2 [kg]", 6, 25); d.setFont("helvetica", "bold"); d.setFontSize(40); d.text(pt(fmtKg(k.kg, 1)), 6, 40);
     d.setFont("courier", "bold"); d.setFontSize(19); d.text(pt(v.charge), 6, 51); d.setFont("helvetica", "bold"); d.setFontSize(13); d.text(pt(`Kiste ${i + 1}/${kl.length}`), 99, 51, { align: "right" });
     try { d.addImage(bcPng(bc), "PNG", 6, 55, 93, 22); } catch (_) {}
     d.setFont("courier", "normal"); d.setFontSize(9); d.text(bc, 52.5, 81, { align: "center" });
