@@ -1375,7 +1375,7 @@ function mailHtml(){
   <p style="margin:0 0 10px"><span style="background:${ab.length?"#b3261e":"#567a0e"};color:#fff;padding:3px 10px;border-radius:12px;font-weight:bold">${ab.length?ab.length+" Abweichung"+(ab.length>1?"en":""):"Keine Abweichungen"}</span></p>
   ${ab.length?`<ul style="color:#b3261e;margin:0 0 10px;padding-left:18px">${ab.map(a=>`<li>${esc(a)}</li>`).join("")}</ul>`:""}
   <table style="border-collapse:collapse;font-size:14px">${row("Menge",S.menge?deNum(num(S.menge),num(S.menge)%1?3:0)+" kg":"–")}${row("Lieferschein-Nr.",S.keinLs?"kein Lieferschein":(S.lsNr||"–"))}${summaryRows().map(([a,b])=>row(a,b)).join("")}${row("Bemerkung",S.bem||"keine")}</table>
-  <p style="color:#567a0e;font-size:13px;font-weight:bold;margin:12px 0 0">Elektronisch erstellt – ohne Unterschrift gültig.</p><p style="color:#707476;font-size:12px;margin:4px 0 0">Protokoll-PDF mit allen Fotos im Anhang.</p></div>
+  <p style="font-weight:bold;margin:12px 0 0">Es handelt sich um eine Stichprobe. Die Abrechnung erfolgt nach Packout.</p><p style="color:#567a0e;font-size:13px;font-weight:bold;margin:8px 0 0">Elektronisch erstellt – ohne Unterschrift gültig.</p><p style="color:#707476;font-size:12px;margin:4px 0 0">Protokoll-PDF mit allen Fotos im Anhang.</p></div>
   ${CFG.disclaimer?`<p style="font-size:11px;color:#56687e;background:#f3f7fb;padding:8px 12px;border-radius:6px;margin-top:10px">${esc(CFG.disclaimer)}</p>`:""}</div>`;
 }
 /* ---------- Musterprotokoll per E-Mail ---------- */
@@ -1571,7 +1571,7 @@ function pdfProtokoll(){
 
   /* ---- Abschluss: ohne Unterschrift gültig ---- */
   need(30); y+=2;
-  box(C.tintG,C.green,[`Erfasst am ${stamp}${wer?" von "+wer:""} mit der App Rettermayer WE.`],"Elektronisch erstellt – ohne Unterschrift gültig.",C.greenDk);
+  box(C.tintG,C.green,["Es handelt sich um eine Stichprobe. Die Abrechnung erfolgt nach Packout.",`Erfasst am ${stamp}${wer?" von "+wer:""} mit der App Rettermayer WE.`],"Elektronisch erstellt – ohne Unterschrift gültig.",C.greenDk);
   if(CFG.disclaimer){ font("normal",7.4,C.grey); const dl=d.splitTextToSize(txt(CFG.disclaimer),W); need(dl.length*3.3+2); d.text(dl,L,y+1); y+=dl.length*3.3+3; }
 
   /* ---- Fotos ---- */

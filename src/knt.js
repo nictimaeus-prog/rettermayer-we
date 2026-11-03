@@ -19,7 +19,8 @@ const KF = ["zert", "schaed"];
 const KF_DE = { zert: "Bio-Zertifikat / Öko-Kontrollnummer auf Lieferschein", schaed: "Ware frei von Schädlingen" };
 const mTxt = (m) => (m.k === "sonst" && m.text ? m.text : MDE[m.k] || m.t) + (m.lvl != null ? ` (${LV_DE[m.lvl]})` : "");
 const SORTEN_DEFAULT = ["Chesnok", "European White", "Garcua", "Gardos", "Garpek", "Messidor", "Messidrom", "Sabagold", "Spring White", "Therador", "Theradrom"];
-const ABW_PCT = 15; // Abweichung Brutto 2 zu Brutto 1, ab der geprüft werden muss
+const ABW_PCT = 15;
+const HINWEIS_ABR = "Es handelt sich um eine Stichprobe. Die Abrechnung erfolgt nach Packout."; // Abweichung Brutto 2 zu Brutto 1, ab der geprüft werden muss
 
 /* ---------------- Sprache ---------------- */
 const TX = {
@@ -573,7 +574,7 @@ function mailHtmlK(recs, mode) {
   <table style="border-collapse:collapse;font-size:14px">${row("Lieferschein-Nr.", r0.keinLieferschein ? "kein Lieferschein" : r0.lieferscheinNr || "–")}${mode !== "erz" && r0.bueroWeNr ? row("büro+ WE-Nr.", r0.bueroWeNr) : ""}
   ${recs.map((r) => row(r.charge, `${r.erzeuger} · ${r.sorte || "–"} · ${r.kisten} Kisten · Brutto 1 ca. ${fmtKg(r.brutto1)} kg${r.brutto2 != null ? " · Brutto 2 " + fmtKg(r.brutto2, 1) + " kg" : ""}`)).join("")}</table>
   ${ab.length ? `<p style="margin:10px 0 4px;font-weight:bold;color:#b3261e">${ab.length} Hinweis${ab.length > 1 ? "e" : ""}</p><ul style="color:#b3261e;margin:0;padding-left:18px">${ab.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>` : `<p style="color:#567a0e;font-weight:bold">Keine Auffälligkeiten</p>`}
-  <p style="color:#567a0e;font-size:13px;font-weight:bold;margin:12px 0 0">Elektronisch erstellt – ohne Unterschrift gültig.</p><p style="color:#707476;font-size:12px;margin:4px 0 0">Protokoll-PDF im Anhang.</p></div>
+  <p style="font-weight:bold;margin:12px 0 0;padding:8px 10px;background:#edf6fb;border-left:4px solid #1c6c9e">${HINWEIS_ABR}</p><p style="color:#567a0e;font-size:13px;font-weight:bold;margin:10px 0 0">Elektronisch erstellt – ohne Unterschrift gültig.</p><p style="color:#707476;font-size:12px;margin:4px 0 0">Protokoll-PDF im Anhang.</p></div>
   ${mode === "erz" && CFG.disclaimer ? `<p style="font-size:11px;color:#56687e;background:#f3f7fb;padding:8px 12px;border-radius:6px;margin-top:10px">${esc(CFG.disclaimer)}</p>` : ""}</div>`;
 }
 
@@ -600,6 +601,8 @@ async function pdfKnt(recs, mode) {
       if (y + h > BOTTOM) { d.addPage(); head(); hdr(); } font("normal", 9, C.ink); let x = L + 2; cells.forEach((c, i) => { d.text(c, cols[i][2] ? x + cols[i][1] - 4 : x, y, { align: cols[i][2] ? "right" : "left" }); x += cols[i][1]; });
       d.setDrawColor(...C.line); d.setLineWidth(0.2); d.line(L, y + h - 3.6, R, y + h - 3.6); y += h; }); y += 3; };
   head();
+  d.setFillColor(...C.tint); d.rect(L, y - 4.5, W, 9, "F"); d.setFillColor(...C.blueDk); d.rect(L, y - 4.5, 1.6, 9, "F");
+  font("bold", 10, C.blueDk); d.text(pt(HINWEIS_ABR), L + 5, y + 1.3); y += 10;
   sec("Anlieferung");
   kv([["Datum Wareneingang", deDate(r0.datum)], ["Lieferschein-Nr.", r0.keinLieferschein ? "kein Lieferschein" : r0.lieferscheinNr || "-", r0.keinLieferschein],
     ...(mode !== "erz" && r0.bueroWeNr ? [["büro+ WE-Nr.", r0.bueroWeNr]] : []),
@@ -634,7 +637,8 @@ async function pdfKnt(recs, mode) {
       try { d.addImage(data, "JPEG", L + col * (w + 4), y, w, h); } catch (_) {} font("normal", 7.5, C.grey); d.text(pt(f.cap), L + col * (w + 4), y + h + 3.6, { maxWidth: w });
       col++; if (col === 3) { col = 0; y += h + 8; } }
     if (col) y += h + 8; }
-  need(22); font("bold", 9.5, C.okg); d.text(pt("Elektronisch erstellt - ohne Unterschrift gültig."), L, y); y += 5;
+  need(26); font("bold", 9.5, C.blueDk); d.text(pt(HINWEIS_ABR), L, y); y += 5;
+  font("bold", 9.5, C.okg); d.text(pt("Elektronisch erstellt - ohne Unterschrift gültig."), L, y); y += 5;
   if (mode === "erz" && CFG.disclaimer) { font("normal", 7.5, C.grey); const ls = d.splitTextToSize(pt(CFG.disclaimer), W); need(ls.length * 3.4); d.text(ls, L, y); }
   const n = d.getNumberOfPages(); const stamp = new Date().toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
   for (let i = 1; i <= n; i++) { d.setPage(i); font("normal", 7.5, C.grey); d.text(pt(`${CFG.kurz} · erstellt ${stamp} · Seite ${i}/${n}`), L, 290); }
