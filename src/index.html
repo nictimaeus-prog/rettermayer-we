@@ -319,7 +319,7 @@ const JN_PG = [
   {id:"schaed",t:"Ware frei von Schädlingen"},
   {id:"fzg",   t:"Fahrzeug / Ladefläche sauber"},
   {id:"beschr",t:"Gebinde beschriftet (Sorte, Partie)"}];
-const NOTEN = [{id:"q",t:"Qualität"},{id:"v",t:"Verpackung / Gebinde"}];
+const NOTEN = []; /* Qualität und Verpackung/Gebinde entfallen */
 const RANGES=[{t:"0 %",von:0,bis:0},{t:"0–10 %",von:0,bis:10},{t:"10–20 %",von:10,bis:20},{t:"20–50 %",von:20,bis:50},{t:"über 50 %",von:50,bis:100}];
 const rVon=r=>RANGES[r].von, rBis=r=>RANGES[r].bis;
 const TEMP=[{v:"ok",t:"in Ordnung"},{v:"frost",t:"Frostschaden"},{v:"hitze",t:"Hitzeschaden"}];
@@ -352,7 +352,9 @@ function pgGebText(x){ const c=posCalc(x); if(!c.n) return ""; return x.geb==="S
 function pgSync(){ if(!isPG()) return; const t=pgTotals(); S.menge=t.kg?String(t.kg):""; S.kisten=t.n?String(t.n):""; const g=[...new Set((S.pgPos||[]).map(x=>x.geb))]; S.gebinde=g.length?g.join(" / "):"Sack";
   S.paletten=String((S.pgPos||[]).reduce((a,x)=>a+(x.geb==="Sack"?(num(x.pal)||0):0),0)||""); const so=[...new Set((S.pgPos||[]).map(x=>x.sorte).filter(Boolean))]; if(so.length===1&&!S.pg.sortePick) S.pg.sorte=so[0]; }
 const pgSorten=()=>[...new Set((S.pgPos||[]).map(x=>x.sorte).filter(Boolean))];
-function fresh(){ return {pgM1:{}, pgM1sonst:"", pgPos:[newPgPos()], prod:null, erz:null, datum:isoDate(new Date()), menge:"", gebinde:null, kisten:"", paletten:"", etiAnz:null, lsNr:"",
+const FR_AVG=[200,300,400,500,600,700,800];
+function frSync(){ if(!isFR()) return; const k=num(S.kisten); S.gebinde="Großkiste"; S.menge=k?String(k*(S.avgKg||400)):""; }
+function fresh(){ return {avgKg:400, pgM1:{}, pgM1sonst:"", pgPos:[newPgPos()], prod:null, erz:null, datum:isoDate(new Date()), menge:"", gebinde:null, kisten:"", paletten:"", etiAnz:null, lsNr:"",
   noten:{}, kal:{}, mg:{}, ernte:null, sauber:null, temp:null, jn:{}, verband:new Set(), fallend:null, trock:null, pg:freshPg(),
   lsFoto:null, lsCheck:null, lsBusy:false, lsMsg:"", fotos:[], bem:"", charge:null, saved:false, celebrated:false, saving:false, sdEdit:null, q:"", seen:new Set(), gain:null, kl:[], keinLs:false}; }
 let S = fresh();
@@ -494,6 +496,7 @@ function missing(){
   if(step===0) return S.prod?null:"Bitte ein Produkt wählen";
   if(step===1) return S.erz?null:(isPG()?"Bitte einen Lieferanten wählen":"Bitte einen Erzeuger wählen");
   if(step===2){ if(!S.datum) return "Bitte Anliefertag angeben";
+    if(isFR()&&!(num(S.kisten)>0)) return "Bitte Anzahl Großkisten angeben";
     if(isPG()){ const bad=S.pgPos.findIndex(x=>!x.sorte); if(bad>=0) return `Bitte Sorte ${bad+1} wählen`; const z=S.pgPos.findIndex(x=>!(posCalc(x).kg>0)); if(z>=0) return `Bitte Menge für Sorte ${z+1} angeben`; return null; } if(!S.gebinde) return "Bitte Gebinde wählen"; return null; }
   if(step===3){
     const m=[];
@@ -696,6 +699,16 @@ function updPp(){ pgSync(); const t=pgTotals(); const el=$("#pp-tot"); if(el) el
   S.pgPos.forEach((x,i)=>{ const e=$("#pp-sum-"+i), c=posCalc(x); if(e) e.textContent=c.kg?deNum(c.kg)+" kg":"–"; }); const pb=$("#plausi-box"); if(pb) pb.innerHTML=plausiBox(); }
 function vLieferung(){
   const pg=isPG();
+  if(isFR()){ frSync(); const k=num(S.kisten);
+    return headerSel()+`<h1>Anlieferung</h1><p class="lead">Immer Großkiste. Nur Anzahl Kisten eingeben, die Menge rechnet die App mit dem Ø-Gewicht je Kiste.</p>
+  <section class="card"><div class="form">
+    <label class="f">Anliefertag<input type="date" id="f-datum" value="${esc(S.datum)}" style="${S.datum>isoDate(new Date())?"border-color:var(--bad)":""}"></label>
+    <label class="f">Lieferschein-Nr.<input type="text" id="f-lsnr" value="${esc(S.lsNr)}"></label>
+    <label class="f">Anzahl Großkisten<span class="h">= Anzahl Etiketten</span><input type="number" inputmode="numeric" min="0" id="f-kisten" placeholder="z. B. 6" value="${esc(S.kisten)}"></label>
+  </div>
+  <div class="q"><div class="lbl">Ø Inhalt je Großkiste<small>Standard 400 kg</small></div><div class="seg txt">${FR_AVG.map(v=>`<button data-act="fr-avg" data-v="${v}" aria-pressed="${(S.avgKg||400)===v}" class="g-sel">${v} kg</button>`).join("")}</div></div>
+  <div class="kpis"><div class="kpi"><span>Menge (geschätzt)</span><b class="calc" id="fr-menge">${k?deNum(k*(S.avgKg||400))+" kg":"–"}</b></div></div>
+  <div id="plausi-box">${plausiBox()}</div></section>`; }
   if(pg){ pgSync(); return headerSel()+`<h1>Anlieferung Pflanzgut</h1><p class="lead">Anliefertag, Sorten mit LOT-Nr. und Kaliber. Die Menge rechnet die App aus Paletten und Säcken.</p>
   <section class="card"><div class="form">
     <label class="f">Anliefertag<input type="date" id="f-datum" value="${esc(S.datum)}" style="${S.datum>isoDate(new Date())?"border-color:var(--bad)":""}"></label>
@@ -746,7 +759,7 @@ function vPgErst(){
 function vPruefung(){
   if(isPG()) return vPgErst();
   const e=S.erz, sollV=e.verbaende||[];
-  return headerSel()+`<h1>Prüfung der Ware</h1><p class="lead">Schulnoten 1 (sehr gut) bis 6 (ungenügend), ab Note 4 eine Abweichung.</p>
+  return headerSel()+`<h1>Prüfung der Ware</h1><p class="lead">Sauberkeit, Temperatur, Kaliber und Mängel. Auffälliges kommt als Abweichung ins Protokoll.</p>
   <section class="card"><div class="sechead"><h2>Bewertung</h2>${chip(secDone("bew"),null,"bew")}</div>
     ${NOTEN.map(n=>`<div class="q"><div class="lbl">${n.t}</div>${seg("noten."+n.id,S.noten[n.id],{items:[1,2,3,4,5,6].map(g=>({t:String(g),v:g,c:g<=2?"g-good":g===3?"g-mid":"g-bad"}))})}</div>`).join("")}
     <div class="q"><div class="lbl">Sauberkeit</div>${seg("sauber",S.sauber,{txt:1,items:[{t:"in Ordnung",v:true,c:"g-good"},{t:"nicht in Ordnung",v:false,c:"g-bad"}]})}</div>
@@ -843,7 +856,7 @@ function vLs(){
 
 function chargeText(){ if(S.charge) return S.charge; return `${S.erz.code} ${String((CNT[counterKey()]||0)+1).padStart(2,"0")} ${P().k}`; }
 function barcodeVal(){ return ascii(chargeText()).replace(/[^A-Z0-9]/g,""); }
-function kolliText(){ if(isPG()&&S.pgPos?.length) return S.pgPos.map(pgGebText).filter(Boolean).join(" · "); const a=[]; if(num(S.kisten)) a.push(num(S.kisten)+" × "+(S.gebinde||"Gebinde")); else if(S.gebinde) a.push(S.gebinde); if(num(S.paletten)) a.push(num(S.paletten)+" Paletten"); return a.join(" / "); }
+function kolliText(){ if(isPG()&&S.pgPos?.length) return S.pgPos.map(pgGebText).filter(Boolean).join(" · "); if(isFR()&&num(S.kisten)) return `${num(S.kisten)} × Großkiste (Ø ${S.avgKg||400} kg)`; const a=[]; if(num(S.kisten)) a.push(num(S.kisten)+" × "+(S.gebinde||"Gebinde")); else if(S.gebinde) a.push(S.gebinde); if(num(S.paletten)) a.push(num(S.paletten)+" Paletten"); return a.join(" / "); }
 function etiCount(){ const kc=klCount(S.kl); if(isTR()&&kc) return kc; if(S.etiAnz) return S.etiAnz; const k=parseInt(S.kisten,10); return k>0?Math.min(999,k):1; }
 function labelTag(){ return isPG()? (S.pg.qual==="bio"?"BIO":"KONV. UNBEH.") : ([...S.verband].map(v=>v.toUpperCase()).join(" + ")||"OHNE VERBAND"); }
 function summaryRows(){
@@ -854,7 +867,7 @@ function summaryRows(){
       ["Sorte / Herkunft",`${S.pg.sorte||"–"} · ${S.pg.land||"–"}`],["Kaliber",S.pg.kaliber||"–"],["Probe",`${deNum(num(S.pg.gewicht),3)} kg · ${c.n} Zehen · Ø ${c.zg!==null?deNum(c.zg,2):"–"} g`],
       ["Mängel",`${c.sum} Zehen = ${c.sumPct} % · davon Fusarium ${c.fusPct} % · ohne Mangel ${c.ohnePct} %`]);
   } else {
-    r.push(["Noten",NOTEN.map(n=>n.t.split(" ")[0]+" "+S.noten[n.id]).join(" · ")]);
+    if(NOTEN.length) r.push(["Noten",NOTEN.map(n=>n.t.split(" ")[0]+" "+S.noten[n.id]).join(" · ")]);
     if(isFR()) r.push(["Kaliber",kalText()]); else { r.push(["Sortierung",`unsortiert, ${fallText()} · ${trockText()}`]); if(klCount(S.kl)){ const sw=schwund(num(S.menge),S.kl); r.push(["Nach Kalibrierung",`${klCount(S.kl)} Kisten · ${deNum(klSum(S.kl),1)} kg${sw?" · Differenz "+swText(sw):""}`]); } }
     r.push(["Mängel",mangelText()+(S.ernte?" · "+ERNTE.find(x=>x.v===S.ernte).t:"")],["Temperatur",tempText()],["Sauberkeit",S.sauber?"in Ordnung":"nicht in Ordnung"],["Auslobung",auslobText()]);
   }
@@ -906,7 +919,7 @@ function relZeit(iso){ const d=new Date(iso), m=(Date.now()-d)/6e4; if(m<1) retu
   return k===t?"heute "+hhmm(d):k===isoDate(y)?"gestern "+hhmm(d):deDate(k)+" "+hhmm(d); }
 function draftData(){
   const d={prod:S.prod, erz:S.erz?{...S.erz}:null, step:Math.min(step,4), datum:S.datum, menge:S.menge, gebinde:S.gebinde, kisten:S.kisten, paletten:S.paletten, lsNr:S.lsNr,
-    noten:S.noten, kal:S.kal, mg:S.mg, ernte:S.ernte, sauber:S.sauber, temp:S.temp, jn:S.jn, verband:[...S.verband], fallend:S.fallend, trock:S.trock, pg:S.pg, pgPos:S.pgPos, pgM1:S.pgM1, pgM1sonst:S.pgM1sonst,
+    noten:S.noten, kal:S.kal, mg:S.mg, ernte:S.ernte, sauber:S.sauber, temp:S.temp, jn:S.jn, verband:[...S.verband], fallend:S.fallend, trock:S.trock, avgKg:S.avgKg, pg:S.pg, pgPos:S.pgPos, pgM1:S.pgM1, pgM1sonst:S.pgM1sonst,
     lsCheck:S.lsCheck, bem:S.bem, kl:S.kl, etiAnz:S.etiAnz, keinLs:!!S.keinLs};
   const all=[S.lsFoto,...S.fotos].filter(Boolean).join("").length;
   if(all<700000){ d.lsFoto=S.lsFoto; d.fotos=S.fotos; d.fotosWeg=0; }
@@ -928,7 +941,7 @@ function resumeDraft(id){
   clearTimeout(draftTimer); S=fresh();
   Object.assign(S,{prod:d.prod, erz:src.find(x=>x.id===d.erz?.id)||d.erz, datum:d.datum||S.datum, menge:d.menge||"", gebinde:d.gebinde||null, kisten:d.kisten||"", paletten:d.paletten||"", lsNr:d.lsNr||"",
     noten:d.noten||{}, kal:d.kal||{}, mg:d.mg||{}, ernte:d.ernte??null, sauber:d.sauber??null, temp:d.temp??null, jn:d.jn||{}, verband:new Set(d.verband||[]), fallend:d.fallend??null, trock:d.trock??null,
-    pg:{...freshPg(),...(d.pg||{})}, pgPos:(d.pgPos&&d.pgPos.length)?d.pgPos:[newPgPos()], pgM1:d.pgM1||{}, pgM1sonst:d.pgM1sonst||"", lsFoto:d.lsFoto||null, lsCheck:d.lsCheck||null, fotos:d.fotos||[], bem:d.bem||"", kl:d.kl||[], etiAnz:d.etiAnz??null, keinLs:!!d.keinLs, draftId:d.id, resumedWeg:d.fotosWeg||0});
+    pg:{...freshPg(),...(d.pg||{})}, avgKg:d.avgKg||400, pgPos:(d.pgPos&&d.pgPos.length)?d.pgPos:[newPgPos()], pgM1:d.pgM1||{}, pgM1sonst:d.pgM1sonst||"", lsFoto:d.lsFoto||null, lsCheck:d.lsCheck||null, fotos:d.fotos||[], bem:d.bem||"", kl:d.kl||[], etiAnz:d.etiAnz??null, keinLs:!!d.keinLs, draftId:d.id, resumedWeg:d.fotosWeg||0});
   draftLast=""; step=Math.max(1,Math.min(d.step||1,4)); view="erf"; render(); window.scrollTo(0,0); toast("Weiter bei „"+steps()[step]+"“");
 }
 async function deleteDraft(id){
@@ -1012,6 +1025,7 @@ function stateFromRec(v){
     jn:v.kontrolle||{}, lsCheck:v.lieferscheinAbgleich||[], bem:v.bemerkung||"", charge:v.charge, saved:true, noten:v.noten||{}, sauber:v.sauber??null, temp:v.temperatur??null,
     verband:new Set(v.verband||[]), ernte:v.ernteart??null, trock:v.abtrocknung??null, etiAnz:v.etiketten||null, keinLs:!!v.keinLieferschein, kl:(v.kistenListe||[]).map(x=>({kal:x.kal||"",kg:str(x.kg)})), pgPos:(v.positionen||[]).map(x=>({sorte:x.sorte||"",lot:x.lot||"",kal:x.kaliber||PG_KAL[0],geb:x.gebinde||"Sack",pal:str(x.paletten),sack:str(x.saecke),anz:x.gebinde==="Sack"?"":str(x.anzahl),kg:x.gebinde==="Sack"?"":str(x.mengeKg)}))});
   if(!st.pgPos.length) st.pgPos=[newPgPos()];
+  if(v.kistenGewichtKg) st.avgKg=v.kistenGewichtKg;
   (v.maengel1||[]).forEach(m=>{ st.pgM1[m.k]={lvl:m.lvl??0}; if(m.k==="sonst") st.pgM1sonst=m.text||""; });
   (v.kaliber||[]).forEach((k,i)=>st.kal[i]=k.prozent||0);
   if(p&&v.maengel&&p.typ!=="pflanzgut"){ const ml=mangelListe(p); v.maengel.forEach(m=>{ const i=ml.findIndex(x=>x.t===m.mangel); const ri=RANGES.findIndex(x=>x.von===m.von&&x.bis===m.bis); if(i>=0&&ri>0) st.mg[i]=ri; }); }
@@ -1448,7 +1462,7 @@ async function speichern(){
     if(isPG()){ Object.assign(rec, pgPosFields(), {qualitaet:S.pg.qual, maengel1:pgM1List(), stufe:"erfasst", erfasstVonName:meNm()}); }
     else { Object.assign(rec,{verband:[...S.verband], noten:S.noten, sauber:S.sauber, temperatur:S.temp,
       maengel:mangelListe(p).map((m,i)=>({mangel:m.t,info:m.info,von:rVon(S.mg[i]||0),bis:rBis(S.mg[i]||0)}))});
-      if(isFR()) Object.assign(rec,{kaliber:kalKlassen(p).map((k,i)=>({klasse:k.t,typ:k.typ,prozent:S.kal[i]||0})), ernteart:S.ernte, sortierung:"kalibriert"});
+      if(isFR()) Object.assign(rec,{kistenGewichtKg:S.avgKg||400, kaliber:kalKlassen(p).map((k,i)=>({klasse:k.t,typ:k.typ,prozent:S.kal[i]||0})), ernteart:S.ernte, sortierung:"kalibriert"});
       else { const kl=S.kl.filter(x=>num(x.kg)).map(x=>({kal:x.kal||"",kg:num(x.kg)})); const sw=schwund(num(S.menge),kl);
         Object.assign(rec,{sortierung:"unsortiert, "+fallText(), abtrocknung:S.trock, kistenListe:kl, mengeErfasst:kl.length?klSum(kl):null, schwundKg:sw?sw.d:null, schwundProzent:sw?sw.pct:null}); } }
     let ref=null; if(db){ ref=await db.collection("wareneingaenge").add(rec); S.docId=ref.id; } else VORG.unshift({id:"l"+Date.now(),...rec});
@@ -1743,8 +1757,9 @@ document.addEventListener("click", ev=>{
   }
   const a=b.dataset.act; if(!a) return;
   if(a==="prod"&&b.dataset.k==="KNT"){ K.start(); render(); window.scrollTo(0,0); return; }
-  if(a==="prod"){ if(S.prod!==b.dataset.k){ const keep=S.prod?S.datum:isoDate(new Date()); S=fresh(); S.datum=keep; S.prod=b.dataset.k; S.gebinde=isFR()?"Kiste":isPG()?"Sack":null; if(isPG()) JN().forEach(q=>S.jn[q.id]=true); } render(); }
+  if(a==="prod"){ if(S.prod!==b.dataset.k){ const keep=S.prod?S.datum:isoDate(new Date()); S=fresh(); S.datum=keep; S.prod=b.dataset.k; S.gebinde=isFR()?"Großkiste":isPG()?"Sack":null; if(isPG()) JN().forEach(q=>S.jn[q.id]=true); } render(); }
   else if(a==="erz"){ const src=isPG()?LIEF:ERZ; const e=src.find(x=>x.id===b.dataset.id); if(S.erz?.id!==e.id){ S.erz=e; S.lsCheck=null; S.verband=new Set(isPG()?[]:(e.verbaende||[])); if(isPG()&&e.land&&!S.pg.land) S.pg.land=e.land; } render(); }
+  else if(a==="fr-avg"){ S.avgKg=+b.dataset.v; frSync(); render(); }
   else if(a==="pgm1"){ const k=b.dataset.k; if(S.pgM1[k]) delete S.pgM1[k]; else S.pgM1[k]={lvl:0}; render(); }
   else if(a==="pgm1-lvl"){ const k=b.dataset.k; if(S.pgM1[k]) S.pgM1[k].lvl=+b.dataset.v; render(); }
   else if(a==="bon-open"){ bonOpen(b.dataset.id); }
@@ -1815,7 +1830,7 @@ document.addEventListener("input", ev=>{
   else if(id.startsWith("pg-a-")){ S.pg.anm[+id.slice(5)]=t.value; }
   else if(id.startsWith("kl-kg-")){ const l=curKL(), i=+id.slice(6); if(l&&l[i]){ const v=num(t.value); if(v!==null&&(v>KISTE_MAX||v<0)){ t.value=l[i].kg??""; t.style.borderColor="var(--bad)"; setTimeout(()=>t.style.borderColor="",1500); toast(v<0?"Gewicht kann nicht negativ sein":"Eine Kiste kann höchstens 1.000 kg haben"); return; } l[i].kg=t.value; updKL(); } }
   else if(id==="f-menge"){ S.menge=t.value; const pb=$("#plausi-box"); if(pb) pb.innerHTML=plausiBox(); updKL(); }
-  else if(id==="f-kisten"){ S.kisten=t.value; S.etiAnz=null; const pb=$("#plausi-box"); if(pb) pb.innerHTML=plausiBox(); }
+  else if(id==="f-kisten"){ S.kisten=t.value; S.etiAnz=null; if(isFR()){ frSync(); const fm=$("#fr-menge"); if(fm) fm.textContent=num(S.kisten)?deNum(num(S.menge))+" kg":"–"; } const pb=$("#plausi-box"); if(pb) pb.innerHTML=plausiBox(); }
   else if(id==="f-pal") S.paletten=t.value;
   else if(id==="f-eti"){ const v=parseInt(t.value,10); S.etiAnz=isNaN(v)?null:Math.min(999,Math.max(1,v)); }
   else if(id==="f-lsnr") S.lsNr=t.value; else if(id==="f-bem") S.bem=t.value; else if(id==="pgm1-sonst") S.pgM1sonst=t.value;
