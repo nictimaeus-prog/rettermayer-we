@@ -28,7 +28,7 @@ const HINWEIS_ABR = "Es handelt sich um eine Stichprobe. Die Abrechnung erfolgt 
 /* ---------------- Sprache ---------------- */
 const TX = {
   de: {
-    tab_erf: "Erfassung", tab_vw: "Verwiegung", tab_ueb: "Vorgänge", tab_aw: "Auswertung", tab_sd: "Stammdaten",
+    tab_erf: "Erfassung", tab_vw: "Verwiegung · Bonitur", tab_ueb: "Vorgänge", tab_aw: "Auswertung", tab_sd: "Stammdaten",
     prod_h1: "Was wird angeliefert?", back_prod: "← Produkt wählen",
     erf_h1: "Knoblauch trocken – Ersterfassung",
     erf_lead: "Beim Abladen: grobe Mengen und sichtbare Mängel je Charge. Genau gewogen wird später unter „Verwiegung“.",
@@ -66,7 +66,7 @@ const TX = {
     lang_btn: "RO", lang_title: "Limba română",
   },
   ro: {
-    tab_erf: "Recepție", tab_vw: "Cântărire", tab_ueb: "Înregistrări", tab_aw: "Analiză", tab_sd: "Date de bază",
+    tab_erf: "Recepție", tab_vw: "Cântărire · Bonitare", tab_ueb: "Înregistrări", tab_aw: "Analiză", tab_sd: "Date de bază",
     prod_h1: "Ce se livrează?", back_prod: "← Alege produsul",
     erf_h1: "Usturoi uscat – recepție inițială",
     erf_lead: "La descărcare: cantități estimate și defecte vizibile pe fiecare lot. Cântărirea exactă se face mai târziu la „Cântărire”.",
@@ -261,8 +261,14 @@ function mangelChipsAlt(mg, keys, ctx, ci) {
 }
 
 /* ---------------- Stufe 1: Ersterfassung ---------------- */
+function dWarn(d) { if (!d) return ""; const h = today(); const back = (new Date(h) - new Date(d)) / 864e5;
+  if (d > h) return `<div class="warnbox wbox"><b>${lang() === "ro" ? "Data este în viitor" : "Datum liegt in der Zukunft"}</b><br>${lang() === "ro" ? "Vă rugăm verificați data recepției." : "Bitte Anliefertag prüfen."}</div>`;
+  if (back > 3) return `<div class="warnbox wbox"><b>${lang() === "ro" ? `Data este acum ${Math.round(back)} zile` : `Datum liegt ${Math.round(back)} Tage zurück`}</b><br>${lang() === "ro" ? "Vă rugăm verificați data recepției." : "Bitte Anliefertag prüfen."}</div>`;
+  return ""; }
+K.dWarn = dWarn;
 K.start = function () { K.on = true; K.kd = null; const s = keLoad();
-  if (s && s.chargen.length) { K.ke = { ...newKE(), ...s, lsBusy: false, saving: false, kontrolle: { zert: true, schaed: true, ...(s.kontrolle || {}) }, chargen: s.chargen.map((c) => ({ ...newCharge(), ...c })) }; setTimeout(() => toast(T("resume")), 50); }
+  const leer = s && !s.lsNr && !s.lsFotoId && !(s.chargen || []).some((c) => c.erzId || c.sorte || c.kisten);
+  if (s && s.chargen.length && !leer) { K.ke = { ...newKE(), ...s, lsBusy: false, saving: false, kontrolle: { zert: true, schaed: true, ...(s.kontrolle || {}) }, chargen: s.chargen.map((c) => ({ ...newCharge(), ...c })) }; setTimeout(() => toast(T("resume")), 50); }
   else K.ke = newKE(); };
 K.stop = function () { K.on = false; };
 function keMissing() {
@@ -291,7 +297,7 @@ K.viewErf = function () {
       <label class="f">${T("lsnr")}<input type="text" id="k-lsnr" value="${esc(e.lsNr)}" ${e.keinLs ? "disabled" : ""} autocomplete="off"></label>
       <label class="f">${T("datum")}<input type="date" id="k-datum" value="${esc(e.datum)}"></label>
       <label class="f">${T("bwe")}<span class="h">${T("opt")}</span><input type="text" id="k-bwe" value="${esc(e.bweNr)}" inputmode="numeric" autocomplete="off"></label>
-    </div>
+    </div><div id="k-dwarn">${dWarn(e.datum)}</div>
     <div class="kchips"><button class="kchip" data-ka="ke-keinls" aria-pressed="${e.keinLs}">${T("keinls")}</button></div>
     <details ${e.belege.length > 1 ? "open" : ""}><summary><b>${T("belege")}</b> <span class="hint">${T("belege_h")} (${e.belege.length})</span></summary>${belegeBlock(e.belege, "ke")}</details>
   </section>
@@ -824,7 +830,7 @@ document.addEventListener("input", (ev) => {
 document.addEventListener("change", (ev) => {
   const t = ev.target, id = t.id || ""; let m;
   if (t.dataset && t.dataset.kpick) { let p = null; try { p = JSON.parse(t.dataset.kpick); } catch (_) {} const files = [...(t.files || [])]; t.value = ""; if (p && files.length) { K.pend = p; onPicked(files); } return; }
-  if (id === "k-datum") { K.ke.datum = t.value || today(); kePersist(); }
+  if (id === "k-datum") { K.ke.datum = t.value || today(); kePersist(); const w = document.getElementById("k-dwarn"); if (w) w.innerHTML = dWarn(K.ke.datum); }
   else if ((m = id.match(/^k-erz-(\d+)$/))) { K.ke.chargen[+m[1]].erzId = t.value; kePersist(); keRefreshBar(); }
   else if ((m = id.match(/^k-sorte-(\d+)$/))) { K.ke.chargen[+m[1]].sorte = t.value; kePersist(); keRefreshBar(); }
   else if ((m = id.match(/^kv-kal-(\d+)$/))) { K.vw.kl[+m[1]].kal = t.value; }

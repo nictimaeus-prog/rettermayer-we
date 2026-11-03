@@ -334,10 +334,16 @@ let CFG = {...CFG_DEFAULT}, LOGO=null;
 let ERZ=[], LIEF=[], VORG=[], CNT={}, DRAFTS=[]; let draftTimer=null, draftLast="";
 let view="erf", step=0, filt="alle";
 const STEPS_STD = ["Produkt","Erzeuger","Lieferung","Prüfung","Fotos","Fertig"];
-const STEPS_PG  = ["Produkt","Lieferant","Lieferung","Bonitur","Fotos","Fertig"];
+const STEPS_PG  = ["Produkt","Lieferant","Lieferung","Prüfung","Fotos","Fertig"];
 const steps=()=>isPG()?STEPS_PG:STEPS_STD;
-function freshPg(){ return {auftrag:"VG Bio", probennehmer:"", probeDatum:isoDate(new Date()), land:"", sorte:"", kaliber:"", form:null, brech:"", gewicht:"", anzahl:"", eindruck:"", cnt:{}, anm:{}, qual:"konv"}; }
-const PG_KAL=["50–60 mm","40–50 mm","55–65 mm","65+ mm"], PG_GEB_R=["Einwegkiste","Big Bag","Sack"], PG_SACK_KG=20, PG_SACK_PAL=40;
+function freshPg(){ return {auftrag:"VG Bio", probennehmer:"", probeDatum:isoDate(new Date()), land:"", sorte:"", kaliber:"", form:"ganz", brech:"", gewicht:"", anzahl:"", eindruck:"", cnt:{}, anm:{}, qual:"konv"}; }
+const PG_KAL=["50–60 mm","40–50 mm","55–65 mm","65+ mm","unbekannt"], PG_GEB_R=["Einwegkiste","Big Bag","Sack"], PG_SACK_KG=20, PG_SACK_PAL=40;
+const PG_M1=[["schalen","Lose Schalen"],["weich","Weiche Zehen"],["besch","Beschädigt"],["trieb","Austrieb"],["farbe","Verfärbung"],["schimmel","Schimmel"],["sonst","Sonstiges"]];
+const PG_LV=["vereinzelt","0–5 %","5–10 %","10–20 %","20–50 %","50 %+"];
+const pgM1Name=k=>(PG_M1.find(x=>x[0]===k)||[k,k])[1];
+function pgM1List(){ return PG_M1.filter(([k])=>S.pgM1&&S.pgM1[k]).map(([k,t])=>({k,t,lvl:S.pgM1[k].lvl??0,text:k==="sonst"?(S.pgM1sonst||""):""})); }
+const pgM1Txt=m=>`${m.t}${m.text?" ("+m.text+")":""}: ${PG_LV[m.lvl]||""}`;
+const pgBonitiert=()=>pgCalc().n>0;
 const isRainbow=s=>/rainbow/i.test(s||"");
 function newPgPos(){ return {sorte:"", lot:"", kal:PG_KAL[0], geb:"Sack", pal:"", sack:"", anz:"", kg:""}; }
 function posCalc(x){ if(x.geb==="Sack"){ const n=(num(x.pal)||0)*PG_SACK_PAL+(num(x.sack)||0); return {n, kg:n*PG_SACK_KG}; } return {n:num(x.anz)||0, kg:num(x.kg)||0}; }
@@ -346,7 +352,7 @@ function pgGebText(x){ const c=posCalc(x); if(!c.n) return ""; return x.geb==="S
 function pgSync(){ if(!isPG()) return; const t=pgTotals(); S.menge=t.kg?String(t.kg):""; S.kisten=t.n?String(t.n):""; const g=[...new Set((S.pgPos||[]).map(x=>x.geb))]; S.gebinde=g.length?g.join(" / "):"Sack";
   S.paletten=String((S.pgPos||[]).reduce((a,x)=>a+(x.geb==="Sack"?(num(x.pal)||0):0),0)||""); const so=[...new Set((S.pgPos||[]).map(x=>x.sorte).filter(Boolean))]; if(so.length===1&&!S.pg.sortePick) S.pg.sorte=so[0]; }
 const pgSorten=()=>[...new Set((S.pgPos||[]).map(x=>x.sorte).filter(Boolean))];
-function fresh(){ return {pgPos:[newPgPos()], prod:null, erz:null, datum:isoDate(new Date()), menge:"", gebinde:null, kisten:"", paletten:"", etiAnz:null, lsNr:"",
+function fresh(){ return {pgM1:{}, pgM1sonst:"", pgPos:[newPgPos()], prod:null, erz:null, datum:isoDate(new Date()), menge:"", gebinde:null, kisten:"", paletten:"", etiAnz:null, lsNr:"",
   noten:{}, kal:{}, mg:{}, ernte:null, sauber:null, temp:null, jn:{}, verband:new Set(), fallend:null, trock:null, pg:freshPg(),
   lsFoto:null, lsCheck:null, lsBusy:false, lsMsg:"", fotos:[], bem:"", charge:null, saved:false, celebrated:false, saving:false, sdEdit:null, q:"", seen:new Set(), gain:null, kl:[], keinLs:false}; }
 let S = fresh();
@@ -395,6 +401,51 @@ function pgCalc(){
   return {ml,n,cnts,sum,ohne:Math.max(0,n-sum),pct,sumPct:pct(sum),ohnePct:n?100-pct(sum):0,fus,fusPct:pct(fus),zg};
 }
 
+const meNm=()=>(window.RWE&&RWE.profile&&RWE.profile()?.name)||NAMES[ME]||"";
+function pgPosFields(){ pgSync(); const t=pgTotals();
+  return {positionen:S.pgPos.map(x=>{ const c=posCalc(x); return {sorte:x.sorte, lot:(x.lot||"").trim(), kaliber:x.kal, gebinde:x.geb, paletten:x.geb==="Sack"?(num(x.pal)||0):null, saecke:x.geb==="Sack"?(num(x.sack)||0):null, anzahl:c.n, mengeKg:c.kg}; }),
+    sorte:pgSorten().join(", "), lot:S.pgPos.map(x=>(x.lot||"").trim()).filter(Boolean).join(", "), mengeKg:t.kg, kisten:t.n, gebinde:S.gebinde, paletten:num(S.paletten)}; }
+function pgBonFields(){ const c=pgCalc();
+  return {qualitaet:S.pg.qual, mangelProzent:c.sumPct, zehengewicht:c.zg,
+    bonitur:{auftraggeber:S.pg.auftrag, probennehmer:S.pg.probennehmer, probeDatum:S.pg.probeDatum, herkunftsland:S.pg.land, sorte:S.pg.sorte, kaliber:S.pg.kaliber, form:S.pg.form, brechstelle:S.pg.brech,
+      gesamtgewichtKg:num(S.pg.gewicht), anzahlZehen:c.n, ohneMangel:c.ohne, eindruck:S.pg.eindruck, maengel:c.ml.map((m,i)=>({mangel:m.t,anzahl:c.cnts[i],prozent:c.pct(c.cnts[i]),anmerkung:S.pg.anm[i]||""})), summe:c.sum, summeProzent:c.sumPct, fusariumProzent:c.fusPct}}; }
+
+/* ---------- Bonitur als 2. Schritt (Pflanzgut) ---------- */
+let BON=null, S_KEEP=null;
+function bonOpen(id){ const v=VORG.find(x=>x.id===id); if(!v) return; if(!BON) S_KEEP=S; S=stateFromRec(v); S.saved=false; S.docId=v.id; S.charge=v.charge; AB_OVERRIDE=null; if(!S.pg.form) S.pg.form="ganz";
+  if(!S.pg.probennehmer) S.pg.probennehmer=meNm(); BON={id, busy:false, msg:"", err:false}; view="vw"; render(); window.scrollTo(0,0); }
+function bonRestore(){ if(S_KEEP){ S=S_KEEP; S_KEEP=null; } BON=null; AB_OVERRIDE=null; }
+function bonMissing(){ const c=pgCalc(), m=[]; const bs=S.pgPos.findIndex(x=>!x.sorte); if(bs>=0) return `Bitte Sorte ${bs+1} wählen`; const z=S.pgPos.findIndex(x=>!(posCalc(x).kg>0)); if(z>=0) return `Bitte Menge für Sorte ${z+1} angeben`;
+  if(!(c.n>0)) m.push("Anzahl Zehen"); if(!num(S.pg.gewicht)) m.push("Gesamtgewicht Probe"); if(!S.pg.form) m.push("ganze Knollen / gebrochen");
+  if(c.n>0&&c.sum>c.n) return `Summe Mängel (${c.sum}) größer als Anzahl Zehen (${c.n})`; return m.length?"Noch offen: "+m.join(", "):null; }
+function vBonEdit(){ const v=VORG.find(x=>x.id===BON.id); if(!v){ bonRestore(); return K.viewVw()+pgBonList(); }
+  const ml=v.maengel1||[]; const miss=bonMissing();
+  return `<div class="chips" style="margin-bottom:6px"><button class="btn small" data-act="bon-close">← Zurück</button></div>
+   <h1><span style="font-family:var(--f-mono)">${esc(v.charge)}</span></h1>
+   <p class="lead"><b>${esc(v.erzeuger)}</b> · Anlieferung ${deDate(v.datum)} · ${esc(v.sorte||"")}${ml.length?`<br>Beim Abladen: ${esc(ml.map(pgM1Txt).join(" · "))}`:""}</p>
+   ${vPgPos()}${vBonitur()}
+   ${BON.msg?`<p class="hint" style="color:${BON.err?"var(--bad)":"var(--ok)"}">${esc(BON.msg)}</p>`:""}
+   <div class="kbar"><div class="msg" id="bon-msg">${esc(miss||"")}</div><button class="btn" data-act="bon-save" ${BON.busy?"disabled":""}>Zwischenspeichern</button><button class="btn primary" id="bon-done" data-act="bon-done" ${BON.busy||miss?"disabled":""}>${BON.busy?"Speichert …":"Bonitur abschließen"}</button></div>`; }
+function updBon(){ if(!BON) return; const miss=bonMissing(); const m=$("#bon-msg"); if(m) m.textContent=miss||""; const b=$("#bon-done"); if(b) b.disabled=!!miss||BON.busy; }
+async function bonSave(final){ if(!BON||BON.busy) return; if(final&&bonMissing()){ toast(bonMissing()); return; }
+  const id=BON.id; const patch={...pgPosFields(), ...pgBonFields()};
+  if(final){ AB_OVERRIDE=null; Object.assign(patch,{stufe:"bonitiert", bonitiert:new Date().toISOString(), bonitiertVon:ME, bonitiertVonName:meNm(), abweichungen:abweichungen()}); }
+  BON.busy=true; render();
+  try{ if(db) await db.doc("wareneingaenge/"+id).update(patch); const v=VORG.find(x=>x.id===id); if(v) Object.assign(v,patch); }
+  catch(e){ BON.busy=false; BON.err=true; BON.msg="Speichern fehlgeschlagen"; render(); return; }
+  if(!final){ BON.busy=false; BON.err=false; BON.msg="Zwischengespeichert"; render(); return; }
+  try{ if(db) await ablegen(db.doc("wareneingaenge/"+id)); }catch(_){}
+  try{ S.docId=id; await sendMail(); }catch(_){}
+  const mailMsg=S.mailMsg||""; bonRestore(); toast("Bonitur abgeschlossen"+(mailMsg?" · "+mailMsg:"")); setTimeout(confetti,60); render(); window.scrollTo(0,0); }
+function pgBonList(){ const all=VORG.filter(v=>v.produkt==="KPG"&&v.stufe); if(!all.length) return "";
+  const off=all.filter(v=>v.stufe==="erfasst"), done=all.filter(v=>v.stufe!=="erfasst").slice(0,8);
+  const row=v=>{ const age=Math.floor((Date.now()-new Date(v.datum+"T12:00:00").getTime())/864e5);
+    return `<div class="drow"><span class="dcode" style="background:var(--c-kpg,var(--field));color:var(--c-light)">KPG</span>
+     <span class="dtx"><b style="font-family:var(--f-mono)">${esc(v.charge)}</b> ${esc(v.erzeuger)} <span class="sub">${deDate(v.datum)} · ${esc(v.sorte||"")} · ${v.mengeKg!=null?deNum(v.mengeKg)+" kg":"–"}${v.stufe==="erfasst"?` · seit ${age} Tg.`:""}</span></span>
+     <button class="btn small${v.stufe==="erfasst"?" primary":""}" data-act="bon-open" data-id="${esc(v.id)}">${v.stufe==="erfasst"?"Bonitur":"ändern"}</button>${v.protokollPdf?`<button class="btn small dark" data-act="pdf-open" data-id="${esc(v.id)}">PDF</button>`:`<button class="btn small dark" data-act="pdf-make" data-id="${esc(v.id)}">PDF</button>`}</div>`; };
+  return `<section class="dlist"><h3>Pflanzgut · Bonitur offen <span class="pill ${off.length?"p-warn":"p-ok"}">${off.length}</span></h3>${off.map(row).join("")||`<p class="hint">Keine offene Bonitur.</p>`}
+    ${done.length?`<details><summary>Zuletzt bonitiert (${done.length})</summary>${done.map(row).join("")}</details>`:""}</section>`; }
+
 /* ---------- Abweichungen ---------- */
 let AB_OVERRIDE=null;
 function abweichungen(){
@@ -402,7 +453,7 @@ function abweichungen(){
   const out=[]; const p=P(), e=S.erz; if(!p||!e) return out;
   plausi().forEach(x=>out.push("Plausibilität: "+x));
   if(isPG()){
-    const c=pgCalc();
+    const c=pgCalc(); pgM1List().forEach(m=>out.push("Mangel Ersterfassung: "+pgM1Txt(m)));
     if(c.n&&c.sumPct>p.tol) out.push(`Mängel gesamt ${c.sumPct} % (Toleranz ${p.tol} %)`);
     if(c.n&&c.fusPct>(p.ftol??10)) out.push(`Fusarium gesamt ${c.fusPct} % (Toleranz ${p.ftol??10} %)`);
   } else {
@@ -446,12 +497,7 @@ function missing(){
     if(isPG()){ const bad=S.pgPos.findIndex(x=>!x.sorte); if(bad>=0) return `Bitte Sorte ${bad+1} wählen`; const z=S.pgPos.findIndex(x=>!(posCalc(x).kg>0)); if(z>=0) return `Bitte Menge für Sorte ${z+1} angeben`; return null; } if(!S.gebinde) return "Bitte Gebinde wählen"; return null; }
   if(step===3){
     const m=[];
-    if(isPG()){
-      const c=pgCalc();
-      if(!(c.n>0)) m.push("Anzahl Zehen"); if(!num(S.pg.gewicht)) m.push("Gesamtgewicht");
-      if(!S.pg.form) m.push("ganze Knollen / gebrochen");
-      if(c.n>0 && c.sum>c.n) return `Summe Mängel (${c.sum}) größer als Anzahl Zehen (${c.n})`;
-    } else {
+    if(isPG()){ /* Bonitur folgt im 2. Schritt */ } else {
       NOTEN.forEach(n=>{ if(!S.noten[n.id]) m.push(n.t); });
       if(isFR()){ if(kalSumme()!==100) m.push(`Kaliber (Summe ${kalSumme()} %)`); if(P().ernteart && !S.ernte) m.push("Ernteart"); }
       if(isTR()){ if(!S.fallend) m.push("Sortierung fallend"); if(!S.trock) m.push("Abtrocknung"); }
@@ -479,7 +525,7 @@ function render(){
   $("#bar").hidden = view!=="erf"||kmode;
   const m=$("#main");
   if(view==="ueb"){ m.innerHTML=viewVorgaenge(); requestAnimationFrame(updScrollHint); }
-  else if(view==="vw") m.innerHTML=K.viewVw();
+  else if(view==="vw") m.innerHTML=BON?vBonEdit():K.viewVw()+(K.vw?"":pgBonList());
   else if(view==="aw") m.innerHTML=K.viewDash();
   else if(view==="sd") m.innerHTML=viewStamm();
   else if(kmode){ m.innerHTML=K.viewErf(); return; }
@@ -527,7 +573,7 @@ function punkte(){
   if(S.lsFoto) b.push(["Lieferschein fotografiert",5]);
   if(S.lsCheck&&S.lsCheck.length&&S.lsCheck.every(r=>r.status!=="offen")) b.push(["Lieferschein abgeglichen",5]);
   const f=Math.min(3,S.fotos.length); if(f) b.push([`${f} Warenfoto${f>1?"s":""}`,f*2]);
-  if(isPG()) b.push(["Bonitur gezählt",10]);
+  if(isPG()&&pgM1List().length) b.push(["Mängel erfasst",5]);
   if(isTR()&&klCount(S.kl)) b.push([`${klCount(S.kl)} Kisten verwogen`,Math.min(10,klCount(S.kl))]);
   if(S.datum===isoDate(new Date())) b.push(["Am Anliefertag erfasst",3]);
   if(S.bem.trim()) b.push(["Bemerkung notiert",2]);
@@ -591,7 +637,7 @@ function confetti(){
 }
 function stepFill(){
   if(step===0) return S.prod?1:0; if(step===1) return S.erz?1:0; if(step===2) return (S.datum&&S.gebinde)?1:0;
-  if(step===3){ const parts=isPG()?["pgkopf","pgbon","jn"]:isTR()?["bew","sort","jn"]:["bew","kal","jn"]; return parts.map(secDone).filter(Boolean).length/parts.length; }
+  if(step===3){ const parts=isPG()?["jn"]:isTR()?["bew","sort","jn"]:["bew","kal","jn"]; return parts.map(secDone).filter(Boolean).length/parts.length; }
   if(step===4) return (S.lsFoto||isPG()||S.keinLs)?1:0; return S.saved?1:0;
 }
 function headerSel(){
@@ -652,12 +698,12 @@ function vLieferung(){
   const pg=isPG();
   if(pg){ pgSync(); return headerSel()+`<h1>Anlieferung Pflanzgut</h1><p class="lead">Anliefertag, Sorten mit LOT-Nr. und Kaliber. Die Menge rechnet die App aus Paletten und Säcken.</p>
   <section class="card"><div class="form">
-    <label class="f">Anliefertag<input type="date" id="f-datum" value="${esc(S.datum)}"></label>
+    <label class="f">Anliefertag<input type="date" id="f-datum" value="${esc(S.datum)}" style="${S.datum>isoDate(new Date())?"border-color:var(--bad)":""}"></label>
     <label class="f">Lieferschein-Nr.<input type="text" id="f-lsnr" value="${esc(S.lsNr)}"></label>
   </div><div id="plausi-box">${plausiBox()}</div></section>${vPgPos()}`; }
   return headerSel()+`<h1>Anlieferung</h1><p class="lead">Anliefertag und Gebinde sind Pflicht. Unplausible Angaben werden gelb markiert und kommen als Hinweis ins Protokoll.</p>
   <section class="card"><div class="form">
-    <label class="f">Anliefertag<input type="date" id="f-datum" value="${esc(S.datum)}"></label>
+    <label class="f">Anliefertag<input type="date" id="f-datum" value="${esc(S.datum)}" style="${S.datum>isoDate(new Date())?"border-color:var(--bad)":""}"></label>
     <label class="f">Menge laut Lieferschein (kg)<input type="number" inputmode="decimal" id="f-menge" value="${esc(S.menge)}"></label>
     <label class="f">Lieferschein-Nr.<input type="text" id="f-lsnr" value="${esc(S.lsNr)}"></label>
   </div>
@@ -688,8 +734,17 @@ function vMaengel(){
 const JA_NEIN=[{t:"Ja",v:true,c:"g-good"},{t:"Nein",v:false,c:"g-bad"}];
 function vJN(){ return `<section class="card"><div class="sechead"><h2>Kontrollfragen</h2>${chip(secDone("jn"),"chip-jn","jn")}</div>
     ${JN().map(q=>`<div class="q"><div class="lbl">${q.t}</div>${seg("jn."+q.id,S.jn[q.id],{txt:1,items:JA_NEIN})}</div>`).join("")}</section>`; }
+function vPgErst(){
+  const m=S.pgM1||{};
+  return headerSel()+`<h1>Prüfung beim Abladen</h1><p class="lead">Nur offensichtliche Mängel antippen. Die Bonitur folgt als 2. Schritt unter „Verwiegung · Bonitur“.</p>
+  <section class="card"><h2>Offensichtliche Mängel</h2><p class="hint">Antippen, dann Anteil wählen. Nichts gewählt = keine Auffälligkeiten.</p>
+    <div class="seg txt">${PG_M1.map(([k,t])=>`<button data-act="pgm1" data-k="${k}" aria-pressed="${!!m[k]}" class="${m[k]?"g-bad":"g-sel"}">${esc(t)}</button>`).join("")}</div>
+    ${PG_M1.filter(([k])=>m[k]).map(([k,t])=>`<div class="q"><div class="lbl">${esc(t)}</div><div class="seg txt">${PG_LV.map((l,j)=>`<button data-act="pgm1-lvl" data-k="${k}" data-v="${j}" aria-pressed="${(m[k].lvl??0)===j}" class="${j>=3?"g-bad":j>=2?"g-mid":"g-sel"}">${esc(l)}</button>`).join("")}</div></div>`).join("")}
+    ${m.sonst?`<label class="f">Sonstiges, was?<input type="text" id="pgm1-sonst" value="${esc(S.pgM1sonst)}"></label>`:""}
+  </section>${vJN()}`;
+}
 function vPruefung(){
-  if(isPG()) return vBonitur();
+  if(isPG()) return vPgErst();
   const e=S.erz, sollV=e.verbaende||[];
   return headerSel()+`<h1>Prüfung der Ware</h1><p class="lead">Schulnoten 1 (sehr gut) bis 6 (ungenügend), ab Note 4 eine Abweichung.</p>
   <section class="card"><div class="sechead"><h2>Bewertung</h2>${chip(secDone("bew"),null,"bew")}</div>
@@ -710,9 +765,9 @@ function vPruefung(){
 }
 function vBonitur(){
   pgSync(); if(!pgSorten().includes(S.pg.sorte)) S.pg.sorte=pgSorten()[0]||""; if(!S.pg.kaliber) S.pg.kaliber=(S.pgPos.find(x=>x.sorte===S.pg.sorte)||{}).kal||"";
-  const c=pgCalc(), p=P();
+  const c=pgCalc(), p=P(); const ed=!!BON;
   const opts=["VG Bio",...ERZ.slice().sort((a,b)=>a.name.localeCompare(b.name,"de")).map(e=>e.name)];
-  return headerSel()+`<h1>Knoblauchbonitur</h1><p class="lead">Aufbau wie die Feldfunk-Bonitur. Anteile und Ø Zehengewicht rechnet die App. Toleranz Mängel gesamt ${p.tol} %, Fusarium gesamt ${p.ftol??10} %.</p>
+  return (ed?"":headerSel())+`${ed?"<h2 style=\"margin-top:18px\">Knoblauchbonitur</h2>":"<h1>Knoblauchbonitur</h1>"}<p class="lead">Aufbau wie die Feldfunk-Bonitur. Anteile und Ø Zehengewicht rechnet die App. Toleranz Mängel gesamt ${p.tol} %, Fusarium gesamt ${p.ftol??10} %.</p>
   <section class="card"><div class="sechead"><h2>Probe</h2>${chip(secDone("pgkopf"),"chip-pgkopf","pgkopf")}</div>
     <div class="q" style="border-top:0"><div class="lbl">Qualität<small>Standard konv. unbehandelt</small></div>${`<div class="seg txt">${QUAL.map(x=>`<button data-act="pgset" data-f="qual" data-v="${x.v}" aria-pressed="${S.pg.qual===x.v}" class="g-sel">${esc(x.t)}</button>`).join("")}</div>`}</div>
     <div class="form">
@@ -741,7 +796,7 @@ function vBonitur(){
       <tr class="sum"><td>Summe Mängel</td><td class="n" id="pg-sum">${c.sum}</td><td class="n" id="pg-sump">${c.n?c.sumPct:"–"}</td><td id="pg-sumflag">${sumFlag(c)}</td></tr>
     </tbody></table></div>
   </section>
-  ${vJN()}`;
+  ${ed?"":vJN()}`;
 }
 function sumFlag(c){ const p=P(); const f=[]; if(c.n&&c.sum>c.n) f.push(`<span class="pill p-bad">mehr Mängel als Zehen</span>`); else { if(c.n&&c.sumPct>p.tol) f.push(`<span class="pill p-bad">über ${p.tol} %</span>`); if(c.n&&c.fusPct>(p.ftol??10)) f.push(`<span class="pill p-bad">Fusarium ${c.fusPct} %</span>`); if(c.n&&!f.length) f.push(`<span class="pill p-ok">in Toleranz</span>`); } return `<span class="chips">${f.join("")}</span>`; }
 function updPg(){
@@ -793,7 +848,8 @@ function etiCount(){ const kc=klCount(S.kl); if(isTR()&&kc) return kc; if(S.etiA
 function labelTag(){ return isPG()? (S.pg.qual==="bio"?"BIO":"KONV. UNBEH.") : ([...S.verband].map(v=>v.toUpperCase()).join(" + ")||"OHNE VERBAND"); }
 function summaryRows(){
   const r=[];
-  if(isPG()){ const c=pgCalc();
+  if(isPG()&&!pgBonitiert()){ const ml=pgM1List(); r.push(["Qualität",qualText()],["Sorten",pgSorten().join(", ")||"–"],["Offensichtliche Mängel",ml.length?ml.map(pgM1Txt).join(" · "):"keine"],["Bonitur","folgt im 2. Schritt"]); }
+  else if(isPG()){ const c=pgCalc();
     r.push(["Qualität",qualText()],["Auftraggeber",S.pg.auftrag],["Probe",`${S.pg.form==="ganz"?"ganze Knollen":"gebrochen"}${S.pg.brech?" · Brechstelle "+S.pg.brech:""}`],
       ["Sorte / Herkunft",`${S.pg.sorte||"–"} · ${S.pg.land||"–"}`],["Kaliber",S.pg.kaliber||"–"],["Probe",`${deNum(num(S.pg.gewicht),3)} kg · ${c.n} Zehen · Ø ${c.zg!==null?deNum(c.zg,2):"–"} g`],
       ["Mängel",`${c.sum} Zehen = ${c.sumPct} % · davon Fusarium ${c.fusPct} % · ohne Mangel ${c.ohnePct} %`]);
@@ -850,7 +906,7 @@ function relZeit(iso){ const d=new Date(iso), m=(Date.now()-d)/6e4; if(m<1) retu
   return k===t?"heute "+hhmm(d):k===isoDate(y)?"gestern "+hhmm(d):deDate(k)+" "+hhmm(d); }
 function draftData(){
   const d={prod:S.prod, erz:S.erz?{...S.erz}:null, step:Math.min(step,4), datum:S.datum, menge:S.menge, gebinde:S.gebinde, kisten:S.kisten, paletten:S.paletten, lsNr:S.lsNr,
-    noten:S.noten, kal:S.kal, mg:S.mg, ernte:S.ernte, sauber:S.sauber, temp:S.temp, jn:S.jn, verband:[...S.verband], fallend:S.fallend, trock:S.trock, pg:S.pg, pgPos:S.pgPos,
+    noten:S.noten, kal:S.kal, mg:S.mg, ernte:S.ernte, sauber:S.sauber, temp:S.temp, jn:S.jn, verband:[...S.verband], fallend:S.fallend, trock:S.trock, pg:S.pg, pgPos:S.pgPos, pgM1:S.pgM1, pgM1sonst:S.pgM1sonst,
     lsCheck:S.lsCheck, bem:S.bem, kl:S.kl, etiAnz:S.etiAnz, keinLs:!!S.keinLs};
   const all=[S.lsFoto,...S.fotos].filter(Boolean).join("").length;
   if(all<700000){ d.lsFoto=S.lsFoto; d.fotos=S.fotos; d.fotosWeg=0; }
@@ -872,7 +928,7 @@ function resumeDraft(id){
   clearTimeout(draftTimer); S=fresh();
   Object.assign(S,{prod:d.prod, erz:src.find(x=>x.id===d.erz?.id)||d.erz, datum:d.datum||S.datum, menge:d.menge||"", gebinde:d.gebinde||null, kisten:d.kisten||"", paletten:d.paletten||"", lsNr:d.lsNr||"",
     noten:d.noten||{}, kal:d.kal||{}, mg:d.mg||{}, ernte:d.ernte??null, sauber:d.sauber??null, temp:d.temp??null, jn:d.jn||{}, verband:new Set(d.verband||[]), fallend:d.fallend??null, trock:d.trock??null,
-    pg:{...freshPg(),...(d.pg||{})}, pgPos:(d.pgPos&&d.pgPos.length)?d.pgPos:[newPgPos()], lsFoto:d.lsFoto||null, lsCheck:d.lsCheck||null, fotos:d.fotos||[], bem:d.bem||"", kl:d.kl||[], etiAnz:d.etiAnz??null, keinLs:!!d.keinLs, draftId:d.id, resumedWeg:d.fotosWeg||0});
+    pg:{...freshPg(),...(d.pg||{})}, pgPos:(d.pgPos&&d.pgPos.length)?d.pgPos:[newPgPos()], pgM1:d.pgM1||{}, pgM1sonst:d.pgM1sonst||"", lsFoto:d.lsFoto||null, lsCheck:d.lsCheck||null, fotos:d.fotos||[], bem:d.bem||"", kl:d.kl||[], etiAnz:d.etiAnz??null, keinLs:!!d.keinLs, draftId:d.id, resumedWeg:d.fotosWeg||0});
   draftLast=""; step=Math.max(1,Math.min(d.step||1,4)); view="erf"; render(); window.scrollTo(0,0); toast("Weiter bei „"+steps()[step]+"“");
 }
 async function deleteDraft(id){
@@ -956,6 +1012,7 @@ function stateFromRec(v){
     jn:v.kontrolle||{}, lsCheck:v.lieferscheinAbgleich||[], bem:v.bemerkung||"", charge:v.charge, saved:true, noten:v.noten||{}, sauber:v.sauber??null, temp:v.temperatur??null,
     verband:new Set(v.verband||[]), ernte:v.ernteart??null, trock:v.abtrocknung??null, etiAnz:v.etiketten||null, keinLs:!!v.keinLieferschein, kl:(v.kistenListe||[]).map(x=>({kal:x.kal||"",kg:str(x.kg)})), pgPos:(v.positionen||[]).map(x=>({sorte:x.sorte||"",lot:x.lot||"",kal:x.kaliber||PG_KAL[0],geb:x.gebinde||"Sack",pal:str(x.paletten),sack:str(x.saecke),anz:x.gebinde==="Sack"?"":str(x.anzahl),kg:x.gebinde==="Sack"?"":str(x.mengeKg)}))});
   if(!st.pgPos.length) st.pgPos=[newPgPos()];
+  (v.maengel1||[]).forEach(m=>{ st.pgM1[m.k]={lvl:m.lvl??0}; if(m.k==="sonst") st.pgM1sonst=m.text||""; });
   (v.kaliber||[]).forEach((k,i)=>st.kal[i]=k.prozent||0);
   if(p&&v.maengel&&p.typ!=="pflanzgut"){ const ml=mangelListe(p); v.maengel.forEach(m=>{ const i=ml.findIndex(x=>x.t===m.mangel); const ri=RANGES.findIndex(x=>x.von===m.von&&x.bis===m.bis); if(i>=0&&ri>0) st.mg[i]=ri; }); }
   const f=FALLEND.find(x=>(v.sortierung||"").includes(x.t)); if(f) st.fallend=f.v;
@@ -967,7 +1024,7 @@ function stateFromRec(v){
 async function vorgPdf(id){
   const v=VORG.find(x=>x.id===id); if(!v) return;
   const keep=S; let buf;
-  if(v.stufe){ try{ buf=await K.pdfFor(v); }catch(e){ toast("PDF konnte nicht erstellt werden"); return; } }
+  if(v.stufe&&v.produkt==="KNT"){ try{ buf=await K.pdfFor(v); }catch(e){ toast("PDF konnte nicht erstellt werden"); return; } }
   else { try{ S=stateFromRec(v); AB_OVERRIDE=v.abweichungen||[]; buf=pdfProtokoll(); }
   catch(e){ S=keep; AB_OVERRIDE=null; toast("PDF konnte nicht erstellt werden"); return; }
   S=keep; AB_OVERRIDE=null; }
@@ -1159,10 +1216,10 @@ function viewVorgaenge(){
     ${demo?`<p class="hint">Ohne Server: Vorgänge nur bis zum Neuladen.</p>`:""}</section>
   ${list.length?`<div class="scrollhint" id="vg-hint" hidden>Tabelle nach rechts wischen für Status und Aktionen →</div><div class="tw vg" id="vg-tw"><table class="t"><thead><tr><th>Charge</th><th>Protokoll</th><th>Produkt</th><th>Erzeuger / Lieferant</th><th>Anlieferung</th><th class="n">Menge kg</th><th>Abw.</th><th>Status</th><th></th></tr></thead><tbody>
   ${list.map(v=>{ const st=STATUS[v.status]||STATUS.offen; const alt=(Date.now()-new Date(v.erstellt).getTime())/864e5;
-    return `<tr><td style="font-family:var(--f-mono);font-weight:700;white-space:nowrap">${esc(v.charge)}</td><td><span class="chips">${v.protokollPdf?`<button class="btn small dark" data-act="pdf-open" data-id="${esc(v.id)}">PDF öffnen</button>`:`<button class="btn small" data-act="pdf-make" data-id="${esc(v.id)}" ${S.pdfBusy===v.id?"disabled":""}>${S.pdfBusy===v.id?"wird erstellt …":"PDF erstellen"}</button>`}${v.gesendet?`<span class="pill p-ok">gesendet</span>`:""}</span></td><td>${esc(v.produktName)}</td><td>${esc(v.erzeuger)}</td><td>${deDate(v.datum)}</td><td class="n">${v.mengeKg!=null?deNum(v.mengeKg):v.brutto1!=null?"≈ "+deNum(v.brutto1):"–"}${v.stufe?`<br><span class="pill ${v.erzVersand?"p-ok":v.stufe==="verwogen"?"p-info":"p-warn"}" style="font-size:12px">${v.erzVersand?"an Erzeuger":v.stufe==="verwogen"?"Brutto 2":"Brutto 1, Verwiegung offen"}</span>`:""}</td>
+    return `<tr><td style="font-family:var(--f-mono);font-weight:700;white-space:nowrap">${esc(v.charge)}</td><td><span class="chips">${v.protokollPdf?`<button class="btn small dark" data-act="pdf-open" data-id="${esc(v.id)}">PDF öffnen</button>`:`<button class="btn small" data-act="pdf-make" data-id="${esc(v.id)}" ${S.pdfBusy===v.id?"disabled":""}>${S.pdfBusy===v.id?"wird erstellt …":"PDF erstellen"}</button>`}${v.gesendet?`<span class="pill p-ok">gesendet</span>`:""}</span></td><td>${esc(v.produktName)}</td><td>${esc(v.erzeuger)}</td><td>${deDate(v.datum)}</td><td class="n">${v.mengeKg!=null?deNum(v.mengeKg):v.brutto1!=null?"≈ "+deNum(v.brutto1):"–"}${v.stufe&&v.produkt==="KNT"?`<br><span class="pill ${v.erzVersand?"p-ok":v.stufe==="verwogen"?"p-info":"p-warn"}" style="font-size:12px">${v.erzVersand?"an Erzeuger":v.stufe==="verwogen"?"Brutto 2":"Brutto 1, Verwiegung offen"}</span>`:v.stufe?`<br><span class="pill ${v.stufe==="erfasst"?"p-warn":"p-info"}" style="font-size:12px">${v.stufe==="erfasst"?"Bonitur offen":"bonitiert"}</span>`:""}</td>
     <td>${v.abweichungen?.length?`<span class="pill p-bad">${v.abweichungen.length}</span>`:`<span class="pill p-ok">0</span>`}</td>
     <td><span class="pill ${v.status==="offen"&&alt>2?"p-bad":st[0]}">${st[1]}${v.status==="offen"&&alt>2?", überfällig":""}</span></td>
-    <td><span class="chips">${v.stufe?`<button class="btn small${v.stufe==="erfasst"?" primary":""}" data-ka="vw-open-go" data-id="${esc(v.id)}">${v.stufe==="erfasst"?"Verwiegen":"Verwiegung"}</button>${v.stufe==="verwogen"&&!v.erzVersand&&K.T&&window.RWE&&RWE.canErzVersand&&RWE.canErzVersand()?`<button class="btn small primary" data-ka="ev-open" data-id="${esc(v.id)}">An Erzeuger</button>`:""}`:""}${v.produkt==="KNT"&&!v.stufe?`<button class="btn small dark" data-act="kl-edit" data-id="${esc(v.id)}">${(v.kistenListe||[]).length?"Kisten ("+v.kistenListe.length+")":"Kisten erfassen"}</button>`:""}${v.status!=="gebucht"&&v.stufe!=="erfasst"?`<button class="btn small" data-act="gebucht" data-id="${esc(v.id)}">in büro+ gebucht</button>`:""}</span></td></tr>`;}).join("")}
+    <td><span class="chips">${v.stufe&&v.produkt==="KPG"?`<button class="btn small${v.stufe==="erfasst"?" primary":""}" data-act="bon-open" data-id="${esc(v.id)}">${v.stufe==="erfasst"?"Bonitur":"Bonitur ändern"}</button>`:""}${v.stufe&&v.produkt==="KNT"?`<button class="btn small${v.stufe==="erfasst"?" primary":""}" data-ka="vw-open-go" data-id="${esc(v.id)}">${v.stufe==="erfasst"?"Verwiegen":"Verwiegung"}</button>${v.stufe==="verwogen"&&!v.erzVersand&&K.T&&window.RWE&&RWE.canErzVersand&&RWE.canErzVersand()?`<button class="btn small primary" data-ka="ev-open" data-id="${esc(v.id)}">An Erzeuger</button>`:""}`:""}${v.produkt==="KNT"&&!v.stufe?`<button class="btn small dark" data-act="kl-edit" data-id="${esc(v.id)}">${(v.kistenListe||[]).length?"Kisten ("+v.kistenListe.length+")":"Kisten erfassen"}</button>`:""}${v.status!=="gebucht"&&v.stufe!=="erfasst"?`<button class="btn small" data-act="gebucht" data-id="${esc(v.id)}">in büro+ gebucht</button>`:""}</span></td></tr>`;}).join("")}
   </tbody></table></div>`:`<div class="empty"><h2>Noch keine Wareneingänge</h2><p class="hint">Gespeicherte Wareneingänge erscheinen hier mit Charge, Abweichungen und Status. Ersten Wareneingang unter „Erfassung“ anlegen.</p></div>`}`;
 }
 const CSV_COLS=[["Belegart",v=>"WE"],["bueroplus_WE_Nr",v=>v.bueroWeNr||""],["Datum",v=>deDate(v.datum)],["Charge",v=>v.charge],["Barcode",v=>v.barcode],["Lieferant_Nr",v=>v.bueroNr],["Lieferant",v=>v.erzeuger],["Kuerzel",v=>v.code],
@@ -1388,11 +1445,7 @@ async function speichern(){
     const rec={charge:S.charge, barcode:barcodeVal(), produkt:p.k, produktName:p.name, artNr:p.artNr||"", saison:saisonLabel(p,sj), erzeugerId:e.id, erzeuger:e.name, code:e.code, bueroNr:e.buero||"",
       datum:S.datum, mengeKg:num(S.menge), gebinde:S.gebinde, kisten:num(S.kisten), paletten:num(S.paletten), etiketten:etiCount(), lieferscheinNr:S.lsNr,
       auslobung:auslobText(), punkte:pk.sum, erfasstVon:ME, kontrolle:S.jn, lieferscheinAbgleich:S.keinLs?[]:(S.lsCheck||[]), keinLieferschein:!!S.keinLs, fotos:S.fotos.length, bemerkung:S.bem, abweichungen:abweichungen(), status:"offen", erstellt:new Date().toISOString()};
-    if(isPG()){ pgSync(); rec.positionen=S.pgPos.map(x=>{ const c=posCalc(x); return {sorte:x.sorte, lot:x.lot.trim(), kaliber:x.kal, gebinde:x.geb, paletten:x.geb==="Sack"?(num(x.pal)||0):null, saecke:x.geb==="Sack"?(num(x.sack)||0):null, anzahl:c.n, mengeKg:c.kg}; });
-      rec.sorte=pgSorten().join(", "); rec.lot=S.pgPos.map(x=>x.lot.trim()).filter(Boolean).join(", "); rec.mengeKg=pgTotals().kg; rec.kisten=pgTotals().n; rec.gebinde=S.gebinde;
-      Object.assign(rec,{qualitaet:S.pg.qual, mangelProzent:c.sumPct, zehengewicht:c.zg,
-      bonitur:{auftraggeber:S.pg.auftrag, probennehmer:S.pg.probennehmer, probeDatum:S.pg.probeDatum, herkunftsland:S.pg.land, sorte:S.pg.sorte, kaliber:S.pg.kaliber, form:S.pg.form, brechstelle:S.pg.brech,
-        gesamtgewichtKg:num(S.pg.gewicht), anzahlZehen:c.n, ohneMangel:c.ohne, eindruck:S.pg.eindruck, maengel:c.ml.map((m,i)=>({mangel:m.t,anzahl:c.cnts[i],prozent:c.pct(c.cnts[i]),anmerkung:S.pg.anm[i]||""})), summe:c.sum, summeProzent:c.sumPct, fusariumProzent:c.fusPct}}); }
+    if(isPG()){ Object.assign(rec, pgPosFields(), {qualitaet:S.pg.qual, maengel1:pgM1List(), stufe:"erfasst", erfasstVonName:meNm()}); }
     else { Object.assign(rec,{verband:[...S.verband], noten:S.noten, sauber:S.sauber, temperatur:S.temp,
       maengel:mangelListe(p).map((m,i)=>({mangel:m.t,info:m.info,von:rVon(S.mg[i]||0),bis:rBis(S.mg[i]||0)}))});
       if(isFR()) Object.assign(rec,{kaliber:kalKlassen(p).map((k,i)=>({klasse:k.t,typ:k.typ,prozent:S.kal[i]||0})), ernteart:S.ernte, sortierung:"kalibriert"});
@@ -1405,7 +1458,7 @@ async function speichern(){
       S.gain={pts:rec.punkte, list:pk.list, neu:erfolge(nach).filter((e,i)=>e.done&&!ev[i].done), up:lvl(nach.pts).nr>lvl(vor.pts).nr, lv:lvl(nach.pts)}; }
     setTimeout(confetti,80);
     ablegen(ref);
-  }catch(err){ toast("Speichern fehlgeschlagen: "+(err?.code==="permission_denied"?"keine Schreibrechte":"bitte erneut versuchen")); }
+  }catch(err){ console.error("save",err); toast("Speichern fehlgeschlagen: "+(err?.code==="permission_denied"?"keine Schreibrechte":"bitte erneut versuchen")); }
   S.saving=false; render();
 }
 
@@ -1494,7 +1547,7 @@ function pdfProtokoll(){
   const txt=s=>String(s??"-").replace(/[✓●]/g,"").replace(/≈/g,"ca.").replace(/[–—]/g,"-").replace(/−/g,"-");
   const stamp=new Date().toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"});
   const wer=(typeof NAMES!=="undefined"&&typeof ME!=="undefined"&&NAMES[ME])||"";
-  const titel=isPG()?"Knoblauchbonitur":"Wareneingangsprotokoll";
+  const titel=isPG()?(pgBonitiert()?"Knoblauchbonitur":"Wareneingang Pflanzgut"):"Wareneingangsprotokoll";
   let y=0;
   const stripe=yy=>{ fill(C.green); d.rect(L,yy,W*0.64,1.6,"F"); fill(C.blue); d.rect(L+W*0.64+1.2,yy,W*0.36-1.2,1.6,"F"); };
   const pageHead=()=>{ try{ d.addImage(LOGO_VG,"JPEG",R-14,6,14,14); }catch(_){}
@@ -1569,6 +1622,9 @@ function pdfProtokoll(){
       table([{t:"Sorte",w:44},{t:"LOT-Nr.",w:36},{t:"Kaliber",w:26},{t:"Gebinde",w:W-150},{t:"Menge kg",w:44,r:1}],[
         ...S.pgPos.map(x=>({c:[x.sorte||"-",x.lot||"-",x.kal||"-",pgGebText(x)||"-",deNum(posCalc(x).kg)]})),
         {c:["Summe","","",`${deNum(tt.n)} Gebinde`,deNum(tt.kg)],o:{b:1,f:C.tintB}}]); }
+    const ml1=pgM1List(); sec("Offensichtliche Mängel beim Abladen"); box(ml1.length?C.tintR:C.tintG, ml1.length?C.red:C.greenDk, [ml1.length?ml1.map(pgM1Txt).join(" · "):"keine Auffälligkeiten"]);
+    if(!c.n){ sec("Bonitur"); box(C.card,C.blue,["Bonitur folgt im 2. Schritt."]); }
+    else {
     sec("Probe");
     two([["Auftraggeber",S.pg.auftrag],["Probennehmer",`${S.pg.probennehmer||"-"} · ${deDate(S.pg.probeDatum)}`],["Herkunftsland",S.pg.land||"-"],["Sorte",S.pg.sorte||"-"],["Kaliber",S.pg.kaliber||"-"]],
         [["Qualität",qualText()],["Probe",S.pg.form==="ganz"?"ganze Knollen":"gebrochen"],["Brechstelle",S.pg.brech||"-"],["Gewicht / Zehen",`${deNum(num(S.pg.gewicht),3)} kg · ${c.n} Zehen`],["Ø Zehengewicht",c.zg!==null?deNum(c.zg,2)+" g":"-"]],32,32);
@@ -1580,6 +1636,7 @@ function pdfProtokoll(){
       {c:["ohne gewichteten Mangel",c.ohne,c.ohnePct,""],o:{b:1,k:C.greenDk,f:C.tintG}},
       ...c.ml.map((m,i)=>({c:[m.t,c.cnts[i]||"",c.cnts[i]?c.pct(c.cnts[i]):"0",S.pg.anm[i]||""],o:c.cnts[i]?{}:{k:C.grey}})),
       {c:["Summe Mängel",c.sum,c.sumPct,`Toleranz ${p.tol} % · Fusarium ${c.fusPct} % (Toleranz ${p.ftol??10} %)`],o:{b:1,f:over?C.tintR:C.tintB,k:over?C.red:C.ink}}]);
+    }
   } else {
     sec("Bewertung");
     const r=[...NOTEN.map(n=>[n.t,"Note "+S.noten[n.id],S.noten[n.id]>=4?C.red:null]),["Sauberkeit",S.sauber?"in Ordnung":"nicht in Ordnung",S.sauber?null:C.red],["Temperatur",tempText(),S.temp!=="ok"?C.red:null]];
@@ -1676,18 +1733,24 @@ async function save(filename, data, label){
 /* ---------- Ereignisse ---------- */
 document.addEventListener("click", ev=>{
   const b=ev.target.closest("button"); if(!b) return;
-  if(b.id==="tab-erf"){view="erf";render();return} if(b.id==="tab-vw"){view="vw";K.vw=null;render();return} if(b.id==="tab-aw"){view="aw";render();return} if(b.id==="tab-ueb"){view="ueb";render();return} if(b.id==="tab-sd"){view="sd";render();return}
+  if(BON&&/^tab-/.test(b.id||"")) bonRestore(); if(b.id==="tab-erf"){view="erf";render();return} if(b.id==="tab-vw"){view="vw";K.vw=null;render();return} if(b.id==="tab-aw"){view="aw";render();return} if(b.id==="tab-ueb"){view="ueb";render();return} if(b.id==="tab-sd"){view="sd";render();return}
   if(b.id==="pdfv-x"){ closePdf(); return; }
   if(b.id==="pdfv-save"){ if(PDFV) save(PDFV.name,PDFV.buf,"Protokoll"); return; }
   if(b.id==="btn-back"){ if(step>0){step--;render();window.scrollTo(0,0);} return; }
   if(b.id==="btn-next"){
-    if(step===5){ if(S.saved){ const keep=S.datum; S=fresh(); S.datum=keep; step=0; render(); window.scrollTo(0,0);} else speichern(); return; }
+    if(step===5){ if(S.saved){ S=fresh(); step=0; render(); window.scrollTo(0,0);} else speichern(); return; }
     if(!missing()){ step++; if(step===4 && S.lsCheck && isPG()) S.lsCheck=S.lsCheck.map(r=>r.punkt==="Sorte"&&r.status==="offen"?{...r,soll:S.pg.sorte||"–"}:r.punkt==="Qualität"&&r.status==="offen"?{...r,soll:qualText()}:r); render(); window.scrollTo(0,0);} return;
   }
   const a=b.dataset.act; if(!a) return;
   if(a==="prod"&&b.dataset.k==="KNT"){ K.start(); render(); window.scrollTo(0,0); return; }
-  if(a==="prod"){ if(S.prod!==b.dataset.k){ const keep=S.datum; S=fresh(); S.datum=keep; S.prod=b.dataset.k; S.gebinde=isFR()?"Kiste":isPG()?"Sack":null; } render(); }
+  if(a==="prod"){ if(S.prod!==b.dataset.k){ const keep=S.prod?S.datum:isoDate(new Date()); S=fresh(); S.datum=keep; S.prod=b.dataset.k; S.gebinde=isFR()?"Kiste":isPG()?"Sack":null; if(isPG()) JN().forEach(q=>S.jn[q.id]=true); } render(); }
   else if(a==="erz"){ const src=isPG()?LIEF:ERZ; const e=src.find(x=>x.id===b.dataset.id); if(S.erz?.id!==e.id){ S.erz=e; S.lsCheck=null; S.verband=new Set(isPG()?[]:(e.verbaende||[])); if(isPG()&&e.land&&!S.pg.land) S.pg.land=e.land; } render(); }
+  else if(a==="pgm1"){ const k=b.dataset.k; if(S.pgM1[k]) delete S.pgM1[k]; else S.pgM1[k]={lvl:0}; render(); }
+  else if(a==="pgm1-lvl"){ const k=b.dataset.k; if(S.pgM1[k]) S.pgM1[k].lvl=+b.dataset.v; render(); }
+  else if(a==="bon-open"){ bonOpen(b.dataset.id); }
+  else if(a==="bon-close"){ bonRestore(); render(); }
+  else if(a==="bon-save"){ bonSave(false); }
+  else if(a==="bon-done"){ bonSave(true); }
   else if(a==="pp-add"){ const l=S.pgPos[S.pgPos.length-1]; const n=newPgPos(); if(l){ n.sorte=""; n.kal=l.kal; } S.pgPos.push(n); render(); }
   else if(a==="pp-del"){ S.pgPos.splice(+b.dataset.i,1); if(!S.pgPos.length) S.pgPos=[newPgPos()]; pgSync(); render(); }
   else if(a==="pp-kal"){ S.pgPos[+b.dataset.i].kal=b.dataset.v; render(); }
@@ -1755,7 +1818,8 @@ document.addEventListener("input", ev=>{
   else if(id==="f-kisten"){ S.kisten=t.value; S.etiAnz=null; const pb=$("#plausi-box"); if(pb) pb.innerHTML=plausiBox(); }
   else if(id==="f-pal") S.paletten=t.value;
   else if(id==="f-eti"){ const v=parseInt(t.value,10); S.etiAnz=isNaN(v)?null:Math.min(999,Math.max(1,v)); }
-  else if(id==="f-lsnr") S.lsNr=t.value; else if(id==="f-bem") S.bem=t.value;
+  else if(id==="f-lsnr") S.lsNr=t.value; else if(id==="f-bem") S.bem=t.value; else if(id==="pgm1-sonst") S.pgM1sonst=t.value;
+  if(BON) updBon();
   if(view==="erf"){ updBar(); scheduleDraft(); }
 });
 document.addEventListener("keydown", ev=>{
@@ -1791,11 +1855,11 @@ render();
   if(!db){ demo=true; render(); return; }
   const editing=()=>view==="sd"&&S.sdEdit;
   const quietErf=()=>view==="erf"&&!K.on&&step!==2&&step!==3&&step!==4;
-  db.collection("erzeuger").onSnapshot(s=>{ ERZ=s.docs.map(d=>({id:d.id,...d.data()})); loaded=true; if(S.erz&&!isPG()) S.erz=ERZ.find(x=>x.id===S.erz.id)||S.erz; if(!editing()&&((view!=="erf"&&!(view==="vw"&&K.vw))||(step<2&&!K.on))) render(); });
-  db.collection("lieferanten").onSnapshot(s=>{ LIEF=s.docs.map(d=>({id:d.id,...d.data()})); if(S.erz&&isPG()) S.erz=LIEF.find(x=>x.id===S.erz.id)||S.erz; if(!editing()&&((view!=="erf"&&!(view==="vw"&&K.vw))||(step<2&&!K.on))) render(); });
+  db.collection("erzeuger").onSnapshot(s=>{ ERZ=s.docs.map(d=>({id:d.id,...d.data()})); loaded=true; if(S.erz&&!isPG()) S.erz=ERZ.find(x=>x.id===S.erz.id)||S.erz; if(!editing()&&((view!=="erf"&&!(view==="vw"&&(K.vw||BON)))||(step<2&&!K.on))) render(); });
+  db.collection("lieferanten").onSnapshot(s=>{ LIEF=s.docs.map(d=>({id:d.id,...d.data()})); if(S.erz&&isPG()) S.erz=LIEF.find(x=>x.id===S.erz.id)||S.erz; if(!editing()&&((view!=="erf"&&!(view==="vw"&&(K.vw||BON)))||(step<2&&!K.on))) render(); });
   db.collection("entwuerfe").onSnapshot(s=>{ DRAFTS=s.docs.map(d=>({id:d.id,...d.data()})); if(view==="erf"&&step===0&&!K.on) render(); });
   db.collection("zaehler").onSnapshot(s=>{ CNT={}; s.docs.forEach(d=>CNT[d.id]=d.data().n||0); if(quietErf()) render(); });
-  db.collection("wareneingaenge").orderBy("erstellt","desc").limit(1000).onSnapshot(s=>{ VORG=s.docs.map(d=>({id:d.id,...d.data()})); if((view==="ueb"&&!S.kEdit)||view==="aw"||(view==="vw"&&!K.vw)||(view==="erf"&&step===0&&(!K.on||K.kd))) render(); });
+  db.collection("wareneingaenge").orderBy("erstellt","desc").limit(1000).onSnapshot(s=>{ VORG=s.docs.map(d=>({id:d.id,...d.data()})); if((view==="ueb"&&!S.kEdit)||view==="aw"||(view==="vw"&&!K.vw&&!BON)||(view==="erf"&&step===0&&(!K.on||K.kd))) render(); });
   db.doc("config/produkte").onSnapshot(s=>{ if(s.exists&&Array.isArray(s.data().liste)){ PROD=PROD_DEFAULT.map(def=>({...def,...(s.data().liste.find(x=>x.k===def.k)||{})})); if(view!=="sd"&&quietErf()) render(); } });
   db.doc("config/allgemein").onSnapshot(s=>{ if(s.exists){ const old=CFG.logoId; CFG={...CFG_DEFAULT,...s.data()}; if(CFG.logoId&&CFG.logoId!==old) ladeLogo(); if((view==="sd"&&!S.sdEdit)||(view==="erf"&&K.on&&!document.activeElement?.matches("input,textarea"))) render(); } });
 })();
