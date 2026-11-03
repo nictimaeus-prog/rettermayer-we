@@ -1368,7 +1368,7 @@ function mailHtml(){
   const p=P(), e=S.erz, ab=abweichungen();
   const row=(a,b)=>`<tr><td style="padding:4px 12px 4px 0;color:#56687e;white-space:nowrap;vertical-align:top">${esc(a)}</td><td style="padding:4px 0">${esc(b)}</td></tr>`;
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333332;max-width:640px">
-  <div style="padding:4px 0 10px"><div style="font-size:22px;font-weight:bold;color:#1c6c9e">${esc(CFG.kurz)}</div><div style="font-size:12px;color:#56687e">${esc([CFG.firma,CFG.anschrift,CFG.kontakt].filter(Boolean).join(" · "))}</div></div>
+  <div style="padding:4px 0 10px"><div style="font-size:22px;font-weight:bold;color:#1c6c9e">${esc(CFG.kurz)}</div><div style="font-size:12px;color:#56687e">${esc([K.firma(),CFG.anschrift,CFG.kontakt].filter(Boolean).join(" · "))}</div></div>
   <div style="background:#1c6c9e;color:#fff;padding:14px 16px;border-radius:8px 8px 0 0;border-bottom:4px solid #94c11f"><div style="font-size:12px;opacity:.85">Wareneingangsprotokoll ${esc(p.name)}</div>
   <div style="font-size:26px;font-weight:bold;font-family:Courier New,monospace;letter-spacing:1px">${esc(S.charge)}</div><div>${esc(e.name)} · ${deDate(S.datum)}</div></div>
   <div style="border:1px solid #dde2e5;border-top:0;padding:12px 16px;border-radius:0 0 8px 8px">
@@ -1489,7 +1489,7 @@ function pdfProtokoll(){
   const tx=L+38;
   font("bold",20,C.ink); d.text(titel,tx,16);
   font("bold",10.5,C.blueDk); d.text(txt(isPG()?`Pflanzgut · ${qualText()} · Anlieferung ${deDate(S.datum)}`:`${p.name} · Anlieferung ${deDate(S.datum)}`),tx,22.8);
-  font("normal",7.8,C.grey); d.text(d.splitTextToSize(txt([CFG.firma,CFG.anschrift,CFG.kontakt].filter(Boolean).join(" · ")),R-30-tx).slice(0,2),tx,27.6);
+  font("normal",7.8,C.grey); d.text(d.splitTextToSize(txt([K.firma(),CFG.anschrift,CFG.kontakt].filter(Boolean).join(" · ")),R-30-tx).slice(0,2),tx,27.6);
   stripe(35); y=41;
 
   /* ---- Kennzahlen ---- */

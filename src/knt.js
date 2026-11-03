@@ -20,6 +20,9 @@ const KF_DE = { zert: "Bio-Zertifikat / Öko-Kontrollnummer auf Lieferschein", s
 const mTxt = (m) => (m.k === "sonst" && m.text ? m.text : MDE[m.k] || m.t) + (m.lvl != null ? ` (${LV_DE[m.lvl]})` : "");
 const SORTEN_DEFAULT = ["Chesnok", "European White", "Garcua", "Gardos", "Garpek", "Messidor", "Messidrom", "Sabagold", "Spring White", "Therador", "Theradrom"];
 const ABW_PCT = 15;
+const firmaOhneKurz = () => { const k = String(CFG.kurz || "").trim(); let f = String(CFG.firma || "").trim();
+  if (k) f = f.replace(new RegExp("\\s*[·,-]?\\s*(Betrieb\\s+)?" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*$", "i"), "").trim(); return f; };
+const dtDE = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? deDate(String(iso).slice(0, 10)) : d.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" }); };
 const HINWEIS_ABR = "Es handelt sich um eine Stichprobe. Die Abrechnung erfolgt nach Packout."; // Abweichung Brutto 2 zu Brutto 1, ab der geprüft werden muss
 
 /* ---------------- Sprache ---------------- */
@@ -179,7 +182,7 @@ document.head.appendChild(css);
 /* ---------------- Zustand ---------------- */
 const K = { on: false, ke: null, kd: null, vw: null, vwFilt: "offen", ev: null, thumbs: {}, pend: null, dash: { prod: "alle", zeit: "saison" }, mailBusy: false };
 window.K = K;
-K.T = T; K.lang = lang;
+K.T = T; K.lang = lang; K.firma = () => firmaOhneKurz();
 const today = () => isoDate(new Date());
 function newCharge(prev) { return { erzId: prev ? prev.erzId : "", sorte: prev ? prev.sorte : "", kisten: "", modus: "avg", avg: 700, gesamt: "", mg: {}, sonst: "", trock: "gut", beschrFehler: false, bem: "" }; }
 function newKE() { return { datum: today(), lsNr: "", keinLs: false, bweNr: "", kontrolle: { zert: true, schaed: true }, belege: [], lsFotoId: null, lsMsg: "", lsBusy: false, chargen: [newCharge()], started: Date.now() }; }
@@ -567,11 +570,11 @@ function mailHtmlK(recs, mode) {
   const titel = mode === "erst" ? "Ersterfassung Knoblauch trocken" : mode === "verw" ? "Verwiegung Knoblauch trocken" : "Wareneingangsprotokoll Knoblauch trocken";
   const ab = recs.flatMap((r) => (r.abweichungen || []).map((a) => (recs.length > 1 ? r.charge + ": " : "") + a));
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333332;max-width:660px">
-  <div style="padding:4px 0 10px"><div style="font-size:22px;font-weight:bold;color:#1c6c9e">${esc(CFG.kurz)}</div><div style="font-size:12px;color:#56687e">${esc([CFG.firma, CFG.anschrift, CFG.kontakt].filter(Boolean).join(" · "))}</div></div>
+  <div style="padding:4px 0 10px"><div style="font-size:22px;font-weight:bold;color:#1c6c9e">${esc(CFG.kurz)}</div><div style="font-size:12px;color:#56687e">${esc([firmaOhneKurz(), CFG.anschrift, CFG.kontakt].filter(Boolean).join(" · "))}</div></div>
   <div style="background:#1c6c9e;color:#fff;padding:14px 16px;border-radius:8px 8px 0 0;border-bottom:4px solid #94c11f"><div style="font-size:12px;opacity:.85">${titel}</div>
   <div style="font-size:24px;font-weight:bold;font-family:Courier New,monospace">${esc(recs.map((r) => r.charge).join(" · "))}</div><div>${mode === "erst" ? "Anlieferung" : "Wareneingang"} ${deDate(r0.datum)}${mode !== "erst" ? " · " + esc(r0.erzeuger) : ""}</div></div>
   <div style="border:1px solid #dde2e5;border-top:0;padding:12px 16px;border-radius:0 0 8px 8px">
-  <table style="border-collapse:collapse;font-size:14px">${row("Lieferschein-Nr.", r0.keinLieferschein ? "kein Lieferschein" : r0.lieferscheinNr || "–")}${mode !== "erz" && r0.bueroWeNr ? row("büro+ WE-Nr.", r0.bueroWeNr) : ""}
+  <table style="border-collapse:collapse;font-size:14px">${row("Erfasst", dtDE(r0.erstellt) + " · " + (r0.erfasstVonName || "-"))}${r0.verwiegung?.vonName ? row("Verwogen", dtDE(r0.verwogen) + " · " + r0.verwiegung.vonName) : ""}${row("Lieferschein-Nr.", r0.keinLieferschein ? "kein Lieferschein" : r0.lieferscheinNr || "–")}${mode !== "erz" && r0.bueroWeNr ? row("büro+ WE-Nr.", r0.bueroWeNr) : ""}
   ${recs.map((r) => row(r.charge, `${r.erzeuger} · ${r.sorte || "–"} · ${r.kisten} Kisten · Brutto 1 ca. ${fmtKg(r.brutto1)} kg${r.brutto2 != null ? " · Brutto 2 " + fmtKg(r.brutto2, 1) + " kg" : ""}`)).join("")}</table>
   ${ab.length ? `<p style="margin:10px 0 4px;font-weight:bold;color:#b3261e">${ab.length} Hinweis${ab.length > 1 ? "e" : ""}</p><ul style="color:#b3261e;margin:0;padding-left:18px">${ab.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>` : `<p style="color:#567a0e;font-weight:bold">Keine Auffälligkeiten</p>`}
   <p style="font-weight:bold;margin:12px 0 0;padding:8px 10px;background:#edf6fb;border-left:4px solid #1c6c9e">${HINWEIS_ABR}</p><p style="color:#567a0e;font-size:13px;font-weight:bold;margin:10px 0 0">Elektronisch erstellt – ohne Unterschrift gültig.</p><p style="color:#707476;font-size:12px;margin:4px 0 0">Protokoll-PDF im Anhang.</p></div>
@@ -588,11 +591,11 @@ async function pdfKnt(recs, mode) {
   const font = (st, sz, c) => { d.setFont("helvetica", st); d.setFontSize(sz); d.setTextColor(...(c || C.ink)); };
   const titel = mode === "erst" ? "Ersterfassung Knoblauch trocken" : mode === "verw" ? "Verwiegeprotokoll Knoblauch trocken" : "Wareneingangsprotokoll Knoblauch trocken";
   const r0 = recs[0]; let y = 0;
-  const head = () => { try { d.addImage(LOGO_VG, "JPEG", R - 16, 8, 16, 16); } catch (_) {}
-    try { const ip = d.getImageProperties(LOGO_RM); const h = 14, w = Math.min(40, (ip.width / ip.height) * h); d.addImage(LOGO_RM, "JPEG", R - 20 - w, 9, w, h); } catch (_) {}
-    font("bold", 15, C.blueDk); d.text(pt(titel), L, 15); font("normal", 9, C.grey);
-    d.text(pt(`${CFG.kurz} · ${CFG.firma}`), L, 20.5, { maxWidth: W - 60 });
-    d.setFillColor(...C.green); d.rect(L, 27, W * 0.64, 1.6, "F"); d.setFillColor(...C.blue); d.rect(L + W * 0.64 + 1.2, 27, W * 0.36 - 1.2, 1.6, "F"); y = 35; };
+  const head = () => { try { d.addImage(LOGO_VG, "JPEG", R - 26, 5, 26, 26); } catch (_) {}
+    try { const ip = d.getImageProperties(LOGO_RM); const h = 20, w = Math.min(34, (ip.width / ip.height) * h); d.addImage(LOGO_RM, "JPEG", R - 30 - w, 8, w, h); } catch (_) {}
+    font("bold", 15, C.blueDk); d.text(pt(titel), L, 15); font("bold", 10, C.ink); d.text(pt(CFG.kurz || ""), L, 21.5);
+    font("normal", 8.5, C.grey); d.text(pt(firmaOhneKurz()), L, 26.5, { maxWidth: W - 70 });
+    d.setFillColor(...C.green); d.rect(L, 33, W * 0.64, 1.6, "F"); d.setFillColor(...C.blue); d.rect(L + W * 0.64 + 1.2, 33, W * 0.36 - 1.2, 1.6, "F"); y = 42; };
   const need = (h) => { if (y + h > BOTTOM) { d.addPage(); head(); } };
   const sec = (t) => { need(14); font("bold", 10.5, C.blueDk); d.setFillColor(...C.green); d.rect(L, y - 3.2, 2.4, 4, "F"); d.text(pt(t.toUpperCase()), L + 5, y); y += 6; };
   const kv = (rows) => { rows.forEach(([a, b, red]) => { const lines = d.splitTextToSize(pt(b), W - 52); need(4.6 * lines.length + 2); font("normal", 8.5, C.grey); d.text(pt(a), L, y); font(red ? "bold" : "normal", 9.5, red ? C.red : C.ink); d.text(lines, L + 50, y); y += 4.6 * lines.length + 1.4; }); y += 2; };
@@ -607,7 +610,7 @@ async function pdfKnt(recs, mode) {
   kv([["Datum Wareneingang", deDate(r0.datum)], ["Lieferschein-Nr.", r0.keinLieferschein ? "kein Lieferschein" : r0.lieferscheinNr || "-", r0.keinLieferschein],
     ...(mode !== "erz" && r0.bueroWeNr ? [["büro+ WE-Nr.", r0.bueroWeNr]] : []),
     ...(r0.kontrolle ? Object.entries(r0.kontrolle).map(([k, x]) => [{ zert: "Zertifikat / Öko-Nr. auf LS", schaed: "Frei von Schädlingen" }[k] || k, x === false ? "nein" : "ja", x === false]) : [["Sauberkeit Fahrzeug / Ware", r0.sauber ? "in Ordnung" : "nicht in Ordnung", !r0.sauber], ["Temperatur", r0.temperatur === "ok" ? "in Ordnung" : "nicht in Ordnung", r0.temperatur !== "ok"]]),
-    ["Erfasst von", r0.erfasstVonName || "-"]]);
+  ]);
   if (mode === "erst" || recs.length > 1) {
     sec("Chargen");
     table([["Charge", 24], ["Erzeuger", 30], ["Sorte", 22], ["Kisten", 13, 1], ["Brutto 1 ca. kg", 21, 1], ["Abtrocknung", 22], ["Beschriftung", 23], ["Mängel", 25]],
@@ -632,6 +635,13 @@ async function pdfKnt(recs, mode) {
   // Fotos zu Mängeln
   const fotos = []; recs.forEach((r) => { if (r.lsFoto && mode !== "erz") fotos.push({ id: r.lsFoto, cap: `Lieferschein ${r.lieferscheinNr || ""}` }); (r.maengel1 || []).forEach((m) => m.foto && fotos.push({ id: m.foto, cap: `${r.charge} · Anlieferung · ${MDE[m.k]}` })); (r.verwiegung?.maengel || []).forEach((m) => m.foto && fotos.push({ id: m.foto, cap: `${r.charge} · Verwiegung · ${MDE[m.k]}` })); });
   { const seen = new Set(); for (let i = fotos.length - 1; i >= 0; i--) { if (seen.has(fotos[i].id)) fotos.splice(i, 1); else seen.add(fotos[i].id); } }
+  { const rows = []; const recs1 = recs.length > 1;
+    recs.forEach((r) => { const p = recs1 ? r.charge + ": " : "";
+      if (!recs1 || r === recs[0]) rows.push(["Ersterfassung", `${dtDE(r.erstellt)} · ${r.erfasstVonName || "-"}`]);
+      if (r.verwiegung?.vonName || r.verwogen) rows.push([p + "Verwiegung", `${dtDE(r.verwogen) || deDate(r.verwiegung?.datum)} · ${r.verwiegung?.vonName || "-"}`]);
+      if (r.erzVersand) rows.push([p + "An Erzeuger gesendet", `${dtDE(r.erzVersand.am)} · ${r.erzVersand.vonName || "-"}`]); });
+    rows.push(["Protokoll erstellt", `${new Date().toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })} · ${meName() || "-"}`]);
+    sec("Bearbeitung"); kv(rows); }
   if (fotos.length) { sec("Fotos"); const w = (W - 8) / 3, h = w * 0.75; let col = 0;
     for (const f of fotos.slice(0, 18)) { const data = await imgData(f.id); if (!data) continue; if (col === 0) need(h + 8);
       try { d.addImage(data, "JPEG", L + col * (w + 4), y, w, h); } catch (_) {} font("normal", 7.5, C.grey); d.text(pt(f.cap), L + col * (w + 4), y + h + 3.6, { maxWidth: w });
@@ -665,7 +675,7 @@ function etiPdf(v, kl, only) {
     const rows = [["Erzeuger", `${v.erzeuger} (${v.code})`], ["Kaliber", k.kal || "-"], ["Öko-Kontrollnr.", e.oeko || v.oeko || "-"], ["QS-ID", e.qs || v.qs || "-"],
       ["Datum WE", deDate(v.datum)], ["Verwogen", `${deDate(vw.datum || today())}${wer ? " · " + wer : ""}`]];
     let y = 89; rows.forEach(([a, b]) => { d.setFont("helvetica", "normal"); d.setFontSize(8.5); d.setTextColor(90, 90, 90); d.text(pt(a), 6, y); d.setTextColor(0, 0, 0); d.setFont("helvetica", "bold"); d.setFontSize(10.5); d.text(d.splitTextToSize(pt(b), 62), 37, y); y += 8.6; d.setDrawColor(200, 200, 200); d.setLineWidth(0.2); d.line(6, y - 5.4, 99, y - 5.4); });
-    d.setFont("helvetica", "normal"); d.setFontSize(7); d.setTextColor(110, 110, 110); d.text(pt(`${CFG.kurz} · ${CFG.firma}`), 52.5, 143, { align: "center", maxWidth: 93 });
+    d.setFont("helvetica", "normal"); d.setFontSize(7); d.setTextColor(110, 110, 110); d.text(pt([CFG.kurz, firmaOhneKurz()].filter(Boolean).join(" · ")), 52.5, 143, { align: "center", maxWidth: 93 });
   }
   return d.output("arraybuffer");
 }
