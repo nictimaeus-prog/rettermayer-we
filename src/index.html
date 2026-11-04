@@ -439,7 +439,7 @@ async function bonSave(final){ if(!BON||BON.busy) return; if(final&&bonMissing()
   catch(e){ BON.busy=false; BON.err=true; BON.msg="Speichern fehlgeschlagen"; render(); return; }
   if(!final){ BON.busy=false; BON.err=false; BON.msg="Zwischengespeichert"; render(); return; }
   try{ if(db) await ablegen(db.doc("wareneingaenge/"+id)); }catch(_){}
-  try{ S.docId=id; await sendMail(); }catch(_){}
+  try{ S.docId=id; S.mail=null; await sendMail(true); }catch(_){}
   const mailMsg=S.mailMsg||""; bonRestore(); toast("Bonitur abgeschlossen"+(mailMsg?" · "+mailMsg:"")); setTimeout(confetti,60); render(); window.scrollTo(0,0); }
 function pgBonList(){ const all=VORG.filter(v=>v.produkt==="KPG"&&v.stufe); if(!all.length) return "";
   const off=all.filter(v=>v.stufe==="erfasst"), done=all.filter(v=>v.stufe!=="erfasst").slice(0,8);
@@ -906,7 +906,7 @@ function vAbschluss(){
     <p class="hint">Die E-Mail enthält die Zusammenfassung und das Protokoll-PDF mit allen Fotos. Versand über den App-Server.${S.pdfUrl?" Protokoll ist abgelegt und unter „Vorgänge“ abrufbar.":""}</p>
   </section>`:""}`;
 }
-function mailSubject(){ return `Wareneingang ${chargeText()} – ${P().name} – ${S.erz.name} – ${deDate(S.datum)}`; }
+function mailSubject(){ const st=isPG()?(pgBonitiert()?" – Bonitur":" – Ersterfassung"):""; return `Wareneingang ${chargeText()} – ${P().name}${st} – ${S.erz.name} – ${deDate(S.datum)}`; }
 function drawBarcode(){ try{ JsBarcode("#bc", barcodeVal(), {format:"CODE128", displayValue:false, margin:0, height:60, width:2}); }catch(e){} }
 
 /* ---------- Angefangene Wareneingänge (Zwischenspeichern) ---------- */
@@ -1469,6 +1469,7 @@ async function speichern(){
       S.gain={pts:rec.punkte, list:pk.list, neu:erfolge(nach).filter((e,i)=>e.done&&!ev[i].done), up:lvl(nach.pts).nr>lvl(vor.pts).nr, lv:lvl(nach.pts)}; }
     setTimeout(confetti,80);
     ablegen(ref);
+    if((CFG.verteiler||[]).length) setTimeout(()=>{ if(S.saved&&!S.mail) sendMail(true); },60);
   }catch(err){ console.error("save",err); toast("Speichern fehlgeschlagen: "+(err?.code==="permission_denied"?"keine Schreibrechte":"bitte erneut versuchen")); }
   S.saving=false; render();
 }
@@ -1513,8 +1514,8 @@ async function musterSenden(){
     toast(c==="server_not_connected"?"Gmail ist nicht verbunden (claude.ai → Einstellungen → Connectors).":c==="approval_required"||c==="not_in_manifest"?"Bitte den Gmail-Zugriff erlauben und erneut tippen.":"Senden fehlgeschlagen. Bitte erneut versuchen."); }
   MUSTER_BUSY=false; render();
 }
-async function sendMail(){
-  const to=empfaenger(); if(!to.length){ toast("Bitte erst einen Verteiler in den Stammdaten hinterlegen"); return; }
+async function sendMail(intern){
+  const to=intern?[...new Set(CFG.verteiler||[])]:empfaenger(); if(!to.length){ toast("Bitte erst einen Verteiler in den Stammdaten hinterlegen"); return; }
   if(!mcp){ S.mail="error"; S.mailMsg="E-Mail-Versand ist in dieser Ansicht nicht verfügbar. Bitte die App in claude.ai öffnen."; render(); return; }
   S.mail="sending"; S.mailMsg=""; render();
   try{
