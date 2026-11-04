@@ -506,8 +506,7 @@ function missing(){
       NOTEN.forEach(n=>{ if(!S.noten[n.id]) m.push(n.t); });
       if(isFR()){ kalFix(); if(kalSumme()!==100) m.push(`Kaliber (Summe ${kalSumme()} %)`); if(P().ernteart && !S.ernte) m.push("Ernteart"); }
       if(isTR()){ if(!S.fallend) m.push("Sortierung fallend"); if(!S.trock) m.push("Abtrocknung"); }
-      if(S.sauber===null) m.push("Sauberkeit");
-      if(!S.temp) m.push("Temperatur");
+
     }
     JN().forEach(q=>{ if(S.jn[q.id]===undefined) m.push(q.t.split(" ")[0]); });
     return m.length? (m.length>3? `Noch ${m.length} Angaben offen` : "Noch offen: "+m.join(", ")) : null;
@@ -548,7 +547,7 @@ function updBar(){
   $("#bar-msg").textContent = miss || (step===5&&!S.saved ? "Angaben prüfen, dann wird die Charge fest vergeben." : "");
 }
 function secDone(id){
-  if(id==="bew") return NOTEN.every(n=>S.noten[n.id]) && S.sauber!==null && !!S.temp;
+  if(id==="bew") return true;
   if(id==="jn") return JN().every(q=>S.jn[q.id]!==undefined);
   if(id==="kal") return kalSumme()===100;
   if(id==="sort") return !!S.fallend && !!S.trock;
@@ -762,12 +761,7 @@ function vPgErst(){
 function vPruefung(){
   if(isPG()) return vPgErst();
   const e=S.erz, sollV=e.verbaende||[];
-  return headerSel()+`<h1>Prüfung der Ware</h1><p class="lead">Sauberkeit, Temperatur, Kaliber und Mängel. Auffälliges kommt als Abweichung ins Protokoll.</p>
-  <section class="card"><div class="sechead"><h2>Bewertung</h2>${chip(secDone("bew"),null,"bew")}</div>
-    ${NOTEN.map(n=>`<div class="q"><div class="lbl">${n.t}</div>${seg("noten."+n.id,S.noten[n.id],{items:[1,2,3,4,5,6].map(g=>({t:String(g),v:g,c:g<=2?"g-good":g===3?"g-mid":"g-bad"}))})}</div>`).join("")}
-    <div class="q"><div class="lbl">Sauberkeit</div>${seg("sauber",S.sauber,{txt:1,items:[{t:"in Ordnung",v:true,c:"g-good"},{t:"nicht in Ordnung",v:false,c:"g-bad"}]})}</div>
-    <div class="q"><div class="lbl">Temperatur</div>${seg("temp",S.temp,{txt:1,items:TEMP.map(x=>({t:x.t,v:x.v,c:x.v==="ok"?"g-good":"g-bad"}))})}</div>
-  </section>
+  return headerSel()+`<h1>Prüfung der Ware</h1><p class="lead">Kaliber und Mängel. Kontrollfragen stehen auf Ja, nur bei Abweichung ändern. Auffälliges kommt ins Protokoll.</p>
   ${isFR()?vKaliber():`<section class="card"><div class="sechead"><h2>Sortierung und Abtrocknung</h2>${chip(secDone("sort"),null,"sort")}</div>
     <p class="hint">Rohware kommt meist unsortiert. Nur vermerken, wie die Partie fällt.</p>
     <div class="q"><div class="lbl">Partie fällt</div>${seg("fallend",S.fallend,{txt:1,items:FALLEND.map(x=>({t:x.t,v:x.v}))})}</div>
@@ -872,7 +866,7 @@ function summaryRows(){
   } else {
     if(NOTEN.length) r.push(["Noten",NOTEN.map(n=>n.t.split(" ")[0]+" "+S.noten[n.id]).join(" · ")]);
     if(isFR()) r.push(["Kaliber",kalText()]); else { r.push(["Sortierung",`unsortiert, ${fallText()} · ${trockText()}`]); if(klCount(S.kl)){ const sw=schwund(num(S.menge),S.kl); r.push(["Nach Kalibrierung",`${klCount(S.kl)} Kisten · ${deNum(klSum(S.kl),1)} kg${sw?" · Differenz "+swText(sw):""}`]); } }
-    r.push(["Mängel",mangelText()+(S.ernte?" · "+ERNTE.find(x=>x.v===S.ernte).t:"")],["Temperatur",tempText()],["Sauberkeit",S.sauber?"in Ordnung":"nicht in Ordnung"],["Auslobung",auslobText()]);
+    r.push(["Mängel",mangelText()+(S.ernte?" · "+ERNTE.find(x=>x.v===S.ernte).t:"")],["Auslobung",auslobText()]);
   }
   r.push(["Gebinde",kolliText()||"–"]);
   return r;
@@ -1655,12 +1649,12 @@ function pdfProtokoll(){
       {c:["Summe Mängel",c.sum,c.sumPct,`Toleranz ${p.tol} % · Fusarium ${c.fusPct} % (Toleranz ${p.ftol??10} %)`],o:{b:1,f:over?C.tintR:C.tintB,k:over?C.red:C.ink}}]);
     }
   } else {
-    sec("Bewertung");
-    const r=[...NOTEN.map(n=>[n.t,"Note "+S.noten[n.id],S.noten[n.id]>=4?C.red:null]),["Sauberkeit",S.sauber?"in Ordnung":"nicht in Ordnung",S.sauber?null:C.red],["Temperatur",tempText(),S.temp!=="ok"?C.red:null]];
+    sec("Auslobung");
+    const r=[];
     const r2=[["Auslobung",auslobText()],["Verband laut Stammdaten",(e.verbaende||[]).join(", ")||"keiner"]];
     if(isTR()) r2.push(["Sortierung","unsortiert, "+fallText()],["Abtrocknung",trockText(),S.trock==="feucht"?C.red:null]);
     if(S.ernte) r2.push(["Ernteart",ERNTE.find(x=>x.v===S.ernte).t]);
-    two(r,r2,40,38);
+    { const h=Math.ceil(r2.length/2); two(r2.slice(0,h),r2.slice(h),40,38); }
     const klv=S.kl.filter(x=>num(x.kg));
     if(isTR()&&klv.length){ const sw=schwund(num(S.menge),klv), bad=sw&&(sw.pct>(p.stol??5)||sw.d<0);
       sec("Menge nach Kalibrierung und Bürsten");
@@ -1760,7 +1754,7 @@ document.addEventListener("click", ev=>{
   }
   const a=b.dataset.act; if(!a) return;
   if(a==="prod"&&b.dataset.k==="KNT"){ K.start(); render(); window.scrollTo(0,0); return; }
-  if(a==="prod"){ if(S.prod!==b.dataset.k){ const keep=S.prod?S.datum:isoDate(new Date()); S=fresh(); S.datum=keep; S.prod=b.dataset.k; S.gebinde=isFR()?"Großkiste":isPG()?"Sack":null; if(isPG()) JN().forEach(q=>S.jn[q.id]=true); } render(); }
+  if(a==="prod"){ if(S.prod!==b.dataset.k){ const keep=S.prod?S.datum:isoDate(new Date()); S=fresh(); S.datum=keep; S.prod=b.dataset.k; S.gebinde=isFR()?"Großkiste":isPG()?"Sack":null; if(isPG()||isFR()) JN().forEach(q=>S.jn[q.id]=true); } render(); }
   else if(a==="erz"){ const src=isPG()?LIEF:ERZ; const e=src.find(x=>x.id===b.dataset.id); if(S.erz?.id!==e.id){ S.erz=e; S.lsCheck=null; S.verband=new Set(isPG()?[]:(e.verbaende||[])); if(isPG()&&e.land&&!S.pg.land) S.pg.land=e.land; } render(); }
   else if(a==="fr-avg"){ S.avgKg=+b.dataset.v; frSync(); render(); }
   else if(a==="pgm1"){ const k=b.dataset.k; if(S.pgM1[k]) delete S.pgM1[k]; else S.pgM1[k]={lvl:0}; render(); }
