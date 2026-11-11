@@ -34,7 +34,7 @@ const HINWEIS_ABR = "Es handelt sich um eine Stichprobe. Die Abrechnung erfolgt 
 /* ---------------- Sprache ---------------- */
 const TX = {
   de: {
-    tab_erf: "Erfassung", tab_vw: "Verwiegung · Bonitur", tab_ueb: "Vorgänge", tab_aw: "Auswertung", tab_sd: "Stammdaten",
+    tab_erf: "Erfassung", tab_vw: "Verwiegung · Bonitur", tab_la: "Lieferscheine", tab_ueb: "Vorgänge", tab_aw: "Auswertung", tab_sd: "Stammdaten",
     prod_h1: "Was wird angeliefert?", back_prod: "← Produkt wählen",
     erf_h1: "Knoblauch trocken – Ersterfassung",
     erf_lead: "Beim Abladen: grobe Mengen und sichtbare Mängel je Charge. Genau gewogen wird später unter „Verwiegung“.",
@@ -85,7 +85,7 @@ const TX = {
     lang_btn: "RO", lang_title: "Limba română",
   },
   ro: {
-    tab_erf: "Recepție", tab_vw: "Cântărire · Bonitare", tab_ueb: "Înregistrări", tab_aw: "Analiză", tab_sd: "Date de bază",
+    tab_erf: "Recepție", tab_vw: "Cântărire · Bonitare", tab_la: "Avize livrare", tab_ueb: "Înregistrări", tab_aw: "Analiză", tab_sd: "Date de bază",
     prod_h1: "Ce se livrează?", back_prod: "← Alege produsul",
     erf_h1: "Usturoi uscat – recepție inițială",
     erf_lead: "La descărcare: cantități estimate și defecte vizibile pe fiecare lot. Cântărirea exactă se face mai târziu la „Cântărire”.",
@@ -1087,6 +1087,7 @@ function piep(ok) {
 function scanTreffer(raw, quelle) {
   const now = Date.now(), c = codeNorm(raw); if (!c) return;
   if (c === SC.last && now - SC.lastAt < 2500) return; SC.last = c; SC.lastAt = now;
+  for (const h of K.scanHooks) { let r = null; try { r = h(c); } catch (e) { console.error(e); } if (r) { SC.res = { code: c, html: r.html }; piep(r.ok !== false); if (r.close) { scanSchliessen(); return; } if (!SC.open) scanOeffnen(false); else scanZeichnen(); return; } }
   const t = codeFinden(c);
   SC.res = t ? { code: c, id: t.v.id, kiste: t.kiste } : { code: c, id: null };
   if (t) { SC.hist = [{ code: c, id: t.v.id, kiste: t.kiste, at: now }, ...SC.hist.filter((h) => h.code !== c)].slice(0, 50); }
@@ -1095,7 +1096,7 @@ function scanTreffer(raw, quelle) {
   if (t && !SC.serie) scanKameraStop();
 }
 function scanKarte() {
-  const r = SC.res; if (!r) return `<p class="ksc-hint">${lang() === "ro" ? "Ține eticheta în fața camerei sau scanează cu scanerul Bluetooth." : "Etikett vor die Kamera halten oder mit dem Bluetooth-Scanner scannen."}</p>`;
+  const r = SC.res; if (r && r.html) return r.html; if (!r) return `<p class="ksc-hint">${lang() === "ro" ? "Ține eticheta în fața camerei sau scanează cu scanerul Bluetooth." : "Etikett vor die Kamera halten oder mit dem Bluetooth-Scanner scannen."}</p>`;
   const v = r.id && VORG.find((x) => x.id === r.id);
   if (!v) return `<div class="ksc-res bad"><b>${esc(r.code)}</b><br>${lang() === "ro" ? "Cod necunoscut – nicio șarjă găsită." : "Unbekannter Code – keine Charge gefunden."}</div>`;
   const n = v.produkt === "KPG" ? etiN(v) : (v.kistenListe || []).length || v.kisten || null; const kl = r.kiste && (v.kistenListe || [])[r.kiste - 1];
@@ -1190,9 +1191,11 @@ css.textContent += `
 @media (min-width:900px) and (orientation:landscape){#ksc .ksc-body{flex-direction:row}#ksc .ksc-cam{flex:1.3;max-height:none}#ksc video{max-height:none}#ksc .ksc-side{flex:1;overflow:auto}}
 .kscan{border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;border-radius:10px;padding:6px 12px;font:700 15px var(--f-body);cursor:pointer;margin-left:8px}`;
 
+/* Für andere Module (Lieferscheine) */
+Object.assign(K, { uploadFile, pdfSeiten, pick, fmtKg, meName, kuerzel, sendMailK, mailErrText, isImgFile, thumb, ACC_ALL, ladeScript, codeFinden, codeNorm, piep, scanOeffnen, zugang: null, scanHooks: [] });
 /* Kopf: Tabs und Sprachknopf */
 K.header = function () {
-  [["erf", "tab_erf"], ["vw", "tab_vw"], ["ueb", "tab_ueb"], ["aw", "tab_aw"], ["sd", "tab_sd"]].forEach(([v, k]) => { const el = document.getElementById("tab-" + v); if (el) el.textContent = T(k); });
+  [["erf", "tab_erf"], ["vw", "tab_vw"], ["la", "tab_la"], ["ueb", "tab_ueb"], ["aw", "tab_aw"], ["sd", "tab_sd"]].forEach(([v, k]) => { const el = document.getElementById("tab-" + v); if (el) el.textContent = T(k); });
   let lb = document.getElementById("k-lang");
   if (!lb) { const row = document.querySelector(".brandrow"); if (row) { lb = document.createElement("button"); lb.id = "k-lang"; lb.className = "klang"; lb.dataset.ka = "lang"; row.appendChild(lb); } }
   if (lb) { lb.textContent = T("lang_btn"); lb.title = T("lang_title"); }
