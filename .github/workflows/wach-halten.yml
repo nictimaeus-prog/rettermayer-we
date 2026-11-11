@@ -1,0 +1,31 @@
+name: Datenbank wach halten
+
+# Supabase pausiert Projekte im kostenlosen Tarif nach 7 Tagen ohne Zugriff.
+# Diese Aufgabe fragt die Datenbank täglich einmal kurz an (nur lesen, keine Buchung) –
+# so bleibt sie auch über Feiertage, Betriebsruhe und außerhalb der Saison erreichbar.
+
+on:
+  schedule:
+    - cron: "23 3 * * *"   # täglich 03:23 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  anfrage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: src/config.prod.js
+          sparse-checkout-cone-mode: false
+      - name: Datenbank kurz anfragen
+        # öffentliche Adresse und öffentlicher Schlüssel stehen ohnehin in src/config.prod.js (kein Geheimnis)
+        run: |
+          URL=$(grep -o 'https://[a-z0-9]*\.supabase\.co' src/config.prod.js | head -1)
+          KEY=$(grep -oE 'eyJ[A-Za-z0-9._-]+|sb_publishable_[A-Za-z0-9_-]+' src/config.prod.js | head -1)
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/docs?select=id&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          echo "Antwort: $code"
+          test "$code" = "200"

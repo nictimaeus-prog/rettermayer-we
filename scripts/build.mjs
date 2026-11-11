@@ -22,6 +22,8 @@ cp(nm("jspdf/dist/jspdf.umd.min.js"), path.join(www, "lib/jspdf.umd.min.js"));
 cp(nm("pdfjs-dist/build/pdf.min.js"), path.join(www, "lib/pdfjs/pdf.min.js"));
 cp(nm("pdfjs-dist/build/pdf.worker.min.js"), path.join(www, "lib/pdfjs/pdf.worker.min.js"));
 cp(nm("heic2any/dist/heic2any.min.js"), path.join(www, "lib/heic2any.min.js")); // HEIC-Fotos (iPhone) im Browser umwandeln
+cp(nm("barcode-detector/dist/iife/index.js"), path.join(www, "lib/barcode-detector.js")); // Barcode-Scanner, falls das Gerät keinen eingebauten hat
+cp(nm("zxing-wasm/dist/reader/zxing_reader.wasm"), path.join(www, "lib/zxing_reader.wasm"));
 
 // Schriften
 const fonts = [

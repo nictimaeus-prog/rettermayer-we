@@ -1057,12 +1057,148 @@ document.addEventListener("dragleave", (ev) => { const z = ev.target.closest && 
 document.addEventListener("drop", (ev) => { const z = ev.target.closest && ev.target.closest("[data-kdrop]"); if (!z) return; ev.preventDefault(); z.classList.remove("over");
   const files = [...(ev.dataTransfer?.files || [])]; if (!files.length) return; if (z.dataset.kdrop === "ls") lsDateien(files); else addBelege(files, listOf(z.dataset.kdrop)); });
 
+/* ---------------- Scanner: Kamera (auch vom Stapler) und Bluetooth-/USB-Handscanner ---------------- */
+const SC = { open: false, stream: null, timer: null, det: null, last: "", lastAt: 0, serie: true, torch: false, hist: [], res: null };
+K.scan = SC;
+let detP = null;
+function ladeScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+async function barcodeLeser() {
+  if (!detP) detP = (async () => {
+    if ("BarcodeDetector" in window) { try { const f = await window.BarcodeDetector.getSupportedFormats?.(); if (!f || f.includes("code_128")) return window.BarcodeDetector; } catch (_) {} }
+    await ladeScript("lib/barcode-detector.js"); const api = window.BarcodeDetectionAPI;
+    api.setZXingModuleOverrides({ locateFile: (p, pre) => (p.endsWith(".wasm") ? "lib/zxing_reader.wasm" : pre + p) });
+    return api.BarcodeDetector;
+  })().catch((e) => { detP = null; throw e; });
+  return detP;
+}
+const codeNorm = (c) => ascii(String(c || "")).replace(/[^A-Z0-9]/g, "");
+function codeFinden(raw) {
+  const c = codeNorm(raw); if (!c) return null;
+  let best = null;
+  for (const v of VORG) { const b = v.barcode || codeNorm(v.charge); if (!b || !c.startsWith(b)) continue; const rest = c.slice(b.length);
+    if (rest === "" || /^K\d{1,3}$/.test(rest)) { if (!best || b.length > best.b.length) best = { v, b, kiste: rest ? parseInt(rest.slice(1), 10) : null }; } }
+  return best;
+}
+function piep(ok) {
+  try { navigator.vibrate?.(ok ? 70 : [60, 60, 60]); } catch (_) {}
+  try { const A = window.AudioContext || window.webkitAudioContext; if (!A) return; const ctx = piep.ctx || (piep.ctx = new A()); const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = ok ? 1650 : 330; g.gain.value = 0.15; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + (ok ? 0.09 : 0.3)); } catch (_) {}
+}
+function scanTreffer(raw, quelle) {
+  const now = Date.now(), c = codeNorm(raw); if (!c) return;
+  if (c === SC.last && now - SC.lastAt < 2500) return; SC.last = c; SC.lastAt = now;
+  const t = codeFinden(c);
+  SC.res = t ? { code: c, id: t.v.id, kiste: t.kiste } : { code: c, id: null };
+  if (t) { SC.hist = [{ code: c, id: t.v.id, kiste: t.kiste, at: now }, ...SC.hist.filter((h) => h.code !== c)].slice(0, 50); }
+  piep(!!t);
+  if (!SC.open) scanOeffnen(false); else scanZeichnen();
+  if (t && !SC.serie) scanKameraStop();
+}
+function scanKarte() {
+  const r = SC.res; if (!r) return `<p class="ksc-hint">${lang() === "ro" ? "Ține eticheta în fața camerei sau scanează cu scanerul Bluetooth." : "Etikett vor die Kamera halten oder mit dem Bluetooth-Scanner scannen."}</p>`;
+  const v = r.id && VORG.find((x) => x.id === r.id);
+  if (!v) return `<div class="ksc-res bad"><b>${esc(r.code)}</b><br>${lang() === "ro" ? "Cod necunoscut – nicio șarjă găsită." : "Unbekannter Code – keine Charge gefunden."}</div>`;
+  const n = v.produkt === "KPG" ? etiN(v) : (v.kistenListe || []).length || v.kisten || null; const kl = r.kiste && (v.kistenListe || [])[r.kiste - 1];
+  const st = v.produkt === "KNT" ? (v.stufe === "verwogen" ? `${T("st_verw")} · Brutto B ${fmtKg(v.brutto2, 1)} kg` : T("st_offen")) : v.produkt === "KPG" ? (v.stufe === "bonitiert" ? "bonitiert" : "Bonitur offen") : "erfasst";
+  const gesc = SC.hist.filter((h) => h.id === v.id).length;
+  return `<div class="ksc-res ok"><div class="ksc-ch">${esc(v.charge)}</div>
+    <div>${esc(v.produktName || v.produkt)} · <b>${esc(v.sorte || "")}</b>${v.lot ? " · LOT " + esc(v.lot) : ""}</div>
+    <div>${esc(v.erzeuger)} · WE ${deDate(v.datum)}</div>
+    ${r.kiste ? `<div class="ksc-big">${v.produkt === "KPG" ? "Gebinde" : T("kiste")} ${r.kiste}${n ? "/" + n : ""}${kl ? ` · ${fmtKg(kl.kg, 1)} kg${kl.kal ? " · " + esc(kl.kal) : ""}` : ""}</div>` : ""}
+    <div class="ksc-st">${esc(st)}${n ? ` · ${gesc}/${n} ${lang() === "ro" ? "scanate" : "gescannt"}` : ""}</div>
+    <div class="ksc-act">${v.produkt === "KNT" && v.stufe === "erfasst" ? `<button class="btn primary" data-ka="sc-vw" data-id="${esc(v.id)}">${T("btn_verw")}</button>` : ""}${v.produkt === "KPG" && v.stufe === "erfasst" ? `<button class="btn primary" data-ka="sc-bon" data-id="${esc(v.id)}">Bonitur</button>` : ""}
+      <button class="btn" data-ka="sc-prot" data-id="${esc(v.id)}">📄 ${T("btn_prot")}</button><button class="btn" data-ka="sc-eti" data-id="${esc(v.id)}">🏷️ ${T("btn_eti")}</button></div></div>`;
+}
+function scanZeichnen() {
+  const box = document.getElementById("ksc"); if (!box) return;
+  box.querySelector(".ksc-out").innerHTML = scanKarte();
+  box.querySelector(".ksc-hist").innerHTML = SC.hist.length ? `<b>${lang() === "ro" ? "Scanate" : "Gescannt"} (${SC.hist.length})</b>${SC.hist.slice(0, 12).map((h) => { const v = VORG.find((x) => x.id === h.id); return `<div>${esc(v ? v.charge : h.code)}${h.kiste ? " · K" + h.kiste : ""}</div>`; }).join("")}${SC.hist.length ? `<button class="btn small" data-ka="sc-clear">${lang() === "ro" ? "Golește lista" : "Liste leeren"}</button>` : ""}` : "";
+  box.querySelector('[data-ka="sc-serie"]').setAttribute("aria-pressed", String(SC.serie));
+  const tb = box.querySelector('[data-ka="sc-torch"]'); if (tb) tb.setAttribute("aria-pressed", String(SC.torch));
+}
+async function scanOeffnen(kamera = true) {
+  if (!document.getElementById("ksc")) {
+    const d = document.createElement("div"); d.id = "ksc"; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", "Scanner");
+    d.innerHTML = `<div class="ksc-top"><b>${lang() === "ro" ? "Scanner" : "Scanner"}</b><span style="flex:1"></span>
+      <button class="btn small" data-ka="sc-serie" aria-pressed="${SC.serie}" title="Nach jedem Treffer weiter scannen">${lang() === "ro" ? "Serie" : "Serie"}</button>
+      <button class="btn small" data-ka="sc-torch" aria-pressed="false">🔦</button><button class="btn small" data-ka="sc-cam">📷</button><button class="btn small primary" data-ka="sc-close">✕</button></div>
+      <div class="ksc-body"><div class="ksc-cam"><video id="ksc-video" playsinline muted></video><div class="ksc-frame"></div></div>
+      <div class="ksc-side"><input id="ksc-in" type="text" autocomplete="off" autocapitalize="characters" placeholder="${lang() === "ro" ? "Cod / scaner Bluetooth" : "Code eingeben oder Bluetooth-Scanner"}" aria-label="Code">
+      <div class="ksc-out"></div><div class="ksc-hist"></div></div></div>`;
+    document.body.appendChild(d); document.body.style.overflow = "hidden";
+  }
+  SC.open = true; scanZeichnen();
+  const inp = document.getElementById("ksc-in"); if (inp && !kamera) setTimeout(() => inp.focus(), 50);
+  if (kamera) await scanKameraStart();
+}
+async function scanKameraStart() {
+  if (SC.stream) return;
+  const v = document.getElementById("ksc-video"); if (!v) return;
+  if (!navigator.mediaDevices?.getUserMedia) { toast(lang() === "ro" ? "Camera nu este disponibilă – folosește scanerul Bluetooth" : "Kamera nicht verfügbar – Bluetooth-Scanner oder Code eintippen"); return; }
+  try {
+    SC.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    v.srcObject = SC.stream; await v.play(); document.getElementById("ksc")?.classList.add("cam");
+    const Det = await barcodeLeser(); SC.det = new Det({ formats: ["code_128", "code_39", "qr_code", "ean_13", "data_matrix"] });
+    SC.timer = setInterval(async () => { if (!SC.stream || SC.busy) return; SC.busy = true; try { const r = await SC.det.detect(v); if (r.length) scanTreffer(r[0].rawValue, "kamera"); } catch (_) {} SC.busy = false; }, 250);
+  } catch (e) { console.warn("Kamera", e); scanKameraStop(); toast(lang() === "ro" ? "Camera nu a putut fi pornită" : "Kamera konnte nicht gestartet werden – Bluetooth-Scanner oder Code eintippen"); }
+}
+function scanKameraStop() { clearInterval(SC.timer); SC.timer = null; try { SC.stream?.getTracks().forEach((t) => t.stop()); } catch (_) {} SC.stream = null; SC.torch = false; document.getElementById("ksc")?.classList.remove("cam"); }
+function scanSchliessen() { scanKameraStop(); SC.open = false; document.getElementById("ksc")?.remove(); document.body.style.overflow = ""; }
+async function scanTorch() { const t = SC.stream?.getVideoTracks?.()[0]; if (!t) { toast("Erst Kamera starten"); return; } try { SC.torch = !SC.torch; await t.applyConstraints({ advanced: [{ torch: SC.torch }] }); } catch (_) { SC.torch = false; toast("Lampe wird von diesem Gerät nicht unterstützt"); } scanZeichnen(); }
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-ka]"); if (!b) return; const id = b.dataset.id;
+  switch (b.dataset.ka) {
+    case "scan": scanOeffnen(true); break;
+    case "sc-close": scanSchliessen(); break;
+    case "sc-cam": if (SC.stream) scanKameraStop(); else scanKameraStart(); break;
+    case "sc-torch": scanTorch(); break;
+    case "sc-serie": SC.serie = !SC.serie; scanZeichnen(); break;
+    case "sc-clear": SC.hist = []; SC.res = null; scanZeichnen(); break;
+    case "sc-vw": scanSchliessen(); view = "vw"; vwOpen(id); break;
+    case "sc-bon": scanSchliessen(); if (typeof bonOpen === "function") bonOpen(id); break;
+    case "sc-prot": if (typeof vorgPdf === "function") vorgPdf(id); break;
+    case "sc-eti": { const v = VORG.find((x) => x.id === id); if (!v) break; if (v.produkt === "KNT" && v.stufe === "verwogen" && (v.kistenListe || []).length) etiShow(v, v.kistenListe, SC.res?.kiste ? SC.res.kiste - 1 : null); else etiErstShow([v]); break; }
+  }
+});
+// Code im Eingabefeld (Bluetooth-Scanner tippt dort hinein und schickt Enter)
+document.addEventListener("keydown", (ev) => { const t = ev.target; if (t.id === "ksc-in" && ev.key === "Enter") { ev.preventDefault(); const c = t.value; t.value = ""; SC.last = ""; scanTreffer(c, "eingabe"); } else if (SC.open && ev.key === "Escape") scanSchliessen(); });
+// Bluetooth-/USB-Scanner im Tastatur-Modus (HID): schnelle Zeichenfolge mit Enter, auch ohne geöffnetes Scanfenster
+const HID = { buf: "", t0: 0, last: 0 };
+document.addEventListener("keydown", (ev) => {
+  const t = ev.target; if (t && (t.id === "ksc-in" || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+  const now = Date.now();
+  if (ev.key === "Enter") { const fast = HID.buf.length >= 5 && now - HID.t0 < HID.buf.length * 60 + 150; const c = HID.buf; HID.buf = ""; if (fast) { ev.preventDefault(); SC.last = ""; scanTreffer(c, "hid"); } return; }
+  if (ev.key.length !== 1 || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  if (now - HID.last > 80) { HID.buf = ""; HID.t0 = now; } HID.last = now; HID.buf += ev.key;
+});
+css.textContent += `
+#ksc{position:fixed;inset:0;z-index:60;background:#0f1d2b;color:#fff;display:flex;flex-direction:column}
+#ksc .ksc-top{display:flex;gap:8px;align-items:center;padding:10px 14px calc(10px);padding-top:calc(10px + env(safe-area-inset-top,0px));background:#0b1622;font-size:18px}
+#ksc .ksc-top .btn{min-height:44px}#ksc .ksc-top .btn[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+#ksc .ksc-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:auto}
+#ksc .ksc-cam{position:relative;background:#000;display:none;max-height:46vh}#ksc.cam .ksc-cam{display:block}
+#ksc video{width:100%;height:100%;max-height:46vh;object-fit:cover;display:block}
+#ksc .ksc-frame{position:absolute;left:10%;right:10%;top:30%;bottom:30%;border:3px solid rgba(148,193,31,.9);border-radius:12px;box-shadow:0 0 0 2000px rgba(0,0,0,.25)}
+#ksc .ksc-side{padding:12px 14px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+#ksc #ksc-in{font:700 22px var(--f-mono);padding:12px;border-radius:12px;border:2px solid #5b7489;background:#13273a;color:#fff}
+#ksc .ksc-hint{color:#c9d6e2;margin:0;font-size:17px}
+#ksc .ksc-res{border-radius:14px;padding:14px 16px;font-size:17px;line-height:1.45}
+#ksc .ksc-res.ok{background:#fff;color:var(--ink);border-left:8px solid var(--ok)}#ksc .ksc-res.bad{background:#fde8e6;color:#8a1c14;border-left:8px solid var(--bad)}
+#ksc .ksc-ch{font:700 30px var(--f-mono);margin-bottom:4px}#ksc .ksc-big{font:700 24px var(--f-body);margin-top:6px}#ksc .ksc-st{margin-top:6px;font-weight:700;color:var(--muted)}
+#ksc .ksc-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}#ksc .ksc-act .btn{min-height:52px;font-size:17px;flex:1 1 140px}
+#ksc .ksc-hist{font:500 15px var(--f-mono);color:#c9d6e2;display:flex;flex-direction:column;gap:2px}#ksc .ksc-hist b{font-family:var(--f-body);color:#fff}#ksc .ksc-hist .btn{margin-top:6px;align-self:flex-start}
+@media (min-width:900px) and (orientation:landscape){#ksc .ksc-body{flex-direction:row}#ksc .ksc-cam{flex:1.3;max-height:none}#ksc video{max-height:none}#ksc .ksc-side{flex:1;overflow:auto}}
+.kscan{border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;border-radius:10px;padding:6px 12px;font:700 15px var(--f-body);cursor:pointer;margin-left:8px}`;
+
 /* Kopf: Tabs und Sprachknopf */
 K.header = function () {
   [["erf", "tab_erf"], ["vw", "tab_vw"], ["ueb", "tab_ueb"], ["aw", "tab_aw"], ["sd", "tab_sd"]].forEach(([v, k]) => { const el = document.getElementById("tab-" + v); if (el) el.textContent = T(k); });
   let lb = document.getElementById("k-lang");
   if (!lb) { const row = document.querySelector(".brandrow"); if (row) { lb = document.createElement("button"); lb.id = "k-lang"; lb.className = "klang"; lb.dataset.ka = "lang"; row.appendChild(lb); } }
   if (lb) { lb.textContent = T("lang_btn"); lb.title = T("lang_title"); }
+  let sb = document.getElementById("k-scan");
+  if (!sb && lb && lb.parentNode) { sb = document.createElement("button"); sb.id = "k-scan"; sb.className = "kscan"; sb.dataset.ka = "scan"; lb.parentNode.insertBefore(sb, lb.nextSibling); }
+  if (sb) { sb.textContent = lang() === "ro" ? "▦ Scan" : "▦ Scan"; sb.title = lang() === "ro" ? "Scanează eticheta" : "Etikett scannen (Kamera oder Bluetooth-Scanner)"; }
   const br = document.querySelector(".brand"); if (br && br.firstChild && br.firstChild.nodeType === 3) br.firstChild.nodeValue = lang() === "ro" ? "Recepție usturoi" : "Wareneingang Knoblauch";
   document.documentElement.lang = lang();
 };
