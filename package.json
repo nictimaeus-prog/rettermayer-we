@@ -26,7 +26,8 @@
     "heic2any": "0.0.4",
     "jsbarcode": "3.11.6",
     "jspdf": "2.5.1",
-    "pdfjs-dist": "3.11.174"
+    "pdfjs-dist": "3.11.174",
+    "xlsx": "0.18.5"
   },
   "engines": {
     "node": ">=22"

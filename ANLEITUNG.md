@@ -111,3 +111,12 @@ assets/                   App-Symbol und Startbild
 - Baut automatisch bei jeder Änderung auf GitHub (Branch `main`): Befehl `npm run build`, Ausgabe-Ordner `www`
 - Verwaltung: dash.cloudflare.com → Workers & Pages → rettermayer-we (Anmeldung nic.timaeus@gmail.com)
 - Die frühere Netlify-Adresse rettermayer-we.netlify.app wird nicht mehr aktualisiert (Netlify-Gratis-Kontingent des Teams GBB aufgebraucht).
+
+## Saatgut-Bestellung (Unterseite /saatgut)
+
+- Adresse: **https://rettermayer-we.pages.dev/saatgut/** – nur im Browser (nicht in der Handy-App), Anmeldung mit dem WE-App-Zugang
+- Zugriff haben nur Nutzer mit Eintrag in `saatgut_zugang` (anfangs Nicolai Timaeus und Martin Haunz). Weitere freischalten:
+  `insert into public.saatgut_zugang (user_id) select id from public.profiles where name = 'Vorname Nachname';`
+- Preise und Erzeuger: im Tab „Aufträge“ die Excel-Preisliste `Preisliste_Saatgut_FJ27_Staffel_….xlsx` hochladen (Tabs Artikelstamm, Staffel-Annahmen, Erzeuger)
+- Bestellschein/E-Mail/Foto auslesen: Supabase-Funktion `saatgut-import`, nutzt den Schlüssel `ANTHROPIC_API_KEY` (wie das Lieferschein-Lesen)
+- Daten: Tabellen `saatgut_stamm` (Preisliste, Erzeuger) und `saatgut_auftraege` (gespeicherte ABs), Migration `20261123000000_saatgut.sql`

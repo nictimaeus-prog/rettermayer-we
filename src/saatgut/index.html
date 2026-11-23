@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#5C8A13">
+<title>Saatgut-Bestellung · VG Bio</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{
+  /* Layout: eine Spalte fürs Handy, Karten untereinander, feste Summenleiste unten */
+  --green:#5C8A13; --green-l:#93C31A; --blue:#2C7FB0; --blue-l:#5FB2DE;
+  --ink:#1F2A1A; --muted:#66705F; --line:#DCE3D3; --bg:#F4F6F0; --card:#FFFFFF; --soft:#EEF5E0;
+  --warn:#B3261E; --warn-bg:#FDECEA; --pick:#E6F2FA;
+  --f-display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 var(--f-body);padding:env(safe-area-inset-top) 0 calc(96px + env(safe-area-inset-bottom));}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue-l);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+header{display:flex;align-items:center;gap:12px;padding:14px 16px 10px;background:var(--card);border-bottom:4px solid var(--green-l);box-shadow:inset 0 -4px 0 0 var(--green-l)}
+header img{height:38px;width:auto}
+header h1{font:700 21px/1.1 var(--f-display);margin:0;color:var(--green);text-wrap:balance}
+header small{display:block;font:600 12px var(--f-body);color:var(--muted);letter-spacing:.02em}
+.stripe{height:4px;background:linear-gradient(90deg,var(--green-l) 0 66%,var(--blue-l) 66% 100%)}
+nav.tabs{display:flex;gap:6px;padding:10px 16px;position:sticky;top:0;z-index:5;background:var(--bg)}
+nav.tabs button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 6px;font-weight:600;color:var(--muted)}
+nav.tabs button[aria-selected="true"]{background:var(--green);border-color:var(--green);color:#fff}
+main{padding:0 16px;display:grid;gap:14px;max-width:760px;margin:0 auto}
+.who{margin-left:auto;text-align:right;font-size:12px;color:var(--muted)}
+.who button{font-size:12px}
+.gate{position:fixed;inset:0;z-index:30;background:var(--bg);display:grid;place-items:center;padding:20px}
+.gate .card{width:100%;max-width:400px}
+.err{color:var(--warn);font-size:14px}
+@media (min-width:900px){nav.tabs{max-width:760px;margin:0 auto}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px}
+.card h2{font:700 18px var(--f-display);margin:0;color:var(--green);display:flex;align-items:center;gap:8px}
+.card h2 .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;font:700 14px var(--f-body)}
+.row{display:flex;gap:8px;align-items:center}
+.row > *{min-width:0}
+input[type=text],input[type=search],input[type=number],input[type=email],input[type=password],textarea,select{width:100%;border:1px solid #C9D3BE;border-radius:10px;padding:11px 12px;background:#FCFDFB}
+textarea{min-height:84px;resize:vertical}
+.mic{flex:0 0 46px;height:46px;border-radius:50%;border:none;background:var(--blue);color:#fff;display:grid;place-items:center;cursor:pointer}
+.mic.on{background:var(--warn);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(179,38,30,.15)}}
+.mic svg{width:22px;height:22px}
+.hint{font-size:13px;color:var(--muted)}
+.list{display:grid;gap:6px}
+.opt{display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;width:100%;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;cursor:pointer}
+.opt:hover{background:var(--soft)}
+.opt b{font-weight:600}
+.opt .sub{grid-column:1;font-size:13px;color:var(--muted)}
+.opt .pr{grid-row:1/3;grid-column:2;align-self:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green)}
+.opt.bad{border-color:#F2B8B5;background:var(--warn-bg)}
+.chosen{display:grid;gap:4px;background:var(--soft);border-radius:10px;padding:10px 12px}
+.chosen b{font-size:17px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:#fff;border:1px solid var(--line)}
+.pill.g{background:var(--green);color:#fff;border-color:var(--green)}
+.pill.b{background:var(--blue);color:#fff;border-color:var(--blue)}
+.pill.w{background:var(--warn-bg);color:var(--warn);border-color:#F2B8B5}
+.link{background:none;border:none;color:var(--blue);font-weight:600;padding:0;cursor:pointer;text-decoration:underline}
+.btn{border:none;border-radius:12px;padding:12px 16px;font-weight:700;background:var(--green);color:#fff;cursor:pointer}
+.btn.sec{background:#fff;color:var(--green);border:1.5px solid var(--green)}
+.btn.blue{background:var(--blue)}
+.btn:disabled{opacity:.45}
+.pos{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px;background:#fff}
+.pos.bad{border-color:#F2B8B5;background:var(--warn-bg)}
+.pos .t{display:flex;justify-content:space-between;gap:10px}
+.pos .t b{font-weight:700}
+.pos .meta{font-size:13px;color:var(--muted)}
+.qty{display:grid;grid-template-columns:44px 1fr 44px;gap:6px;align-items:center;max-width:220px}
+.qty button{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--soft);font-size:22px;font-weight:700;color:var(--green)}
+.qty input{text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.pos .money{display:flex;justify-content:space-between;align-items:baseline;font-variant-numeric:tabular-nums}
+.pos .money strong{font-size:18px}
+.x{border:none;background:none;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:0 4px}
+.sum{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-variant-numeric:tabular-nums}
+.sum .tot{font:700 20px var(--f-display);color:var(--green);border-top:2px solid var(--green);padding-top:6px}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sw{position:relative;width:52px;height:30px;flex:0 0 52px}
+.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;border-radius:999px;background:#C9D3BE;transition:.2s}
+.sw span::after{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s}
+.sw input:checked + span{background:var(--green)}
+.sw input:checked + span::after{transform:translateX(22px)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;z-index:9;box-shadow:0 -6px 18px rgba(31,42,26,.08)}
+.bar .v{flex:1;display:grid}
+.bar .v small{color:var(--muted);font-size:12px}
+.bar .v b{font:700 22px var(--f-display);color:var(--green);font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);font-size:14px;padding:6px 2px}
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:90vw}
+.drop{border:2px dashed #B7C9A1;border-radius:12px;padding:16px 12px;display:grid;justify-items:center;gap:8px;text-align:center;background:#FAFCF6;cursor:pointer}
+.drop.over{border-color:var(--blue);background:var(--pick)}
+.drop-ic{width:40px;height:40px;border-radius:50%;background:var(--soft);color:var(--green);display:grid;place-items:center}
+.drop-ic svg{width:22px;height:22px}
+label.btn{display:inline-block}
+details summary{cursor:pointer;font-weight:600;color:var(--blue)}
+.imp-status{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--green);animation:sp 0.9s linear infinite;flex:0 0 18px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pos .src{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em}
+[hidden]{display:none!important}
+/* AB-Vorschau */
+.paper{background:#fff;border:1px solid var(--line);border-radius:6px;padding:28px 30px;font:12px/1.35 Arial,sans-serif;color:#222;width:680px;box-shadow:0 2px 10px rgba(31,42,26,.08)}
+.paper p,.paper div,.paper td,.paper th,.paper span{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.paper p{margin:10px 0;font-size:12px}
+.paper .hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.paper .firm{font:700 16px Arial;color:var(--green)}
+.paper .firm small{display:block;font:400 10px Arial;color:#6b6b6b;margin-top:2px}
+.paper .hd img{height:44px}
+.paper .stripe{margin:10px 0 14px}
+.paper .addr{display:grid;grid-template-columns:1fr auto;gap:14px}
+.paper .sender{font-size:8px;color:#888;text-decoration:underline}
+.paper .info{display:grid;grid-template-columns:auto auto;gap:1px 10px;font-size:11px}
+.paper .info span:nth-child(odd){color:#6b6b6b}
+.paper h3{font:700 20px Arial;color:var(--green);margin:18px 0 2px}
+.paper h3 small{font-size:13px;color:var(--blue);margin-left:8px}
+.paper table{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px}
+.paper th{background:var(--green);color:#fff;text-align:left;padding:5px 4px;font-weight:700}
+.paper td{padding:4px;border-bottom:1px solid #e3e3e3;vertical-align:top}
+.paper tr:nth-child(even) td{background:#F2F8E4}
+.paper .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.paper .tot{margin-left:auto;margin-top:10px;display:grid;grid-template-columns:auto auto;gap:2px 18px;width:max-content;font-variant-numeric:tabular-nums}
+.paper .tot .g{font-weight:700;color:var(--green);border-top:1px solid var(--green);border-bottom:3px double var(--green);padding:2px 0;background:#F2F8E4}
+.paper .ft{margin-top:22px;padding-top:6px;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:8px;color:#6b6b6b}
+.orders .o{display:grid;grid-template-columns:1fr auto;gap:2px 10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;text-align:left;width:100%;cursor:pointer}
+.orders .o .sub{font-size:13px;color:var(--muted)}
+.orders .o .pr{grid-row:1/3;grid-column:2;align-self:center;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<header>
+  <img src="data:image/jpeg;base64,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" alt="VG Bio">
+  <div><h1>Saatgut-Bestellung FJ27</h1><small>Vermarktungsgesellschaft Bio-Bauern mbH · Gemüse</small></div>
+  <div class="who" id="who" hidden><span id="who-n"></span><br><button class="link" id="logout">Abmelden</button></div>
+</header>
+<div class="stripe"></div>
+<nav class="tabs" role="tablist">
+  <button id="tab-best" role="tab" aria-selected="true" data-view="v-best">Bestellung</button>
+  <button id="tab-ab" role="tab" aria-selected="false" data-view="v-ab">AB</button>
+  <button id="tab-auf" role="tab" aria-selected="false" data-view="v-auf">Aufträge</button>
+</nav>
+
+<main id="v-best">
+  <section class="card" aria-labelledby="h-erz">
+    <h2 id="h-erz"><span class="n">1</span>Erzeuger</h2>
+    <div id="erz-chosen" class="chosen" hidden></div>
+    <div id="erz-search">
+      <div class="row">
+        <input id="erz-q" type="search" placeholder="Name, Ort oder Kd-Nr. – z. B. Käßer" autocomplete="off">
+        <button class="mic" data-mic="erz-q" aria-label="Erzeuger diktieren" hidden></button>
+      </div>
+      <div id="erz-list" class="list" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-dik">
+    <h2 id="h-dik"><span class="n">2</span>Bestellung diktieren</h2>
+    <div class="row" style="align-items:flex-start">
+      <textarea id="dik" placeholder="z. B. „Käßer, Flexi Kuri 80, Bellesco Öko 12, Boro 25“"></textarea>
+      <button class="mic" data-mic="dik" aria-label="Bestellung diktieren" hidden></button>
+    </div>
+    <div class="row"><button id="dik-go" class="btn">Positionen übernehmen</button><span class="hint" id="mic-hint">Tipp: Mikrofon auf der Handy-Tastatur antippen und sprechen.</span></div>
+  </section>
+
+
+  <section class="card" id="imp-card" aria-labelledby="h-imp">
+    <h2 id="h-imp"><span class="n">3</span>Bestellschein oder E-Mail übernehmen</h2>
+    <div id="imp-drop" class="drop" tabindex="0">
+      <div class="drop-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div>
+      <b>Foto, PDF oder E-Mail hierher ziehen</b>
+      <span class="hint">oder</span>
+      <div class="row" style="flex-wrap:wrap;justify-content:center">
+        <label class="btn blue" for="imp-cam">Foto aufnehmen</label>
+        <label class="btn sec" for="imp-file">Datei wählen</label>
+      </div>
+      <input id="imp-cam" type="file" accept="image/*" capture="environment" hidden>
+      <input id="imp-file" type="file" accept="image/*,.pdf,.eml,.txt,.csv,application/pdf,message/rfc822,text/plain" multiple hidden>
+      <span class="hint">Bestellschein, Fax, handschriftliche Notiz, PDF oder gespeicherte E-Mail (.eml)</span>
+    </div>
+    <details id="imp-paste-box">
+      <summary>E-Mail-Text einfügen</summary>
+      <textarea id="imp-text" placeholder="Text der Bestell-E-Mail hier einfügen …" style="margin-top:8px"></textarea>
+      <button id="imp-text-go" class="btn" style="margin-top:8px">Text auswerten</button>
+    </details>
+    <div id="imp-status" class="imp-status" hidden><span class="spin" aria-hidden="true"></span><span id="imp-status-t">Claude liest die Bestellung …</span><button id="imp-stop" class="link">Abbrechen</button></div>
+    <div id="imp-result" class="chosen" hidden></div>
+    <p class="hint" id="imp-off" hidden>Das Auslesen ist noch nicht eingerichtet (API-Schlüssel fehlt in Supabase).</p>
+  </section>
+  <section class="card" aria-labelledby="h-art">
+    <h2 id="h-art"><span class="n">4</span>Artikel suchen</h2>
+    <div class="row">
+      <input id="art-q" type="search" placeholder="Sorte, Kultur oder Art.-Nr. – z. B. „prospero öko“" autocomplete="off">
+      <button class="mic" data-mic="art-q" aria-label="Artikel diktieren" hidden></button>
+    </div>
+    <div id="art-list" class="list"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-pos">
+    <h2 id="h-pos"><span class="n">5</span>Positionen</h2>
+    <div id="pos-list" class="list"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-opt">
+    <h2 id="h-opt"><span class="n">6</span>Angaben zur AB</h2>
+    <div class="toggle"><span>Erstbestellung (Rabatt)</span><label class="sw"><input id="erst" type="checkbox" checked><span></span></label></div>
+    <div class="grid2">
+      <label class="f" for="lief">Liefertermin<input id="lief" type="text" value="Frühjahr 2027"></label>
+      <label class="f" for="ref">Ihre Referenz<input id="ref" type="text" placeholder="optional"></label>
+      <label class="f" for="nach">Nachtrag-Nr.<input id="nach" type="text" inputmode="numeric" placeholder="optional"></label>
+      <label class="f" for="bearb">Bearbeiter<input id="bearb" type="text" value="Nicolai Timaeus"></label>
+    </div>
+    <div class="sum" id="sum"></div>
+    <div class="row" style="flex-wrap:wrap">
+      <button id="neu" class="btn sec">Neue Bestellung</button>
+    </div>
+  </section>
+</main>
+
+<main id="v-ab" hidden>
+  <div class="row" style="flex-wrap:wrap">
+    <button id="ab-save" class="btn">Auftrag speichern</button>
+    <button id="ab-pdf" class="btn blue">PDF erstellen</button>
+    <button id="ab-share" class="btn blue" hidden>PDF teilen / mailen</button>
+    <button id="ab-copy" class="btn sec">Mailtext kopieren</button>
+  </div>
+  <p class="hint" id="ab-hint"></p>
+  <div class="paper" id="paper"></div>
+</main>
+
+<main id="v-auf" hidden>
+  <section class="card">
+    <h2>Gespeicherte Aufträge</h2>
+    <p class="hint" id="auf-hint">Aufträge werden gespeichert, sobald du in der AB auf „Auftrag speichern“ tippst. Alle freigeschalteten Nutzer sehen dieselbe Liste.</p>
+    <div id="auf-list" class="list orders"></div>
+    <div class="row" style="flex-wrap:wrap">
+      <button id="csv-copy" class="btn sec">CSV für büro+ kopieren</button>
+      <button id="csv-dl" class="btn blue">CSV herunterladen</button>
+    </div>
+  </section>
+  <section class="card" id="stamm-card">
+    <h2>Preisliste &amp; Erzeuger aktualisieren</h2>
+    <p class="hint" id="stamm-info">Stand wird geladen …</p>
+    <p class="hint">Excel-Datei „Preisliste_Saatgut_FJ27_Staffel_…xlsx“ hochladen (Tabs Artikelstamm, Staffel-Annahmen, Erzeuger). Danach rechnen beide Nutzer sofort mit den neuen Preisen.</p>
+    <label class="btn sec" for="stamm-file" style="justify-self:start">Excel-Datei wählen</label>
+    <input id="stamm-file" type="file" accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+  </section>
+</main>
+
+<div class="bar">
+  <div class="v"><small id="bar-l">Gesamtbetrag</small><b id="bar-v">0,00 €</b></div>
+  <button id="bar-btn" class="btn">AB ansehen</button>
+</div>
+<div id="toast" class="toast" hidden></div>
+<div class="gate" id="gate">
+  <form class="card" id="login-form" autocomplete="on">
+    <img src="data:image/jpeg;base64,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" alt="VG Bio" style="height:44px;justify-self:start">
+    <h2>Saatgut-Bestellung FJ27</h2>
+    <p class="hint" id="gate-t">Anmeldung mit deinem Zugang zur Rettermayer-WE-App.</p>
+    <label class="f" for="li-mail">E-Mail<input id="li-mail" type="email" autocomplete="username" required></label>
+    <label class="f" for="li-pw">Passwort<input id="li-pw" type="password" autocomplete="current-password" required style="width:100%;border:1px solid #C9D3BE;border-radius:10px;padding:11px 12px;background:#FCFDFB"></label>
+    <button class="btn" id="li-go" type="submit">Anmelden</button>
+    <p class="err" id="li-err" hidden></p>
+  </form>
+</div>
+
+<script src="../config.js"></script>
+<script src="../lib/supabase.js"></script>
+<script src="../lib/jspdf.umd.min.js"></script>
+<script>
+(function(){
+"use strict";
+let D = {arts:[], ers:[], staffel:{}, rab:{}};
+const LOGO = document.querySelector("header img").src;
+const VG = {firma:"Vermarktungsgesellschaft Bio-Bauern mbH", zusatz:"Bioland Erzeugergemeinschaft", str:"Marktplatz 19", ort:"86554 Pöttmes",
+  tel:"+49 (0)8253 99 70 20-0", fax:"+49 (0)8253 99 70 20-20", mail:"buero@bio-vg.de", web:"www.bio-vg.de",
+  gf:"Andreas Hopf", hrb:"HRB 26286", ust:"DE 278098048", oeko:"DE-ÖKO-006", praefix:"GEM27", bmail:"nicolai.timaeus@bio-vg.de"};
+const $ = s => document.querySelector(s);
+const eur = v => (Math.round(v*100)/100).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
+const num = v => (Math.round(v*100)/100).toLocaleString("de-DE",{maximumFractionDigits:2});
+const n2 = v => (Math.round(v*100)/100).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s||"").toLowerCase().replace(/ß/g,"ss").normalize("NFD").replace(/[̀-ͯ]/g,"");
+let ARTS = [], ERS = [], CATALOG = "";
+function initData(cat, ers){
+  D = {arts: cat.arts||[], staffel: cat.staffel||{}, rab: cat.rab||{}, ers: ers||[]};
+  ARTS = D.arts.map(a => Object.assign({kal:"",h:"",ha:0}, a, {txt: norm([a.n,a.k,a.s,a.v,a.kal,a.l].join(" ")), na: /nicht lieferbar/i.test(a.h||"")}));
+  ERS = D.ers.map(e => Object.assign({kd:"",vn:"",st:"",plz:"",o:"",la:"DE",m:"",e:"C",sk:"",sc:""}, e, {txt: norm([e.n,e.vn,e.o,e.kd].join(" "))}));
+  CATALOG = ARTS.map(a=>[a.n,a.k,a.s,a.v,a.kal?"Kal. "+a.kal:"",a.l,"Einheit: "+a.e].filter(Boolean).join(" | ")).join("\n");
+}
+const KAT = {G:0,A:1,B:2,C:3};
+
+// ---------- Zustand ----------
+let S = fresh();
+function fresh(){ return {erz:null, pos:[], erst:true, lief:"Frühjahr 2027", ref:"", nach:"", bearb:"Nicolai Timaeus"}; }
+function load(){ try{ const s = JSON.parse(localStorage.getItem("vgbio-saatgut-web-entwurf")); return s && s.pos ? s : null; }catch(e){ return null; } }
+function persist(){ try{ localStorage.setItem("vgbio-saatgut-web-entwurf", JSON.stringify(S)); }catch(e){} }
+function toast(t){ const el=$("#toast"); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2600); }
+
+// ---------- Berechnung (wie im Excel-Tool) ----------
+function art(n){ return ARTS.find(a => a.n===n); }
+function erz(){ return S.erz ? ERS.find(e => String(e.kd)===String(S.erz.kd) && e.n===S.erz.n) : null; }
+function calc(){
+  const e = erz();
+  const base = e ? KAT[e.e] ?? 3 : 3;
+  const perK = {};
+  S.pos.forEach(p => { const a=art(p.n); if(a) perK[a.k]=(perK[a.k]||0)+(+p.q||0); });
+  const rows = S.pos.map(p => {
+    const a = art(p.n); if(!a) return null;
+    const st = D.staffel[a.k] || [Infinity,Infinity]; const tq = perK[a.k]||0;
+    const km = tq>=st[0] ? 1 : tq>=st[1] ? 2 : 3;
+    let ke = base;
+    if(e && e.sk!==""){ const skv = e.sk==="G"?0:+e.sk; if(!e.sc || norm([a.n,a.k,a.s,a.v,a.l].join(" · ")).includes(norm(e.sc))) ke=Math.min(ke,skv); }
+    const code = (p.m!==undefined && p.m!=="") ? (p.m==="G"?0:+p.m) : Math.min(km, ke);
+    const price = a.p[code]; const q=+p.q||0;
+    return {p, a, code, kat: code===0?"G":String(code), price, total: Math.round(q*price*100)/100, ha: a.ha? q/a.ha : 0};
+  }).filter(Boolean);
+  const summe = rows.reduce((s,r)=>s+r.total,0);
+  const best = rows.length ? Math.min(...rows.map(r=>r.code)) : null;
+  const rabatt = (S.erst && rows.length) ? -Math.min(summe, D.rab[String(best)]) : 0;
+  const netto = summe + rabatt;
+  const land = e ? (e.la||"DE") : "DE";
+  const mwstSatz = land==="DE" ? 0.07 : 0;
+  const mwst = Math.round(netto*mwstSatz*100)/100;
+  const abnr = e ? (VG.praefix + "-" + (e.kd || norm(e.n).replace(/[^a-z0-9]+/g,"").slice(0,8)) + (S.nach ? "-"+S.nach : "")) : "";
+  return {e, rows, summe, rabatt, best, netto, mwstSatz, mwst, gesamt: netto+mwst, abnr};
+}
+
+// ---------- Suche ----------
+const NUMW = {ein:1,eins:1,eine:1,einen:1,zwei:2,drei:3,vier:4,"fünf":5,fuenf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,"zwölf":12,zwoelf:12,
+  zwanzig:20,"dreißig":30,dreissig:30,vierzig:40,"fünfzig":50,fuenfzig:50,sechzig:60,siebzig:70,achtzig:80,neunzig:90,hundert:100};
+const STOP = new Set(["einheit","einheiten","eh","stuck","stueck","mal","bitte","von","mit","und","x","korn","tausend","mio","million","millionen","sack","saecke","der","die","das","noch","dazu","plus"]);
+const SYN = {bio:"oko", oeko:"oko", konventionell:"konv", konv:"konv", geprimet:"geprimt", primed:"geprimt", rot:"rot", rote:"rote"};
+function tokens(q){ return norm(q).split(/[^a-z0-9.,-]+/).filter(t => t && !STOP.has(t)).map(t => SYN[t]||t); }
+function scoreArt(a, toks){
+  let s=0; for(const t of toks){ if(t.length<2) continue; if(a.txt.includes(t)) s += t.length>3 ? 3 : 2; }
+  if(s===0) return 0;
+  const v = norm(a.v);
+  if(!toks.includes("geprimt") && v.includes("geprimt")) s -= 1;
+  if(!toks.includes("konv") && v.includes("konv")) s -= 0.6;
+  if(a.na) s -= 0.4;
+  return s;
+}
+function searchArts(q, n){ const t=tokens(q); if(!t.length) return [];
+  return ARTS.map(a=>({a,s:scoreArt(a,t)})).filter(x=>x.s>0).sort((x,y)=>y.s-x.s).slice(0,n).map(x=>x.a); }
+function searchErz(q){ const t=norm(q).split(/\s+/).filter(Boolean); if(!t.length) return [];
+  return ERS.map(e=>({e,s:t.reduce((s,w)=>s+(e.txt.includes(w)?(e.n.toLowerCase().startsWith(w)?3:2):0),0)}))
+    .filter(x=>x.s>=t.length*2).sort((x,y)=>y.s-x.s || x.e.n.localeCompare(y.e.n)).slice(0,8).map(x=>x.e); }
+
+// Diktat → Positionen: „Flexi Kuri 80, Bellesco Öko 12 …“
+function parseDiktat(txt){
+  const t = txt.replace(/[A-Za-zÄÖÜäöüß]+/g, w => { const k=w.toLowerCase(); return NUMW[k]!==undefined ? String(NUMW[k]) : w; });
+  const segs = t.split(/[,;\n]+|\s+und\s+/i).map(x=>x.trim()).filter(Boolean);
+  const out=[], rest=[]; const NUM=/\d+(?:[.,]\d+)?/g;
+  const push=(words,q)=>{ words=words.trim(); if(!words) return; out.push({words, q:parseFloat(String(q).replace(",", ".")), cands:searchArts(words,5)}); };
+  segs.forEach(seg => {
+    const nums = seg.match(NUM) || [];
+    if(!nums.length){ rest.push(seg); return; }
+    if(nums.length===1){ push(seg.replace(nums[0]," "), nums[0]); return; }
+    const re=/([^0-9]*?[A-Za-zÄÖÜäöüß][^0-9]*?)\s*(\d+(?:[.,]\d+)?)/g; let m;
+    while((m=re.exec(seg))) push(m[1], m[2]);
+  });
+  return {pos:out, rest};
+}
+
+// ---------- Darstellung ----------
+function renderErz(){
+  const e = erz();
+  $("#erz-chosen").hidden = !e; $("#erz-search").hidden = !!e;
+  if(e){
+    const ein = {G:"Kategorie 0 (Großbetrieb)",A:"immer Kategorie 1",B:"mind. Kategorie 2",C:"Kategorie nach Menge"}[e.e]||"";
+    $("#erz-chosen").innerHTML = `<b>${esc(e.n)}</b><span class="hint">${esc([e.st, (e.plz+" "+e.o).trim(), e.la!=="DE"?e.la:""].filter(Boolean).join(" · "))}${e.kd?" · Kd-Nr. "+esc(e.kd):""}</span>
+      <div class="pills"><span class="pill g">Einstufung ${esc(e.e)}: ${esc(ein)}</span>${e.sk?`<span class="pill b">Sonder-Kat. ${esc(e.sk)}${e.sc?" für "+esc(e.sc):""}</span>`:""}${e.m?`<span class="pill">${esc(e.m)}</span>`:`<span class="pill w">keine E-Mail</span>`}</div>
+      <div><button class="link" id="erz-change">Erzeuger ändern</button></div>`;
+    $("#erz-change").onclick = () => { S.erz=null; persist(); renderAll(); $("#erz-q").focus(); };
+  }
+}
+function renderErzList(){
+  const q=$("#erz-q").value; const L=$("#erz-list"); const r=searchErz(q);
+  L.innerHTML = q && !r.length ? `<div class="empty">Kein Erzeuger gefunden. Neue Erzeuger im Excel-Tool im Tab „Erzeuger“ anlegen.</div>` :
+    r.map((e,i)=>`<button class="opt" data-i="${i}"><b>${esc(e.n)}</b><span class="sub">${esc(e.o)}${e.kd?" · "+esc(e.kd):""} · Einstufung ${esc(e.e)}</span></button>`).join("");
+  L.querySelectorAll(".opt").forEach(b => b.onclick = () => { const e=r[+b.dataset.i]; S.erz={kd:e.kd,n:e.n}; $("#erz-q").value=""; L.innerHTML=""; persist(); renderAll(); });
+}
+function renderArtList(){
+  const q=$("#art-q").value; const L=$("#art-list"); const r=searchArts(q,8); const c=calc();
+  const base = c.e ? (KAT[c.e.e]??3) : 3;
+  L.innerHTML = q && !r.length ? `<div class="empty">Kein Artikel gefunden – anderes Stichwort probieren (Sorte, Kultur, „öko“, „geprimt“).</div>` :
+    r.map((a,i)=>`<button class="opt${a.na?" bad":""}" data-i="${i}"><b>${esc(a.s)} · ${esc(a.v)}</b><span class="sub">${esc(a.n)} · ${esc(a.k)}${a.kal?" · Kal. "+esc(a.kal):""} · ${esc(a.l)} · je ${esc(a.e)}${a.na?" · voraussichtlich nicht lieferbar":""}</span><span class="pr">ab ${eur(Math.min(a.p[base],a.p[Math.min(base,1)]))}</span></button>`).join("");
+  L.querySelectorAll(".opt").forEach(b => b.onclick = () => { addPos(r[+b.dataset.i].n, ""); $("#art-q").value=""; L.innerHTML=""; });
+}
+function addPos(n,q,cands){ S.pos.push({n, q, m:"", c:cands||null}); persist(); renderPos(); renderSum();
+  const ins=document.querySelectorAll("#pos-list .qty input"); const last=ins[ins.length-1]; if(last && !q) last.focus(); }
+function renderPos(){
+  const c=calc(); const L=$("#pos-list");
+  if(!S.pos.length){ L.innerHTML=`<div class="empty">Noch keine Positionen. Diktieren (2), Bestellschein übernehmen (3) oder suchen (4).</div>`; return; }
+  L.innerHTML = S.pos.map((p,i)=>{ const r=c.rows.find(x=>x.p===p); const a=art(p.n);
+    const alt = p.c && p.c.length>1 ? `<label class="f">Stimmt der Artikel? ${p.o?"„"+esc(p.o)+"“ – ":""}Andere Treffer:<select data-alt="${i}">${p.c.map(n=>{const x=art(n);return `<option value="${esc(n)}"${n===p.n?" selected":""}>${esc(x.s)} · ${esc(x.v)}${x.kal?" · "+esc(x.kal):""} (${esc(n)})</option>`;}).join("")}</select></label>`:"";
+    return `<div class="pos${a.na?" bad":""}">
+      <div class="t"><div>${p.src?`<div class="src">${esc(p.src)}</div>`:""}<b>${esc(a.s)} · ${esc(a.v)}</b><div class="meta">${esc(a.n)} · ${esc(a.k)}${a.kal?" · Kal. "+esc(a.kal):""} · ${esc(a.l)}</div>${a.na?`<div class="pills" style="margin-top:4px"><span class="pill w">Bio laut Züchter voraussichtlich nicht lieferbar</span></div>`:""}</div><button class="x" data-del="${i}" aria-label="Position entfernen">×</button></div>
+      ${alt}
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap">
+        <div class="qty"><button data-dec="${i}" aria-label="weniger">−</button><input type="number" inputmode="decimal" min="0" step="any" value="${esc(p.q)}" data-q="${i}" aria-label="Menge"><button data-inc="${i}" aria-label="mehr">+</button></div>
+        <span class="meta">je ${esc(a.e)}${r&&r.ha?" · ca. "+num(r.ha)+" ha":""}</span>
+      </div>
+      <div class="money"><span><span class="pill g">Kat. ${r?esc(r.kat):"–"}</span> <span class="meta">${r?eur(r.price):""}</span>
+        <select data-m="${i}" aria-label="Kategorie manuell" style="width:auto;padding:4px 6px;margin-left:6px;font-size:13px"><option value="">auto</option>${["G","1","2","3"].map(k=>`<option${p.m===k?" selected":""}>${k}</option>`).join("")}</select></span>
+        <strong>${r && +p.q ? eur(r.total) : ""}</strong></div>
+    </div>`; }).join("");
+  L.querySelectorAll("[data-q]").forEach(inp => inp.oninput = () => { S.pos[+inp.dataset.q].q = inp.value; persist(); renderSum(); softPos(); });
+  L.querySelectorAll("[data-inc]").forEach(b => b.onclick = () => { const p=S.pos[+b.dataset.inc]; p.q=String((+p.q||0)+1); persist(); renderPos(); renderSum(); });
+  L.querySelectorAll("[data-dec]").forEach(b => b.onclick = () => { const p=S.pos[+b.dataset.dec]; p.q=String(Math.max(0,(+p.q||0)-1)); persist(); renderPos(); renderSum(); });
+  L.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { S.pos.splice(+b.dataset.del,1); persist(); renderPos(); renderSum(); });
+  L.querySelectorAll("[data-m]").forEach(s => s.onchange = () => { S.pos[+s.dataset.m].m = s.value; persist(); renderPos(); renderSum(); });
+  L.querySelectorAll("[data-alt]").forEach(s => s.onchange = () => { S.pos[+s.dataset.alt].n = s.value; persist(); renderPos(); renderSum(); });
+}
+let softT; function softPos(){ clearTimeout(softT); softT=setTimeout(()=>{ const a=document.activeElement; const k=a&&a.dataset?a.dataset.q:null; renderPos(); if(k!=null){ const el=document.querySelector(`[data-q="${k}"]`); if(el){ el.focus(); const v=el.value; el.value=""; el.value=v; } } }, 700); }
+function renderSum(){
+  const c=calc();
+  $("#sum").innerHTML = `<span>Summe netto</span><span>${eur(c.summe)}</span>
+    <span>Erstbesteller-Rabatt${c.best!=null&&S.erst?" (Kat. "+(c.best===0?"G":c.best)+")":""}</span><span>${eur(c.rabatt)}</span>
+    <span>Netto</span><span>${eur(c.netto)}</span>
+    <span>${c.mwstSatz? "MwSt. 7 %" : "MwSt. 0 % (Ausland)"}</span><span>${eur(c.mwst)}</span>
+    <span class="tot">Gesamtbetrag</span><span class="tot">${eur(c.gesamt)}</span>`;
+  $("#bar-v").textContent = eur(c.gesamt);
+  $("#bar-l").textContent = c.rows.length ? `${c.rows.length} Position${c.rows.length>1?"en":""} · Gesamtbetrag` : "Gesamtbetrag";
+}
+function abCheck(c){
+  if(!c.e) return "Bitte zuerst einen Erzeuger wählen.";
+  if(!c.rows.length) return "Es ist noch keine Position erfasst.";
+  if(c.rows.some(r=>!(+r.p.q))) return "Bei mindestens einer Position fehlt die Menge.";
+  return "";
+}
+function today(){ return new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+function fitPaper(){ const p=$("#paper"); const w=$("#v-ab").clientWidth-32; if(w>0) p.style.zoom = Math.min(1, w/682); }
+window.addEventListener("resize", fitPaper);
+function renderAB(){
+  const c=calc(); const e=c.e; const err=abCheck(c);
+  $("#ab-hint").textContent = err || "So sieht die Auftragsbestätigung aus. Speichern legt den Auftrag in der gemeinsamen Liste ab.";
+  $("#ab-save").disabled = !!err; $("#ab-pdf").disabled = !!err; $("#ab-copy").disabled = !!err;
+  const vers = e && e.vn && !norm(e.n).includes(norm(e.vn)) ? `<div>Versand: ${esc(e.vn)}</div>` : "";
+  $("#paper").innerHTML = `
+    <div class="hd"><div class="firm">${VG.firma}<small>${VG.zusatz}</small><small>${VG.str} · ${VG.ort} · Tel. ${VG.tel} · ${VG.web}</small></div><img src="${LOGO}" alt=""></div>
+    <div class="stripe"></div>
+    <div class="addr"><div><div class="sender">${VG.firma} · ${VG.str} · ${VG.ort}</div>
+      ${e?`<div style="font-weight:700;font-size:13px;margin-top:4px">${esc(e.n)}</div>${vers}<div>${esc(e.st)}</div><div>${esc((e.plz+" "+e.o).trim())}${e.la!=="DE"?" ("+esc(e.la)+")":""}</div>`:`<div class="hint">Erzeuger fehlt</div>`}</div>
+      <div class="info"><span>AB-Nr.</span><b>${esc(c.abnr||"–")}</b><span>Datum</span><span>${today()}</span><span>Kunden-Nr.</span><span>${esc(e&&e.kd||"–")}</span>
+        <span>Ihre Referenz</span><span>${esc(S.ref||"–")}</span><span>Liefertermin</span><b>${esc(S.lief||"nach Absprache")}</b><span>Ansprechpartner</span><span>${esc(S.bearb)}</span><span>E-Mail</span><span>${VG.bmail}</span></div></div>
+    <h3>Auftragsbestätigung<small>${c.abnr?"Nr. "+esc(c.abnr):""}</small></h3>
+    <p>Sehr geehrte Damen und Herren,<br>vielen Dank für Ihre Saatgutbestellung. Hiermit bestätigen wir Ihnen folgende Positionen:</p>
+    <table><thead><tr><th>Pos.</th><th>Art.-Nr.</th><th>Artikel</th><th>Züchter</th><th class="r">Menge</th><th>Einheit</th><th>Kat.</th><th class="r">Einzelpreis €</th><th class="r">Gesamt €</th></tr></thead>
+    <tbody>${c.rows.length?"":`<tr><td colspan="9" style="color:#888;text-align:center;padding:14px">Noch keine Positionen</td></tr>`}${c.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.a.n)}</td><td>${esc(r.a.k)} ${esc(r.a.s)}, ${esc(r.a.v)}${r.a.kal?", Kal. "+esc(r.a.kal):""}</td><td>${esc(r.a.l)}</td><td class="r">${num(+r.p.q||0)}</td><td>${esc(r.a.e)}</td><td>${esc(r.kat)}</td><td class="r">${n2(r.price)}</td><td class="r">${n2(r.total)}</td></tr>`).join("")}</tbody></table>
+    <div class="tot"><span>Summe netto</span><span class="r">${eur(c.summe)}</span><span>Erstbesteller-Rabatt</span><span class="r">${eur(c.rabatt)}</span><b>Netto</b><b class="r">${eur(c.netto)}</b>
+      <span>${c.mwstSatz?"zzgl. MwSt. 7 %":"MwSt. 0 % (steuerfreie Lieferung)"}</span><span class="r">${eur(c.mwst)}</span><span class="g">Gesamtbetrag</span><span class="g r">${eur(c.gesamt)}</span></div>
+    <p style="font-size:10px;margin-top:14px">Alle Preise in Euro netto. Die Preiskategorie richtet sich nach Ihrer Einstufung bzw. der Bestellmenge je Kultur (Kategorie G = Großbetrieb).</p>
+    <p>Vielen Dank für Ihren Auftrag. Bei Fragen erreichen Sie uns gerne.</p><p>Mit freundlichen Grüßen<br><br><b>${esc(S.bearb)}</b><br>${VG.firma}</p>
+    <div class="ft"><div>${VG.firma}<br>${VG.zusatz}<br>${VG.str} · ${VG.ort}</div><div>Tel. ${VG.tel} · Fax -20<br>${VG.mail} · ${VG.web}<br>Geschäftsführer: ${VG.gf}</div><div style="text-align:right">${VG.hrb}<br>USt-IdNr. ${VG.ust}<br>Öko-Kontrollstelle ${VG.oeko}</div></div>`;
+  fitPaper();
+}
+function mailText(c){
+  return `Auftragsbestätigung ${c.abnr} – Gemüse-Saatgut FJ27\n\nGuten Tag,\n\nvielen Dank für Ihre Saatgutbestellung. Wir bestätigen Ihnen folgende Positionen:\n\n` +
+    c.rows.map((r,i)=>`${i+1}. ${r.a.k} ${r.a.s}, ${r.a.v}${r.a.kal?", Kal. "+r.a.kal:""} (${r.a.n}) – ${num(+r.p.q)} × ${r.a.e} à ${eur(r.price)} (Kat. ${r.kat}) = ${eur(r.total)}`).join("\n") +
+    `\n\nSumme netto: ${eur(c.summe)}\nErstbesteller-Rabatt: ${eur(c.rabatt)}\nNetto: ${eur(c.netto)}\n${c.mwstSatz?"zzgl. MwSt. 7 %":"MwSt. 0 %"}: ${eur(c.mwst)}\nGesamtbetrag: ${eur(c.gesamt)}\n\nLiefertermin: ${S.lief}\n\nMit freundlichen Grüßen\n${S.bearb}\n${VG.firma}\n${VG.str} · ${VG.ort} · Tel. ${VG.tel}`;
+}
+function renderAll(){ renderErz(); renderPos(); renderSum(); if(!$("#v-ab").hidden) renderAB(); }
+
+// ---------- Ansichten ----------
+function show(id){
+  ["v-best","v-ab","v-auf"].forEach(v => $("#"+v).hidden = v!==id);
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.view===id ? "true":"false"));
+  $("#bar-btn").textContent = id==="v-best" ? "AB ansehen" : "Zur Bestellung";
+  if(id==="v-ab") renderAB();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => show(b.dataset.view));
+$("#bar-btn").onclick = () => show($("#v-best").hidden ? "v-best" : "v-ab");
+
+// ---------- Eingaben ----------
+$("#erz-q").oninput = renderErzList;
+$("#art-q").oninput = renderArtList;
+$("#dik-go").onclick = () => {
+  const r = parseDiktat($("#dik").value);
+  if(!S.erz){ for(const w of r.rest){ const e=searchErz(w)[0]; if(e && norm(w).length>2){ S.erz={kd:e.kd,n:e.n}; break; } } }
+  let n=0; r.pos.forEach(x => { if(x.cands.length){ S.pos.push({n:x.cands[0].n, q:String(x.q), m:"", c:x.cands.map(a=>a.n), src:"Diktat", o:x.words}); n++; } });
+  persist(); renderAll();
+  const miss = r.pos.filter(x=>!x.cands.length).map(x=>"„"+x.words+"“");
+  toast(n ? `${n} Position${n>1?"en":""} übernommen${miss.length?" · nicht erkannt: "+miss.join(", "):""}` : (S.erz && r.rest.length ? "Erzeuger übernommen" : "Nichts erkannt – bitte z. B. „Flexi Kuri 80“ sprechen (Sorte + Menge)."));
+  if(n || (S.erz && r.rest.length)) $("#dik").value="";
+};
+["erst","lief","ref","nach","bearb"].forEach(id => { const el=$("#"+id); if(el.type==="checkbox") el.checked=S[id]; else el.value=S[id]||"";
+  el.oninput = el.onchange = () => { S[id] = el.type==="checkbox" ? el.checked : el.value.trim(); persist(); renderSum(); }; });
+$("#neu").onclick = () => { if($("#neu").dataset.c!=="1"){ $("#neu").dataset.c="1"; $("#neu").textContent="Wirklich leeren? Nochmal tippen"; setTimeout(()=>{ $("#neu").dataset.c=""; $("#neu").textContent="Neue Bestellung"; },3000); return; }
+  S=fresh(); persist(); ["erst","lief","ref","nach","bearb"].forEach(id=>{const el=$("#"+id); if(el.type==="checkbox") el.checked=S[id]; else el.value=S[id]||"";});
+  $("#neu").dataset.c=""; $("#neu").textContent="Neue Bestellung"; renderAll(); window.scrollTo(0,0); toast("Neue Bestellung begonnen"); };
+$("#ab-copy").onclick = async () => { const c=calc(); try{ await navigator.clipboard.writeText(mailText(c)); toast("Mailtext kopiert – in die E-Mail einfügen"); }catch(e){ toast("Kopieren nicht möglich"); } };
+
+// ---------- Plattform: Supabase, Diktat im Browser, Dateien ----------
+const MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+const CFG = window.RWE_CONFIG || {};
+const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, storageKey:"rwe-auth"}});
+let orders=[], me=null;
+document.querySelectorAll(".mic").forEach(b => b.innerHTML = MIC);
+// Diktat über die Spracherkennung des Browsers (Chrome, Edge, Safari)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SR){
+  $("#mic-hint").textContent = "Mikrofon antippen und sprechen – oder die Diktierfunktion der Tastatur nutzen.";
+  let rec=null, target=null, base="";
+  document.querySelectorAll(".mic").forEach(b => { b.hidden=false; b.onclick = () => {
+    if(rec){ rec.stop(); return; }
+    target = $("#"+b.dataset.mic); base = target.value ? target.value.replace(/\s*$/," ") : "";
+    rec = new SR(); rec.lang="de-DE"; rec.interimResults=true; rec.continuous=true;
+    b.classList.add("on");
+    rec.onresult = ev => { let fin="", part="";
+      for(let i=ev.resultIndex;i<ev.results.length;i++){ const t=ev.results[i][0].transcript; if(ev.results[i].isFinal) fin+=t; else part+=t; }
+      if(fin){ base = base + fin.trim() + (target.id==="dik" ? ", " : " "); }
+      target.value = (base + part).trim(); target.dispatchEvent(new Event("input")); };
+    rec.onerror = ev => { if(ev.error==="not-allowed") toast("Mikrofon nicht erlaubt – bitte in den Browser-Einstellungen freigeben."); };
+    rec.onend = () => { b.classList.remove("on"); rec=null; };
+    try{ rec.start(); }catch(e){ b.classList.remove("on"); rec=null; toast("Diktat gerade nicht möglich."); }
+  }; });
+}
+function saveFile(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+
+async function loadOrders(){
+  const { data, error } = await sb.from("saatgut_auftraege").select("data").order("updated_at", {ascending:false});
+  if(error){ $("#auf-list").innerHTML='<div class="empty">Aufträge konnten nicht geladen werden.</div>'; return; }
+  orders = (data||[]).map(r => r.data).filter(Boolean); renderOrders();
+}
+function renderOrders(){
+  const L=$("#auf-list");
+  if(!orders.length){ L.innerHTML='<div class="empty">Noch keine gespeicherten Aufträge.</div>'; return; }
+  const sum = orders.reduce((s,o)=>s+(+o.netto||0),0);
+  L.innerHTML = `<div class="hint">${orders.length} Auftrag${orders.length>1?"e":""} · zusammen netto ${eur(sum)}</div>` + orders.map((o,i)=>`<button class="o" data-i="${i}"><b>${esc(o.abnr)} · ${esc(o.erzeuger)}</b><span class="sub">${esc(o.datum)} · ${(o.positionen||[]).length} Pos. · ${esc(o.bearbeiter||"")}</span><span class="pr">${eur(+o.gesamt||0)}</span></button>`).join("");
+  L.querySelectorAll(".o").forEach(b => b.onclick = () => { const o=orders[+b.dataset.i];
+    S = {erz:{kd:o.kd,n:o.erzeuger}, pos:(o.positionen||[]).map(p=>({n:p.art, q:String(p.menge), m:p.manuell||"", c:null})), erst:!!o.erst, lief:o.liefertermin||"", ref:o.referenz||"", nach:o.nachtrag||"", bearb:o.bearbeiter||""};
+    persist(); ["erst","lief","ref","nach","bearb"].forEach(id=>{const el=$("#"+id); if(el.type==="checkbox") el.checked=S[id]; else el.value=S[id]||"";});
+    renderAll(); show("v-best"); toast("Auftrag "+o.abnr+" geladen"); });
+}
+$("#ab-save").onclick = async () => {
+  const c=calc(); const err=abCheck(c); if(err){ toast(err); return; }
+  const doc = {abnr:c.abnr, datum:today(), gespeichert:new Date().toISOString(), kd:String(c.e.kd||""), erzeuger:c.e.n, ort:c.e.o, email:c.e.m||"",
+    einstufung:c.e.e, erst:S.erst, liefertermin:S.lief, referenz:S.ref, nachtrag:S.nach, bearbeiter:S.bearb,
+    positionen:c.rows.map((r,i)=>({pos:i+1, art:r.a.n, buero:r.a.b||"", kultur:r.a.k, sorte:r.a.s, variante:r.a.v, kaliber:r.a.kal, zuechter:r.a.l, menge:+r.p.q, einheit:r.a.e, kategorie:r.kat, manuell:r.p.m||"", einzelpreis:r.price, gesamt:r.total})),
+    summe:Math.round(c.summe*100)/100, rabatt:Math.round(c.rabatt*100)/100, netto:Math.round(c.netto*100)/100, mwst_satz:c.mwstSatz, mwst:c.mwst, gesamt:Math.round(c.gesamt*100)/100};
+  $("#ab-save").disabled=true;
+  const { error } = await sb.from("saatgut_auftraege").upsert({abnr:c.abnr, erzeuger:c.e.n, kd:String(c.e.kd||""), gesamt:doc.gesamt, data:doc, bearbeiter:S.bearb, updated_at:new Date().toISOString()});
+  $("#ab-save").disabled=false;
+  if(error){ toast("Speichern fehlgeschlagen – bitte erneut versuchen"); return; }
+  toast("Auftrag "+c.abnr+" gespeichert"); loadOrders();
+};
+function csvText(){
+  const H=["AB-Nr.","AB-Datum","Kd-Nr.","Erzeuger","Pos.","Art.-Nr.","büro+ Art.-Nr.","Kultur","Sorte","Variante","Kaliber","Züchter","Menge","Einheit","Kategorie","Einzelpreis netto","Gesamt netto","MwSt-Satz","Liefertermin","Bearbeiter"];
+  const q = v => { v=String(v==null?"":v); return /[;"\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const d = v => (Math.round((+v||0)*100)/100).toFixed(2).replace(".",",");
+  const lines=[H.join(";")];
+  orders.slice().reverse().forEach(o => { (o.positionen||[]).forEach(p => lines.push([o.abnr,o.datum,o.kd,o.erzeuger,p.pos,p.art,p.buero||"",p.kultur,p.sorte,p.variante,p.kaliber,p.zuechter,d(p.menge),p.einheit,p.kategorie,d(p.einzelpreis),d(p.gesamt),Math.round((o.mwst_satz||0)*100),o.liefertermin,o.bearbeiter].map(q).join(";")));
+    if(+o.rabatt) lines.push([o.abnr,o.datum,o.kd,o.erzeuger,"","RABATT","","","Erstbesteller-Rabatt","","","","1,00","","",d(o.rabatt),d(o.rabatt),Math.round((o.mwst_satz||0)*100),o.liefertermin,o.bearbeiter].map(q).join(";")); });
+  return lines.join("\r\n");
+}
+$("#csv-copy").onclick = async () => { if(!orders.length){ toast("Noch keine gespeicherten Aufträge"); return; } try{ await navigator.clipboard.writeText(csvText()); toast("CSV kopiert"); }catch(e){ toast("Kopieren nicht möglich"); } };
+$("#csv-dl").onclick = () => { if(!orders.length){ toast("Noch keine gespeicherten Aufträge"); return; }
+  saveFile(new Blob(["\ufeff"+csvText()], {type:"text/csv;charset=utf-8"}), "Saatgut-Positionen_"+new Date().toISOString().slice(0,10)+".csv"); };
+
+// ---------- PDF der AB ----------
+function buildPdf(){
+  const c=calc(); const err=abCheck(c); if(err){ toast(err); return null; }
+  if(!window.jspdf){ toast("PDF-Erstellung lädt noch – gleich nochmal tippen"); return null; }
+  const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:"mm", format:"a4"}); const G=[92,138,19], B=[44,127,176], GR=[107,107,107];
+  const e=c.e; let y=18;
+  doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(...G); doc.text(VG.firma, 18, y);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...GR); doc.text(VG.zusatz, 18, y+5); doc.text(`${VG.str} · ${VG.ort} · Tel. ${VG.tel} · ${VG.web}`, 18, y+9.5);
+  try{ doc.addImage(LOGO, "JPEG", 152, 9, 40, 16.4); }catch(x){}
+  doc.setFillColor(147,195,26); doc.rect(18, 32, 116, 1.4, "F"); doc.setFillColor(95,178,222); doc.rect(134, 32, 58, 1.4, "F");
+  y=42; doc.setFontSize(6.5); doc.setTextColor(140); doc.text(`${VG.firma} · ${VG.str} · ${VG.ort}`, 18, y);
+  doc.setTextColor(20); doc.setFontSize(11); doc.setFont("helvetica","bold"); doc.text(e.n, 18, y+6); doc.setFont("helvetica","normal");
+  const adr=[]; if(e.vn && !norm(e.n).includes(norm(e.vn))) adr.push("Versand: "+e.vn); adr.push(e.st, (e.plz+" "+e.o).trim()+(e.la!=="DE"?" ("+e.la+")":"")); adr.filter(Boolean).forEach((t,i)=>doc.text(t,18,y+11+i*5));
+  const info=[["AB-Nr.",c.abnr,1],["Datum",today()],["Kunden-Nr.",String(e.kd||"–")],["Ihre Referenz",S.ref||"–"],["Liefertermin",S.lief||"nach Absprache",1],["Ansprechpartner",S.bearb],["E-Mail",VG.bmail]];
+  info.forEach((r,i)=>{ doc.setFontSize(8.5); doc.setTextColor(...GR); doc.setFont("helvetica","normal"); doc.text(r[0],128,y+i*4.6); doc.setTextColor(20); doc.setFont("helvetica",r[2]?"bold":"normal"); doc.text(String(r[1]),154,y+i*4.6); });
+  y=82; doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.setTextColor(...G); doc.text("Auftragsbestätigung",18,y); doc.setFontSize(11); doc.setTextColor(...B); doc.text("Nr. "+c.abnr, 92, y);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(20); doc.text("Sehr geehrte Damen und Herren,",18,y+8); doc.text("vielen Dank für Ihre Saatgutbestellung. Hiermit bestätigen wir Ihnen folgende Positionen:",18,y+13);
+  y=101; const cols=[[18,"Pos."],[27,"Art.-Nr."],[44,"Artikel"],[108,"Züchter"],[143,"Menge","r"],[145,"Einheit"],[166,"Kat."],[180,"Preis €","r"],[192,"Gesamt €","r"]];
+  doc.setFillColor(...G); doc.rect(17,y-4.2,176,6.2,"F"); doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
+  cols.forEach(cl=>doc.text(cl[1], cl[0]+(cl[2]?0:0.5), y, cl[2]?{align:"right"}:undefined));
+  doc.setFont("helvetica","normal"); doc.setTextColor(20); y+=6;
+  c.rows.forEach((r,i)=>{ if(y>255){ doc.addPage(); y=20; }
+    if(i%2){ doc.setFillColor(242,248,228); doc.rect(17,y-4,176,5.6,"F"); }
+    const art = doc.splitTextToSize(`${r.a.k} ${r.a.s}, ${r.a.v}${r.a.kal?", Kal. "+r.a.kal:""}`, 62)[0];
+    const vals=[String(i+1), r.a.n, art, r.a.l, num(+r.p.q), r.a.e, r.kat, n2(r.price), n2(r.total)];
+    cols.forEach((cl,j)=>doc.text(vals[j], cl[0]+(cl[2]?0:0.5), y, cl[2]?{align:"right"}:undefined)); y+=5.6; });
+  y+=4; const tot=[["Summe netto",eur(c.summe)],["Erstbesteller-Rabatt",eur(c.rabatt)],["Netto",eur(c.netto),1],[c.mwstSatz?"zzgl. MwSt. 7 %":"MwSt. 0 % (steuerfreie Lieferung)",eur(c.mwst)],["Gesamtbetrag",eur(c.gesamt),2]];
+  tot.forEach(t=>{ doc.setFontSize(t[2]===2?11:9.5); doc.setFont("helvetica",t[2]?"bold":"normal"); doc.setTextColor(...(t[2]===2?G:[20,20,20]));
+    if(t[2]===2){ doc.setFillColor(242,248,228); doc.rect(120,y-4.4,73,6.6,"F"); doc.setDrawColor(...G); doc.line(120,y-4.4,193,y-4.4); doc.line(120,y+2.2,193,y+2.2); doc.line(120,y+2.9,193,y+2.9); }
+    doc.text(t[0],122,y); doc.text(t[1],192,y,{align:"right"}); y+=6; });
+  y+=6; doc.setFont("helvetica","normal"); doc.setTextColor(20); doc.setFontSize(8);
+  doc.text("Alle Preise in Euro netto. Die Preiskategorie richtet sich nach Ihrer Einstufung bzw. der Bestellmenge je Kultur (Kategorie G = Großbetrieb).",18,y);
+  doc.setFontSize(9.5); doc.text("Vielen Dank für Ihren Auftrag. Bei Fragen erreichen Sie uns gerne.",18,y+9); doc.text("Mit freundlichen Grüßen",18,y+18);
+  doc.setFont("helvetica","bold"); doc.text(S.bearb,18,y+28); doc.setFont("helvetica","normal"); doc.text(VG.firma,18,y+33);
+  doc.setDrawColor(220); doc.line(18,278,192,278); doc.setFontSize(6.8); doc.setTextColor(...GR);
+  [[VG.firma,VG.zusatz,VG.str+" · "+VG.ort],["Tel. "+VG.tel+" · Fax -20",VG.mail+" · "+VG.web,"Geschäftsführer: "+VG.gf],[VG.hrb,"USt-IdNr. "+VG.ust,"Öko-Kontrollstelle "+VG.oeko]]
+    .forEach((col,j)=>col.forEach((t,i)=>doc.text(t, j===0?18:j===1?105:192, 282+i*3.4, j===1?{align:"center"}:j===2?{align:"right"}:undefined)));
+  const name = ("AB_"+c.abnr+"_"+e.n).replace(/[\\/:*?"<>|]+/g,"").slice(0,90)+".pdf";
+  return {blob: doc.output("blob"), name, c};
+}
+$("#ab-pdf").onclick = () => { const r=buildPdf(); if(r) saveFile(r.blob, r.name); };
+if(navigator.canShare && navigator.canShare({files:[new File(["x"], "t.pdf", {type:"application/pdf"})]})){
+  $("#ab-share").hidden=false;
+  $("#ab-share").onclick = async () => { const r=buildPdf(); if(!r) return;
+    const file=new File([r.blob], r.name, {type:"application/pdf"});
+    try{ await navigator.share({files:[file], title:"Auftragsbestätigung "+r.c.abnr, text:mailText(r.c)}); }catch(e){ if(e && e.name!=="AbortError") toast("Teilen nicht möglich"); } };
+}
+
+// ---------- Bestellschein / E-Mail / Foto übernehmen (Auswertung durch Claude) ----------
+let sampler=true, imgOK=true, imgTypes=["image/jpeg","image/png","image/webp","image/gif"], imgMax=4, impCtl=null;
+async function blobToB64(b){ const buf=new Uint8Array(await b.arrayBuffer()); let s=""; for(let i=0;i<buf.length;i+=0x8000) s+=String.fromCharCode.apply(null, buf.subarray(i,i+0x8000)); return btoa(s); }
+async function shrink(blob){ // Fotos auf max. 1600 px verkleinern
+  try{ const bmp = await createImageBitmap(blob); const k=Math.min(1, 1600/Math.max(bmp.width,bmp.height));
+    const cv=document.createElement("canvas"); cv.width=Math.round(bmp.width*k); cv.height=Math.round(bmp.height*k); cv.getContext("2d").drawImage(bmp,0,0,cv.width,cv.height);
+    return await new Promise(r=>cv.toBlob(r,"image/jpeg",0.85)); }catch(e){ return blob; } }
+async function askClaude(prompt, imgs, signal){
+  const { data:{ session } } = await sb.auth.getSession();
+  const images = []; for(const b of imgs){ const j=await shrink(b); images.push({media_type:"image/jpeg", data: await blobToB64(j)}); }
+  const r = await fetch(CFG.supabaseUrl + "/functions/v1/saatgut-import", {method:"POST", signal,
+    headers:{"Content-Type":"application/json", "apikey":CFG.supabaseAnonKey, "Authorization":"Bearer "+(session?session.access_token:"")},
+    body: JSON.stringify({input: prompt, images})});
+  const out = await r.json().catch(()=>null);
+  if(!r.ok){ const e = new Error("fail"); e.code = out && out.error ? out.error.code : "upstream_error"; throw e; }
+  const t = String(out.text||""); const m = t.match(/```(?:json)?\s*([\s\S]*?)```/); const raw = m ? m[1] : t.slice(t.indexOf("{"), t.lastIndexOf("}")+1);
+  try{ return JSON.parse(raw); }catch(e){ const x=new Error("json"); x.code="invalid_json"; throw x; }
+}
+function loadScript(src){ return new Promise((res,rej)=>{ if(document.querySelector(`script[src="${src}"]`)) return res(); const sc=document.createElement("script"); sc.src=src; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); }); }
+async function pdfLib(){
+  if(window.pdfjsLib) return window.pdfjsLib;
+  await loadScript("../lib/pdfjs/pdf.min.js");
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "../lib/pdfjs/pdf.worker.min.js";
+  return window.pdfjsLib;
+}
+async function readPdf(file){
+  const lib = await pdfLib(); const pdf = await lib.getDocument({data: await file.arrayBuffer(), isEvalSupported:false}).promise;
+  let text=""; const imgs=[];
+  for(let i=1;i<=Math.min(pdf.numPages,6);i++){ const pg=await pdf.getPage(i); const tc=await pg.getTextContent(); text += tc.items.map(x=>x.str).join(" ") + "\n"; }
+  if(text.replace(/\s/g,"").length < 40){
+    for(let i=1;i<=Math.min(pdf.numPages,imgMax);i++){ const pg=await pdf.getPage(i); const vp=pg.getViewport({scale:1.6});
+      const cv=document.createElement("canvas"); cv.width=vp.width; cv.height=vp.height; await pg.render({canvasContext:cv.getContext("2d"), viewport:vp}).promise;
+      imgs.push(await new Promise(r=>cv.toBlob(r,"image/jpeg",0.85))); }
+    text="";
+  }
+  return {text, imgs};
+}
+function decodeQP(s){ return s.replace(/=\r?\n/g,"").replace(/(=[0-9A-F]{2})+/g, m => { try{ return decodeURIComponent(m.replace(/=/g,"%")); }catch(e){ return m; } }); }
+function cleanMail(t){
+  if(/quoted-printable/i.test(t)) t = decodeQP(t);
+  t = t.replace(/^[A-Za-z0-9+\/=]{60,}\s*$/gm, "");            // Base64-Anhänge entfernen
+  t = t.replace(/<style[\s\S]*?<\/style>/gi,"").replace(/<br\s*\/?>/gi,"\n").replace(/<\/(p|div|tr|li)>/gi,"\n").replace(/<[^>]+>/g," ").replace(/&nbsp;/g," ");
+  return t.replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim();
+}
+async function toJpeg(file){
+  if(imgTypes.includes(file.type)) return file;
+  if(/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name||"")){ try{ await loadScript("../lib/heic2any.min.js"); const r = await window.heic2any({blob:file, toType:"image/jpeg", quality:0.85}); return Array.isArray(r)?r[0]:r; }catch(e){} }
+  const url = URL.createObjectURL(file);
+  try{ const im = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+    const cv=document.createElement("canvas"); cv.width=im.naturalWidth; cv.height=im.naturalHeight; cv.getContext("2d").drawImage(im,0,0);
+    return await new Promise(r=>cv.toBlob(r,"image/jpeg",0.88)); }
+  finally{ URL.revokeObjectURL(url); }
+}
+async function handleFiles(list){
+  const files=[...list]; if(!files.length) return;
+  
+  let text="", imgs=[], names=[];
+  setImpStatus("Datei wird gelesen …");
+  try{
+    for(const f of files){
+      names.push(f.name||"Foto");
+      const n=(f.name||"").toLowerCase();
+      if(f.type.startsWith("image/") || /\.(jpe?g|png|heic|heif|webp|gif)$/.test(n)){ imgs.push(await toJpeg(f)); }
+      else if(f.type==="application/pdf" || n.endsWith(".pdf")){ const r=await readPdf(f); text += (r.text?"\n--- "+f.name+" ---\n"+r.text:""); imgs.push(...r.imgs); }
+      else if(n.endsWith(".msg")){ toast("Outlook-.msg kann ich nicht lesen – bitte als PDF speichern oder den Text einfügen."); }
+      else { text += "\n--- "+(f.name||"Text")+" ---\n" + cleanMail(await f.text()); }
+    }
+  }catch(e){ setImpStatus(null); toast("Die Datei konnte nicht gelesen werden."); return; }
+  if(imgs.length && !imgOK){ setImpStatus(null); toast("Fotos kann diese Ansicht nicht an Claude senden – bitte Text einfügen."); if(!text) return; imgs=[]; }
+  if(!text.trim() && !imgs.length){ setImpStatus(null); return; }
+  runImport(text, imgs.slice(0,imgMax), names.join(", "));
+}
+function setImpStatus(t){ $("#imp-status").hidden = !t; if(t) $("#imp-status-t").textContent=t; $("#imp-drop").style.pointerEvents = t ? "none" : ""; }
+async function runImport(text, imgs, quelle){
+  impCtl = new AbortController();
+  setImpStatus("Claude liest die Bestellung …"); $("#imp-result").hidden=true;
+  const prompt = `Du liest eine Saatgut-Bestellung eines Gemüsebauern an die Vermarktungsgesellschaft Bio-Bauern mbH (VG Bio). Quelle: E-Mail, Bestellschein, Fax, Foto oder Notiz.
+Aufgabe: Ordne jede bestellte Position genau einem Artikel aus dem KATALOG zu und rechne die Menge in die Einheit des Katalog-Artikels um.
+Regeln:
+- Umrechnung: „EH (250.000 K)“ = 250.000 Korn je Einheit (500.000 Korn = 2); „Mio. K“ = Millionen Korn (3,6 Mio. = 3.6); „1.000 K“ = 1.000 Korn (5.000 Korn = 5); „EH (50.000 K)“ = 50.000 Korn; „EH (100.000 K)“ = 100.000 Korn. Steht schon „Einheiten“/„EH“/„Pakete“, die Zahl direkt nehmen.
+- Bio/Öko oder konventionell nicht genannt: Öko nehmen (Bio-Betriebe). „geprimt“ nur, wenn ausdrücklich genannt. Kaliber nur wählen, wenn genannt oder eindeutig.
+- Was du nicht sicher zuordnen kannst (Sorte nicht im Katalog, Menge fehlt, unleserlich), kommt in "unklar" (kurz, mit Originalwortlaut).
+- Erzeuger = der bestellende Betrieb (Absender, Name auf dem Bestellschein), nicht VG Bio.
+Antworte nur mit JSON in dieser Form:
+{"erzeuger":{"name":"","ort":"","kdnr":""},"referenz":"","liefertermin":"","positionen":[{"art":"ZW-002","menge":12,"original":"Bellesco bio 3 Mio Korn","sicher":true}],"unklar":[""]}
+KATALOG (Art.-Nr. | Kultur | Sorte | Variante | Kaliber | Züchter | Einheit):
+${CATALOG}
+
+DOKUMENT${imgs.length? " (siehe "+imgs.length+" Bild(er))":""}:
+${text ? text.slice(0,40000) : "(nur Bild)"}`;
+  try{
+    const res = await askClaude(prompt, imgs, impCtl.signal);
+    applyImport(res||{}, quelle);
+  }catch(e){
+    const code = e && e.code;
+    if(e && e.name==="AbortError") toast("Abgebrochen");
+    else if(code==="not_configured"){ $("#imp-off").hidden=false; toast("Auslesen ist noch nicht eingerichtet."); }
+    else if(code==="not_signed_in"||code==="forbidden") toast("Bitte neu anmelden.");
+    else if(code==="not_granted"||code==="sampling_disabled"||code==="not_declared"){ $("#imp-off").hidden=false; toast("Auswertung nicht erlaubt"); }
+    else if(code==="rate_limited") toast("Gerade zu viele Anfragen – bitte gleich nochmal versuchen.");
+    else if(code==="image_rejected") toast("Das Bild konnte nicht verarbeitet werden – anderes Foto versuchen.");
+    else if(code==="invalid_json") toast("Die Bestellung konnte nicht sicher gelesen werden – bitte nochmal versuchen.");
+    else toast("Auswertung fehlgeschlagen – bitte nochmal versuchen.");
+  }finally{ setImpStatus(null); impCtl=null; }
+}
+$("#imp-stop").onclick = () => { if(impCtl) impCtl.abort(); };
+function applyImport(r, quelle){
+  const pos = Array.isArray(r.positionen) ? r.positionen : [];
+  const unklar = (Array.isArray(r.unklar) ? r.unklar : []).map(String).filter(x=>x.trim());
+  let erzTxt="";
+  const ez = r.erzeuger || {};
+  let found=null;
+  if(ez.kdnr) found = ERS.find(e => String(e.kd)===String(ez.kdnr).trim());
+  if(!found && (ez.name||ez.ort)) found = searchErz([ez.name,ez.ort].filter(Boolean).join(" "))[0] || searchErz(String(ez.name||""))[0];
+  if(found){
+    if(!S.erz){ S.erz={kd:found.kd,n:found.n}; erzTxt="Erzeuger übernommen: "+found.n; }
+    else if(String(S.erz.kd)!==String(found.kd) || S.erz.n!==found.n){ erzTxt="Im Dokument steht „"+(ez.name||found.n)+"“ – gewählt ist ein anderer Erzeuger."; }
+  } else if(ez.name){ erzTxt="Erzeuger „"+ez.name+(ez.ort?" ("+ez.ort+")":"")+"“ nicht im Verteiler gefunden – bitte oben wählen."; }
+  let n=0;
+  pos.forEach(x => {
+    const a = art(String(x.art||"").trim().toUpperCase()); const q = parseFloat(String(x.menge).replace(",", "."));
+    if(!a){ unklar.push((x.original||x.art||"?")+" (kein passender Artikel)"); return; }
+    const alts = [a.n, ...searchArts(String(x.original||a.s), 5).map(z=>z.n).filter(k=>k!==a.n)].slice(0,6);
+    S.pos.push({n:a.n, q: isFinite(q) ? String(q) : "", m:"", c: alts, src: (x.sicher===false?"Import – bitte prüfen":"Import"), o: String(x.original||"").slice(0,80)});
+    n++;
+  });
+  if(r.referenz && !S.ref){ S.ref=String(r.referenz).slice(0,60); $("#ref").value=S.ref; }
+  if(r.liefertermin && String(r.liefertermin).trim()){ S.lief=String(r.liefertermin).slice(0,40); $("#lief").value=S.lief; }
+  persist(); renderAll();
+  const box=$("#imp-result"); box.hidden=false;
+  box.innerHTML = `<b>${n} Position${n===1?"":"en"} übernommen</b><span class="hint">aus ${esc(quelle)}</span>` +
+    (erzTxt?`<span>${esc(erzTxt)}</span>`:"") +
+    (unklar.length?`<div><span class="pill w">Bitte prüfen</span><ul style="margin:6px 0 0 18px;padding:0">${unklar.map(u=>`<li>${esc(u)}</li>`).join("")}</ul></div>`:"") +
+    `<span class="hint">Positionen stehen unten unter 5 – Mengen und Artikel kurz kontrollieren.</span>`;
+  toast(n ? `${n} Position${n===1?"":"en"} aus dem Dokument übernommen` : "Keine Positionen erkannt");
+}
+const drop=$("#imp-drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { const dt=e.dataTransfer; if(dt && dt.files && dt.files.length) handleFiles(dt.files);
+  else if(dt){ const t=dt.getData("text/plain"); if(t){ runImport(cleanMail(t), [], "eingefügtem Text"); } } });
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => { if(!drop.contains(e.target)) e.preventDefault(); });
+$("#imp-file").onchange = e => { handleFiles(e.target.files); e.target.value=""; };
+$("#imp-cam").onchange = e => { handleFiles(e.target.files); e.target.value=""; };
+$("#imp-text").addEventListener("paste", e => { const f = e.clipboardData && e.clipboardData.files; if(f && f.length){ e.preventDefault(); handleFiles(f); } });
+$("#imp-text-go").onclick = () => { const t=$("#imp-text").value.trim(); if(!t){ toast("Bitte zuerst den E-Mail-Text einfügen"); return; }
+   runImport(cleanMail(t), [], "eingefügtem Text"); $("#imp-text").value=""; };
+
+// ---------- Stammdaten: aus Supabase laden, aus der Excel-Preisliste aktualisieren ----------
+async function loadStamm(){
+  const { data, error } = await sb.from("saatgut_stamm").select("id,data,stand,updated_at");
+  if(error) throw error;
+  const by = Object.fromEntries((data||[]).map(r => [r.id, r]));
+  if(!by.katalog || !by.erzeuger){ $("#stamm-info").textContent = "Noch keine Preisliste hinterlegt – bitte Excel-Datei hochladen."; return false; }
+  initData(by.katalog.data, by.erzeuger.data);
+  const d = new Date(by.katalog.updated_at).toLocaleDateString("de-DE");
+  $("#stamm-info").textContent = `${ARTS.length} Artikel · ${ERS.length} Erzeuger · ${by.katalog.stand||""} (hochgeladen ${d})`;
+  return true;
+}
+async function excelLesen(file){
+  await loadScript("../lib/xlsx.full.min.js");
+  const wb = window.XLSX.read(await file.arrayBuffer(), {type:"array", cellFormula:false});
+  const sh = n => { const w = wb.Sheets[n]; if(!w) throw new Error("Tab „"+n+"“ fehlt"); return w; };
+  const v = (w, a) => { const c = w[a]; return c ? (c.v===undefined?"":c.v) : ""; };
+  const ar = sh("Artikelstamm"), sa = sh("Staffel-Annahmen"), ez = sh("Erzeuger");
+  const arts=[];
+  for(let r=5;r<=400;r++){
+    const n = String(v(ar,"A"+r)).trim(); if(!n) continue;
+    const aktiv = v(ar,"P"+r); if(!(aktiv===true || String(aktiv).toUpperCase()==="TRUE" || String(aktiv).toUpperCase()==="WAHR")) continue;
+    const p = ["H","I","J","K"].map(c => Math.round((+v(ar,c+r)||0)*100)/100);
+    if(!p.every(x => x>0)) continue;
+    arts.push({n, k:String(v(ar,"B"+r)), s:String(v(ar,"C"+r)), l:String(v(ar,"D"+r)), kal:String(v(ar,"E"+r)||""), e:String(v(ar,"F"+r)), v:String(v(ar,"G"+r)), p, ha:+v(ar,"L"+r)||0, h:String(v(ar,"M"+r)||""), b:String(v(ar,"Q"+r)||"")});
+  }
+  const staffel={}; for(let r=27;r<=31;r++){ const k=String(v(sa,"A"+r)).trim(); if(k) staffel[k]=[+v(sa,"C"+r), +v(sa,"D"+r), +v(sa,"F"+r)]; }
+  const rab={"0":+v(sa,"C8"), "1":+v(sa,"C5"), "2":+v(sa,"C6"), "3":+v(sa,"C7")};
+  const ers=[];
+  for(let r=5;r<=3000;r++){
+    const n=String(v(ez,"B"+r)).trim(); if(!n) continue;
+    const o={n}; const put=(k,c)=>{ const x=String(v(ez,c+r)).trim(); if(x) o[k]=x; };
+    put("kd","A"); put("vn","C"); put("st","D"); put("plz","E"); put("o","F"); put("la","H"); put("m","K"); put("e","M"); put("sk","N"); put("sc","O");
+    ers.push(o);
+  }
+  if(arts.length<10 || !Object.keys(staffel).length || ers.length<10) throw new Error("Datei hat nicht das erwartete Format");
+  return {cat:{arts, staffel, rab}, ers};
+}
+$("#stamm-file").onchange = async e => {
+  const f = e.target.files[0]; e.target.value=""; if(!f) return;
+  $("#stamm-info").textContent = "Datei wird gelesen …";
+  try{
+    const r = await excelLesen(f);
+    const stand = f.name.replace(/\.xls[xm]$/i,"");
+    const now = new Date().toISOString();
+    const { error } = await sb.from("saatgut_stamm").upsert([{id:"katalog", data:r.cat, stand, updated_at:now}, {id:"erzeuger", data:r.ers, stand, updated_at:now}]);
+    if(error) throw error;
+    await loadStamm(); renderAll(); renderErzList(); renderArtList();
+    toast(`Preisliste übernommen: ${r.cat.arts.length} Artikel, ${r.ers.length} Erzeuger`);
+  }catch(x){ $("#stamm-info").textContent = "Fehler: " + (x && x.message ? x.message : "Datei konnte nicht gelesen werden"); }
+};
+
+async function start(session){
+  const user = session.user;
+  const { data: ok } = await sb.rpc("saatgut_ok");
+  if(!ok){ $("#li-err").textContent="Dein Zugang ist für das Saatgut-Tool noch nicht freigeschaltet."; $("#li-err").hidden=false; await sb.auth.signOut(); return; }
+  const { data: prof } = await sb.from("profiles").select("name").eq("id", user.id).maybeSingle();
+  me = {id:user.id, name: (prof && prof.name) || user.email};
+  $("#who-n").textContent = me.name; $("#who").hidden=false; $("#gate").hidden=true;
+  S = load() || fresh(); if(!load()) S.bearb = me.name;
+  ["erst","lief","ref","nach","bearb"].forEach(id=>{const el=$("#"+id); if(el.type==="checkbox") el.checked=S[id]; else el.value=S[id]||"";});
+  try{ const has = await loadStamm(); if(!has){ show("v-auf"); toast("Bitte zuerst die Excel-Preisliste hochladen"); } }
+  catch(e){ toast("Stammdaten konnten nicht geladen werden"); }
+  renderAll(); renderErzList(); renderArtList(); loadOrders();
+}
+$("#login-form").addEventListener("submit", async ev => {
+  ev.preventDefault(); $("#li-err").hidden=true; $("#li-go").disabled=true;
+  const { data, error } = await sb.auth.signInWithPassword({email: $("#li-mail").value.trim(), password: $("#li-pw").value});
+  $("#li-go").disabled=false;
+  if(error){ $("#li-err").textContent="Anmeldung fehlgeschlagen – E-Mail oder Passwort prüfen."; $("#li-err").hidden=false; return; }
+  start(data.session);
+});
+$("#logout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+sb.auth.getSession().then(({data}) => { if(data && data.session) start(data.session); });
+
+})();
+</script>
+</body>
+</html>

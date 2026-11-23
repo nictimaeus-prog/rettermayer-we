@@ -14,11 +14,14 @@ fs.mkdirSync(www, { recursive: true });
 
 // App-Dateien
 for (const f of ["index.html", "rwe-runtime.js", "knt.js", "la.js"]) cp(path.join(root, "src", f), path.join(www, f));
+// Gemüse-Saatgut: Bestell- und AB-Tool (nur Browser), erreichbar unter /saatgut/
+cp(path.join(root, "src/saatgut/index.html"), path.join(www, "saatgut/index.html"));
 
 // Bibliotheken
 cp(nm("@supabase/supabase-js/dist/umd/supabase.js"), path.join(www, "lib/supabase.js"));
 cp(nm("jsbarcode/dist/JsBarcode.all.min.js"), path.join(www, "lib/JsBarcode.all.min.js"));
 cp(nm("jspdf/dist/jspdf.umd.min.js"), path.join(www, "lib/jspdf.umd.min.js"));
+cp(nm("xlsx/dist/xlsx.full.min.js"), path.join(www, "lib/xlsx.full.min.js")); // Excel-Preisliste im Saatgut-Tool einlesen
 cp(nm("pdfjs-dist/build/pdf.min.js"), path.join(www, "lib/pdfjs/pdf.min.js"));
 cp(nm("pdfjs-dist/build/pdf.worker.min.js"), path.join(www, "lib/pdfjs/pdf.worker.min.js"));
 cp(nm("heic2any/dist/heic2any.min.js"), path.join(www, "lib/heic2any.min.js")); // HEIC-Fotos (iPhone) im Browser umwandeln
