@@ -127,7 +127,10 @@ details summary{cursor:pointer;font-weight:600;color:var(--blue)}
 .paper .hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .paper .firm{font:700 16px Arial;color:var(--green)}
 .paper .firm small{display:block;font:400 10px Arial;color:#6b6b6b;margin-top:2px}
-.paper .hd img{height:44px}
+.paper .hd .vgl{height:44px;display:block;margin-left:auto}
+.paper .partner{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:5px;font-size:9px;line-height:1.2;color:#6b6b6b;text-align:right}
+.paper .partner b{color:#E8901C;font-size:10px}
+.paper .partner img{height:30px;width:30px;border-radius:50%}
 .paper .stripe{margin:10px 0 14px}
 .paper .addr{display:grid;grid-template-columns:1fr auto;gap:14px}
 .paper .sender{font-size:8px;color:#888;text-decoration:underline}
@@ -297,6 +300,7 @@ details summary{cursor:pointer;font-weight:600;color:var(--blue)}
 "use strict";
 let D = {arts:[], ers:[], staffel:{}, rab:{}};
 const LOGO = document.querySelector("header img").src;
+const GBB_LOGO = "data:image/jpeg;base64,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";
 const VG = {firma:"Vermarktungsgesellschaft Bio-Bauern mbH", zusatz:"Bioland Erzeugergemeinschaft", str:"Marktplatz 19", ort:"86554 Pöttmes",
   tel:"+49 (0)8253 99 70 20-0", fax:"+49 (0)8253 99 70 20-20", mail:"buero@bio-vg.de", web:"www.bio-vg.de",
   gf:"Andreas Hopf", hrb:"HRB 26286", ust:"DE 278098048", oeko:"DE-ÖKO-006", praefix:"GEM27", bmail:"nicolai.timaeus@bio-vg.de"};
@@ -550,7 +554,7 @@ function renderAB(){
   $("#ab-save").disabled = !!err; $("#ab-pdf").disabled = !!err; $("#ab-copy").disabled = !!err;
   const vers = e && e.vn && !norm(e.n).includes(norm(e.vn)) ? `<div>Versand: ${esc(e.vn)}</div>` : "";
   $("#paper").innerHTML = `
-    <div class="hd"><div class="firm">${VG.firma}<small>${VG.zusatz}</small><small>${VG.str} · ${VG.ort} · Tel. ${VG.tel} · ${VG.web}</small></div><img src="${LOGO}" alt=""></div>
+    <div class="hd"><div class="firm">${VG.firma}<small>${VG.zusatz}</small><small>${VG.str} · ${VG.ort} · Tel. ${VG.tel} · ${VG.web}</small></div><div><img class="vgl" src="${LOGO}" alt=""><div class="partner"><span>in Partnerschaft mit<br><b>Georgs Bio-Bauern</b></span><img src="${GBB_LOGO}" alt="Georgs Bio-Bauern"></div></div></div>
     <div class="stripe"></div>
     <div class="addr"><div><div class="sender">${VG.firma} · ${VG.str} · ${VG.ort}</div>
       ${e?`<div style="font-weight:700;font-size:13px;margin-top:4px">${esc(e.n)}</div>${vers}<div>${esc(e.st)}</div><div>${esc((e.plz+" "+e.o).trim())}${e.la!=="DE"?" ("+esc(e.la)+")":""}</div>`:`<div class="hint">Erzeuger fehlt</div>`}</div>
@@ -570,7 +574,7 @@ function renderAB(){
 function mailText(c){
   return `Auftragsbestätigung ${c.abnr} – Gemüse-Saatgut FJ27\n\nGuten Tag,\n\nvielen Dank für Ihre Saatgutbestellung. Wir bestätigen Ihnen folgende Positionen:\n\n` +
     c.rows.map((r,i)=>`${i+1}. ${r.a.k} ${r.a.s}, ${r.a.v}${r.a.kal?", Kal. "+r.a.kal:""} (${r.a.n}) – ${num(+r.p.q)} × ${r.a.e} à ${eur(r.price)} (Kat. ${r.kat}) = ${eur(r.total)}`).join("\n") +
-    `\n\nSumme netto: ${eur(c.summe)}\nErstbesteller-Rabatt: ${eur(c.rabatt)}\nNetto: ${eur(c.netto)}\n${c.mwstSatz?"zzgl. MwSt. 7 %":"MwSt. 0 %"}: ${eur(c.mwst)}\nGesamtbetrag: ${eur(c.gesamt)}\n\nLiefertermin: ${S.lief}\n\nMit freundlichen Grüßen\n${S.bearb}\n${VG.firma}\n${VG.str} · ${VG.ort} · Tel. ${VG.tel}`;
+    `\n\nSumme netto: ${eur(c.summe)}\nErstbesteller-Rabatt: ${eur(c.rabatt)}\nNetto: ${eur(c.netto)}\n${c.mwstSatz?"zzgl. MwSt. 7 %":"MwSt. 0 %"}: ${eur(c.mwst)}\nGesamtbetrag: ${eur(c.gesamt)}\n\nLiefertermin: ${S.lief}\n\nMit freundlichen Grüßen\n${S.bearb}\n${VG.firma}\n${VG.str} · ${VG.ort} · Tel. ${VG.tel}\nin Partnerschaft mit Georgs Bio-Bauern`;
 }
 function renderAll(){ const cc=calc(); const ca=$("#cur-ab"); if(ca) ca.textContent = cc.abnr ? "AB "+cc.abnr+(cc.rows.length?" · "+cc.rows.length+" Pos.":"") : "Neue Auftragsbestätigung"; renderErz(); renderPos(); renderSum(); if(!$("#v-ab").hidden) renderAB(); }
 
@@ -734,7 +738,10 @@ function buildPdf(){
   const e=c.e; let y=18;
   doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(...G); doc.text(VG.firma, 18, y);
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...GR); doc.text(VG.zusatz, 18, y+5); doc.text(`${VG.str} · ${VG.ort} · Tel. ${VG.tel} · ${VG.web}`, 18, y+9.5);
-  try{ doc.addImage(LOGO, "JPEG", 152, 9, 40, 16.4); }catch(x){}
+  try{ doc.addImage(LOGO, "JPEG", 156, 7.5, 36, 14.8); }catch(x){}
+  try{ doc.addImage(GBB_LOGO, "JPEG", 183, 22.6, 9, 9); }catch(x){}
+  doc.setFontSize(7); doc.setTextColor(...GR); doc.setFont("helvetica","normal"); doc.text("in Partnerschaft mit", 181.5, 26.1, {align:"right"});
+  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(232,144,28); doc.text("Georgs Bio-Bauern", 181.5, 29.6, {align:"right"}); doc.setFont("helvetica","normal");
   doc.setFillColor(147,195,26); doc.rect(18, 32, 116, 1.4, "F"); doc.setFillColor(95,178,222); doc.rect(134, 32, 58, 1.4, "F");
   y=42; doc.setFontSize(6.5); doc.setTextColor(140); doc.text(`${VG.firma} · ${VG.str} · ${VG.ort}`, 18, y);
   doc.setTextColor(20); doc.setFontSize(11); doc.setFont("helvetica","bold"); doc.text(e.n, 18, y+6); doc.setFont("helvetica","normal");
@@ -743,13 +750,13 @@ function buildPdf(){
   info.forEach((r,i)=>{ doc.setFontSize(8.5); doc.setTextColor(...GR); doc.setFont("helvetica","normal"); doc.text(r[0],128,y+i*4.6); doc.setTextColor(20); doc.setFont("helvetica",r[2]?"bold":"normal"); doc.text(String(r[1]),154,y+i*4.6); });
   y=82; doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.setTextColor(...G); doc.text("Auftragsbestätigung",18,y); doc.setFontSize(11); doc.setTextColor(...B); doc.text("Nr. "+c.abnr, 92, y);
   doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(20); doc.text("Sehr geehrte Damen und Herren,",18,y+8); doc.text("vielen Dank für Ihre Saatgutbestellung. Hiermit bestätigen wir Ihnen folgende Positionen:",18,y+13);
-  y=101; const cols=[[18,"Pos."],[27,"Art.-Nr."],[44,"Artikel"],[108,"Züchter"],[143,"Menge","r"],[145,"Einheit"],[166,"Kat."],[180,"Preis €","r"],[192,"Gesamt €","r"]];
+  y=101; const cols=[[18,"Pos."],[27,"Art.-Nr."],[44,"Artikel"],[104,"Züchter"],[136,"Menge","r"],[138,"Einheit"],[160,"Kat."],[177,"Preis €","r"],[192,"Gesamt €","r"]];
   doc.setFillColor(...G); doc.rect(17,y-4.2,176,6.2,"F"); doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
   cols.forEach(cl=>doc.text(cl[1], cl[0]+(cl[2]?0:0.5), y, cl[2]?{align:"right"}:undefined));
   doc.setFont("helvetica","normal"); doc.setTextColor(20); y+=6;
   c.rows.forEach((r,i)=>{ if(y>255){ doc.addPage(); y=20; }
     if(i%2){ doc.setFillColor(242,248,228); doc.rect(17,y-4,176,5.6,"F"); }
-    const art = doc.splitTextToSize(`${r.a.k} ${r.a.s}, ${r.a.v}${r.a.kal?", Kal. "+r.a.kal:""}`, 62)[0];
+    const art = doc.splitTextToSize(`${r.a.k} ${r.a.s}, ${r.a.v}${r.a.kal?", Kal. "+r.a.kal:""}`, 58)[0];
     const vals=[String(i+1), r.a.n, art, r.a.l, num(+r.p.q), r.a.e, r.kat, n2(r.price), n2(r.total)];
     cols.forEach((cl,j)=>doc.text(vals[j], cl[0]+(cl[2]?0:0.5), y, cl[2]?{align:"right"}:undefined)); y+=5.6; });
   y+=4; const tot=[["Summe netto",eur(c.summe)],["Erstbesteller-Rabatt",eur(c.rabatt)],["Netto",eur(c.netto),1],[c.mwstSatz?"zzgl. MwSt. 7 %":"MwSt. 0 % (steuerfreie Lieferung)",eur(c.mwst)],["Gesamtbetrag",eur(c.gesamt),2]];
