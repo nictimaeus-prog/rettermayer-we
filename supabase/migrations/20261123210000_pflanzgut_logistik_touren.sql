@@ -50,3 +50,13 @@ update public.pfg_sorten set bb_dt = 12.5 where name in ('Avanti','Colomba','Ann
 alter table public.pfg_auftragpos add column if not exists bb_dt numeric not null default 11 check (bb_dt > 0);
 alter table public.pfg_bestellpos add column if not exists verpackung text not null default 'Big Bag' check (verpackung in ('Big Bag','Sack 25 kg','lose'));
 alter table public.pfg_bestellpos add column if not exists bb_dt numeric not null default 11 check (bb_dt > 0);
+
+-- Zukauf: Bezugsquelle je Sorte (meist Züchter, manchmal Händler), Lieferantenart Händler
+alter table public.pfg_sorten add column if not exists bezugsquelle text;
+alter table public.pfg_lieferanten drop constraint if exists pfg_lieferanten_typ_check;
+alter table public.pfg_lieferanten add constraint pfg_lieferanten_typ_check check (typ in ('Vermehrer','VO','Züchter','Händler','Spedition'));
+alter table public.pfg_bestellungen drop constraint if exists pfg_bestellungen_lieferant_typ_check;
+alter table public.pfg_bestellungen add constraint pfg_bestellungen_lieferant_typ_check check (lieferant_typ in ('Vermehrer','VO','Züchter','Händler'));
+
+-- Abholung: Abholstelle (Vermehrer) direkt am Kundenauftrag
+alter table public.pfg_auftraege add column if not exists abholstelle text;

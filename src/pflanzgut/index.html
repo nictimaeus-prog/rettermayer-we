@@ -21,14 +21,16 @@ html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.4 var(--f-body);padding-bottom:40px}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--blue-l);outline-offset:2px}
-header{display:flex;align-items:center;gap:12px;padding:12px 18px 10px;background:var(--card)}
-header img{height:36px;width:auto}
-header h1{font:700 21px/1.1 var(--f-display);margin:0;color:var(--green)}
+header{display:flex;align-items:center;gap:10px;padding:6px 14px;background:var(--card)}
+header img{height:24px;width:auto}
+header h1{font:700 17px/1.1 var(--f-display);margin:0;color:var(--green)}
 header small{display:block;font:600 12px var(--f-body);color:var(--muted)}
 .who{margin-left:auto;text-align:right;font-size:12px;color:var(--muted)}
 .stripe{height:4px;background:linear-gradient(90deg,var(--green-l) 0 66%,var(--blue-l) 66% 100%)}
-nav.tabs{display:flex;gap:6px;padding:10px 18px;position:sticky;top:0;z-index:5;background:var(--bg);flex-wrap:wrap;max-width:1280px;margin:0 auto}
-nav.tabs button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:600;color:var(--muted);cursor:pointer}
+nav.tabs{display:flex;gap:6px;padding:8px 14px;position:sticky;top:0;z-index:5;background:var(--bg);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:1280px;margin:0 auto;transition:transform .2s ease}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs.hide{transform:translateY(-110%)}
+nav.tabs button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 13px;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer;white-space:nowrap;flex:0 0 auto}
 nav.tabs button[aria-selected="true"]{background:var(--green);border-color:var(--green);color:#fff}
 main{padding:0 18px;display:grid;gap:14px;max-width:1280px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:10px;min-width:0}
@@ -91,6 +93,39 @@ td input,td select{padding:5px 7px;font-size:13.5px}
 .mic.on{background:var(--warn);animation:pulse 1.2s infinite}
 .mic svg{width:24px;height:24px}
 @keyframes pulse{50%{opacity:.6}}
+.grid2{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+.zkg{border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;gap:6px}
+.posh,.pl{display:grid;grid-template-columns:76px minmax(110px,1fr) 74px 92px 34px;gap:6px;align-items:center}
+.posh{font-size:12px;color:var(--muted);font-weight:600;padding:0 2px}
+.poslist{display:grid;gap:6px}
+.poslist .pos{padding:6px;border-radius:10px;gap:4px}
+.pl input,.pl select{padding:8px 6px}
+.pl .p-m{text-align:right}
+.pinfo .hint{padding:0 2px}
+.x{border:1px solid #F2B8B5;background:#fff;color:var(--warn);border-radius:8px;height:36px;cursor:pointer}
+.seg button{padding:8px 12px}
+.chk{font-size:14px;gap:6px;margin:4px 0}
+details.more{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+details.more > summary{cursor:pointer;font-weight:700;color:var(--blue)}
+details.more[open]{display:grid;gap:8px}
+.abw{background:var(--pick);border-radius:10px;padding:8px}
+@media (max-width:700px){
+  body{font-size:15px}
+  header small{display:none}
+  header h1{font-size:15px}
+  .who{font-size:11px}
+  main{padding:0 8px}
+  .card{padding:10px;border-radius:12px;gap:8px}
+  .card h2{font-size:17px}
+  input,select,textarea{font-size:16px}
+  .grid{grid-template-columns:1fr 1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi b{font-size:19px}
+  .posh,.pl{grid-template-columns:58px minmax(80px,1fr) 58px 72px 30px;gap:4px}
+  .pl input,.pl select{padding:8px 4px}
+  .seg button{padding:8px 10px;font-size:14px}
+  .btn{padding:9px 12px}
+}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -98,7 +133,7 @@ td input,td select{padding:5px 7px;font-size:13.5px}
 <header>
   <img src="data:image/jpeg;base64,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" alt="VG Bio">
   <div><h1>Pflanzkartoffeln 2027</h1><small>Vermarktungsgesellschaft Bio-Bauern mbH · Kundenaufträge, Einkauf, Partien</small></div>
-  <div class="who" id="who" hidden><span id="who-n"></span><br><button class="link" id="logout">Abmelden</button></div>
+  <div class="who" id="who" hidden><span id="who-n"></span> · <button class="link" id="logout">Abmelden</button></div>
 </header>
 <div class="stripe"></div>
 <nav class="tabs" role="tablist">
@@ -145,6 +180,14 @@ td input,td select{padding:5px 7px;font-size:13.5px}
 
 <!-- Bestellungen -->
 <main id="v-best" hidden>
+  <section class="card" id="zk-card">
+    <div class="row"><h2 class="grow">Zukaufvorschlag</h2>
+      <select id="zk-lz" style="width:auto"><option value="">Herbst und Frühjahr</option><option value="Frühjahr">nur Frühjahr</option><option value="Herbst">nur Herbst</option></select>
+      <label class="row" style="font-size:13px;gap:4px"><input type="checkbox" id="zk-alle"> alle Sorten zeigen</label></div>
+    <p class="hint">Kundenaufträge minus VG-Anteil aus der eigenen Vermehrung (Bestellungen bei Vermehrern/VOs) minus schon Zugekauftes (Züchter/Händler). Vorschlag aufgerundet auf volle Big Bags. Die Bezugsquelle gilt je Sorte und wird gespeichert.</p>
+    <div id="zk-sum" class="hint"></div>
+    <div id="zk-body" style="display:grid;gap:10px"></div>
+  </section>
   <section class="card" id="best-list-card">
     <div class="row"><h2 class="grow">Einkauf: Bestellungen bei Vermehrern, VO-Firmen und Züchtern</h2>
       <button class="btn" id="best-neu">+ Neue Bestellung</button>
@@ -152,7 +195,7 @@ td input,td select{padding:5px 7px;font-size:13.5px}
       <button class="btn sec" id="best-csv">CSV für büro+</button></div>
     <div class="row">
       <input type="search" id="best-q" class="grow" placeholder="Suchen: Nummer, Lieferant, Sorte …">
-      <select id="best-typ" style="width:auto"><option value="">alle Lieferanten</option><option>Vermehrer</option><option>VO</option><option>Züchter</option></select>
+      <select id="best-typ" style="width:auto"><option value="">alle Lieferanten</option><option>Vermehrer</option><option>VO</option><option>Züchter</option><option>Händler</option></select>
       <select id="best-stat" style="width:auto"><option value="">alle Status</option><option>Entwurf</option><option>offen</option><option>bestätigt</option><option>geliefert</option><option>storniert</option></select>
       <label class="row" style="font-size:13px;gap:4px"><input type="checkbox" id="best-offen"> nur ohne Partie</label>
     </div>
@@ -207,7 +250,7 @@ td input,td select{padding:5px 7px;font-size:13.5px}
     <div class="row"><h2 class="grow">Lieferanten: Züchter, Vermehrer, VO-Firmen, Speditionen</h2></div>
     <div class="grid">
       <label class="f">Name<input type="text" id="ln-name"></label>
-      <label class="f">Art<select id="ln-typ"><option>Vermehrer</option><option>VO</option><option>Züchter</option><option>Spedition</option></select></label>
+      <label class="f">Art<select id="ln-typ"><option>Vermehrer</option><option>VO</option><option>Züchter</option><option>Händler</option><option>Spedition</option></select></label>
       <label class="f">VO-Firma (bei Vermehrern)<input type="text" id="ln-vo" list="dl-vo"></label>
       <label class="f">E-Mail<input type="email" id="ln-mail"></label>
       <div class="row" style="align-self:end"><button class="btn sm" id="ln-add">Lieferant anlegen</button></div>
@@ -247,6 +290,8 @@ td input,td select{padding:5px 7px;font-size:13.5px}
 <datalist id="dl-lief"></datalist>
 <datalist id="dl-kunden"></datalist>
 <datalist id="dl-sped"></datalist>
+<datalist id="dl-quelle"></datalist>
+<datalist id="dl-verm"></datalist>
 
 <div class="toast" id="toast" hidden></div>
 
@@ -330,6 +375,7 @@ function fillLists(){
   $("#dl-zue").innerHTML = zue.map(z => `<option value="${esc(z)}">`).join("");
   $("#dl-vo").innerHTML = D.lief.filter(l => l.typ === "VO").map(l => `<option value="${esc(l.name)}">`).join("");
   $("#dl-kunden").innerHTML = D.kunden.map(k => `<option value="${esc(kundeLabel(k))}">`).join("");
+  $("#dl-verm").innerHTML = [...new Set(D.lief.filter(l => l.typ === "Vermehrer").map(l => l.name).concat(D.partien.map(p => p.vermehrer)))].sort().map(v => `<option value="${esc(v)}">`).join("");
   const jahre = [...new Set(D.partien.map(p => p.jahr))].sort((a, b) => b - a);
   const js = $("#part-jahr"), cur = js.value; js.innerHTML = jahre.map(j => `<option>${j}</option>`).join(""); if (cur) js.value = cur;
   const st = [...new Set(D.partien.map(p => p.status).filter(Boolean))].sort();
@@ -415,7 +461,7 @@ function renderBestList(){
 ["#best-q", "#best-typ", "#best-stat", "#best-offen"].forEach(s => $(s).addEventListener("input", renderBestList));
 $("#best-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openEdit("best", tr.dataset.id); });
 $("#best-neu").onclick = () => openEdit("best", null);
-$("#best-dik").onclick = () => { openEdit("best", null); const t = $("#e-dik"); if (t) t.focus(); };
+$("#best-dik").onclick = () => { openEdit("best", null); E._dikOpen = true; $("#e-dikbox").hidden = false; const t = $("#e-dik"); if (t) t.focus(); };
 
 function renderAufList(){
   const q = norm($("#auf-q").value), lz = $("#auf-lz").value, st = $("#auf-stat").value, nurOffen = $("#auf-offen").checked;
@@ -425,13 +471,13 @@ function renderAufList(){
   const tot = list.filter(a => a.status !== "storniert").reduce((s, a) => s + summeK("auf", a), 0);
   $("#auf-t").innerHTML = `<thead><tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Kd.-Nr.</th><th>Ort</th><th>Lieferung</th><th>Lieferart / Tour</th><th>Sorten</th><th class="n">Pos.</th><th class="n">Menge dt</th><th>Partien</th><th>Status</th></tr></thead><tbody>` +
     (list.map(a => { const ps = posOfK("auf", a.id), k = D.kunden.find(x => x.kdnr === a.kdnr) || {};
-      return `<tr class="click" data-id="${a.id}"><td><b>${esc(a.nr)}</b></td><td>${esc(datum(a.datum))}</td><td>${esc(a.kunde)}</td><td>${esc(a.kdnr || "")}</td><td>${esc(k.ort || "")}</td><td>${esc(a.lieferzeitraum)}</td><td>${a.lieferart === "Anlieferung" ? (a.tour_id && tourOf(a.tour_id) ? `<span class="pill b">${esc(tourOf(a.tour_id).nr + " " + tourOf(a.tour_id).spedition)}</span>` : `<span class="pill a">Anlieferung, ohne Tour</span>`) : "Abholung"}${a.entlade_abweichend ? ` <span class="pill" title="abweichende Entladestelle">abw. Entladestelle</span>` : ""}</td><td>${esc(ps.map(p => p.sorte + (p.sortierung !== "NS" ? " " + p.sortierung : "")).join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("auf", a))}</td><td>${aufPill(offenK("auf", a))}</td><td>${statPill(a.status)}</td></tr>`; }).join("") || `<tr><td colspan="12" class="empty">Noch keine Kundenaufträge – mit „+ Neuer Auftrag“ anlegen</td></tr>`) +
+      return `<tr class="click" data-id="${a.id}"><td><b>${esc(a.nr)}</b></td><td>${esc(datum(a.datum))}</td><td>${esc(a.kunde)}</td><td>${esc(a.kdnr || "")}</td><td>${esc(k.ort || "")}</td><td>${esc(a.lieferzeitraum)}</td><td>${a.lieferart === "Anlieferung" ? (a.tour_id && tourOf(a.tour_id) ? `<span class="pill b">${esc(tourOf(a.tour_id).nr + " " + tourOf(a.tour_id).spedition)}</span>` : `<span class="pill a">Anlieferung, ohne Tour</span>`) : "Abholung" + (a.abholstelle ? " (" + esc(a.abholstelle) + ")" : "")}${a.entlade_abweichend ? ` <span class="pill" title="abweichende Entladestelle">abw. Entladestelle</span>` : ""}</td><td>${esc(ps.map(p => p.sorte + (p.sortierung !== "NS" ? " " + p.sortierung : "")).join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("auf", a))}</td><td>${aufPill(offenK("auf", a))}</td><td>${statPill(a.status)}</td></tr>`; }).join("") || `<tr><td colspan="12" class="empty">Noch keine Kundenaufträge – mit „+ Neuer Auftrag“ anlegen</td></tr>`) +
     `</tbody><tfoot><tr class="sum"><td colspan="9">${list.length} Aufträge</td><td class="n">${fdt(tot)}</td><td colspan="2"></td></tr></tfoot>`;
 }
 ["#auf-q", "#auf-lz", "#auf-stat", "#auf-offen"].forEach(s => $(s).addEventListener("input", renderAufList));
 $("#auf-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openEdit("auf", tr.dataset.id); });
 $("#auf-neu").onclick = () => openEdit("auf", null);
-$("#auf-dik").onclick = () => { openEdit("auf", null); const t = $("#e-dik"); if (t) t.focus(); };
+$("#auf-dik").onclick = () => { openEdit("auf", null); E._dikOpen = true; $("#e-dikbox").hidden = false; const t = $("#e-dik"); if (t) t.focus(); };
 
 // ---------- Bearbeiten (gemeinsame Maske)
 let E = null;
@@ -453,7 +499,8 @@ function openEdit(kind, id, preset){
 function closeEdit(){ const k = E ? E.kind : "best"; E = null; $(K[k].edit).hidden = true; $(K[k].edit).innerHTML = ""; $(K[k].list).hidden = false; renderAll(); }
 function kandidaten(p){
   return D.partien.filter(x => x.sorte === p.sorte && verfuegbar(x) && num(x[FIELD[p.sortierung]]) > 0 && (E.kind === "auf" ? x.jahr === jahrAkt() :
-    (E.lieferant_typ === "Vermehrer" ? x.vermehrer === E.lieferant : E.lieferant_typ === "VO" ? (x.vo || "") === E.lieferant : true)));
+    (E.lieferant_typ === "Vermehrer" ? x.vermehrer === E.lieferant : E.lieferant_typ === "VO" ? (x.vo || "") === E.lieferant : false))
+    && (E.kind !== "auf" || E.lieferart !== "Abholung ab Vermehrer" || !E.abholstelle || x.vermehrer === E.abholstelle));
 }
 function frei(x, sortierung, posId){
   const k = E.kind, eigen = posId ? D[K[k].Z].filter(z => z.pos_id === posId && z.partie_id === x.id).reduce((a, z) => a + num(z.menge_dt), 0) : 0;
@@ -463,37 +510,59 @@ function lzSelect(id, val){
   const opts = LZ.slice(); if (val && !opts.includes(val)) opts.push(val);
   return `<select id="${id}">${opts.map(o => `<option value="${esc(o)}" ${o === val ? "selected" : ""}>${esc(LZNAME[o] || o)}</option>`).join("")}</select>`;
 }
+// Maske: oben Erzeuger/Lieferant, dann Lieferart und Lieferzeitraum, dann je Zeile Menge · Sorte · Sortierung · Verpackung.
+// Felder ändern nur das Modell und die Infozeile der Position, damit der Fokus (Handy-Tastatur) erhalten bleibt.
+const seg = (cls, opts, val) => `<div class="seg ${cls}" role="group">${opts.map(([v, t]) => `<button type="button" data-v="${esc(v)}" aria-pressed="${v === val}">${esc(t)}</button>`).join("")}</div>`;
+const lzKey = () => E.kind === "auf" ? "lieferzeitraum" : "liefertermin";
+function vpVal(p){ return p.verpackung === "Big Bag" ? "BB " + String(num(p.bb_dt) || 11).replace(".", ",") : p.verpackung === "Sack 25 kg" ? "Sack" : "lose"; }
+function vpOpts(p){
+  const bb = num(p.bb_dt) || 11, opts = ["BB 11", "BB 12,5"]; if (![11, 12.5].includes(bb)) opts.push("BB " + String(bb).replace(".", ","));
+  return opts.concat(["Sack", "lose"]).map(o => `<option ${o === vpVal(p) ? "selected" : ""}>${o}</option>`).join("");
+}
+function vpSet(p, v){
+  if (v.startsWith("BB")){ p.verpackung = "Big Bag"; p.bb_dt = num(v.slice(3)) || 11; } else p.verpackung = v === "Sack" ? "Sack 25 kg" : "lose";
+}
 function renderEdit(){
   const c = K[E.kind], box = $(c.edit);
   if (E.kind === "best") $("#dl-lief").innerHTML = D.lief.filter(l => l.typ === E.lieferant_typ).map(l => `<option value="${esc(l.name)}">`).join("");
-  const sumM = E.pos.reduce((a, p) => a + num(p.menge_dt), 0);
+  if (!E.pos.length || E.pos[E.pos.length - 1].sorte || E.pos[E.pos.length - 1].menge_dt) E.pos.push(newPos());
   const kd = E.kind === "auf" && E.kdnr ? D.kunden.find(k => k.kdnr === E.kdnr) : null;
-  const head = E.kind === "best" ? `
-  <div class="grid">
-    <label class="f">Bestellt bei<select id="e-typ"><option ${E.lieferant_typ === "Vermehrer" ? "selected" : ""}>Vermehrer</option><option value="VO" ${E.lieferant_typ === "VO" ? "selected" : ""}>VO-Firma</option><option ${E.lieferant_typ === "Züchter" ? "selected" : ""}>Züchter</option></select></label>
-    <label class="f">Lieferant<input type="text" id="e-lief" list="dl-lief" value="${esc(E.lieferant)}" placeholder="Name wählen oder eintippen"></label>
-    <label class="f">VO-Firma<input type="text" id="e-vo" list="dl-vo" value="${esc(E.vo || "")}"></label>
-    <label class="f">Datum<input type="date" id="e-datum" value="${esc(E.datum || "")}"></label>
-    <label class="f">Lieferzeitraum${lzSelect("e-lz", E.liefertermin)}</label>
-    <label class="f">Status<select id="e-stat">${["Entwurf", "offen", "bestätigt", "geliefert", "storniert"].map(s => `<option ${E.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-  </div>` : `
-  <div class="grid" style="grid-template-columns:2.2fr 1fr 1.3fr 1fr">
-    <label class="f">Kunde (Name oder Kd.-Nr. tippen)<input type="text" id="e-kunde" list="dl-kunden" value="${esc(kd ? kundeLabel(kd) : (E.kunde || ""))}" placeholder="${D.kunden.length ? "z. B. Abtei Maria Frieden" : "Kunden zuerst über „Import büro+“ einlesen"}"></label>
-    <label class="f">Datum<input type="date" id="e-datum" value="${esc(E.datum || "")}"></label>
-    <label class="f">Lieferzeitraum${lzSelect("e-lz", E.lieferzeitraum)}</label>
-    <label class="f">Status<select id="e-stat">${["Entwurf", "offen", "bestätigt", "geliefert", "storniert"].map(s => `<option ${E.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-  </div>
-  ${kd ? `<p class="hint">${esc([kd.strasse, [kd.plz, kd.ort].filter(Boolean).join(" "), kd.telefon || kd.mobil, kd.email].filter(Boolean).join(" · "))}</p>` : (E.kunde ? `<p class="hint">Kunde nicht in der büro+-Liste – wird nur mit Namen gespeichert.</p>` : "")}`;
+  const head = E.kind === "auf" ? `
+    <label class="f">Erzeuger / Kunde<input type="text" id="e-kunde" list="dl-kunden" autocomplete="off" enterkeyhint="next" value="${esc(kd ? kundeLabel(kd) : (E.kunde || ""))}" placeholder="${D.kunden.length ? "Name oder Kundennummer" : "Kunden zuerst über „Import büro+“ einlesen"}"></label>
+    <div class="hint" id="e-kd-info">${kundeInfo()}</div>
+    <div class="row">${seg("e-la", LA.map(x => [x, x === "Abholung ab Vermehrer" ? "Abholung" : x]), E.lieferart)}${seg("e-lzs", [["Frühjahr", "Frühjahr"], ["Herbst", "Herbst"]], E.lieferzeitraum)}</div>`
+  : `
+    <div class="row">${seg("e-typs", [["Vermehrer", "Vermehrer"], ["VO", "VO"], ["Züchter", "Züchter"], ["Händler", "Händler"]], E.lieferant_typ)}${seg("e-lzs", [["Frühjahr", "Frühjahr"], ["Herbst", "Herbst"]], E.liefertermin)}</div>
+    <div class="grid2"><label class="f">Lieferant<input type="text" id="e-lief" list="dl-lief" autocomplete="off" value="${esc(E.lieferant)}" placeholder="Name wählen oder tippen"></label>
+    <label class="f">VO-Firma<input type="text" id="e-vo" list="dl-vo" autocomplete="off" value="${esc(E.vo || "")}"></label></div>`;
   box.innerHTML = `
-  <div class="row"><h2 class="grow">${E.id ? c.titel + " " + esc(E.nr) : c.neu}</h2><button class="btn sec" id="e-back">← zurück</button></div>
-  ${dikHtml()}
-  ${head}${E.kind === "auf" ? logiHtml() : ""}
-  <label class="f">Bemerkung<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
-  <h3>Positionen</h3>
-  <div id="e-pos" style="display:grid;gap:8px">${E.pos.map((p, i) => posHtml(p, i)).join("")}</div>
-  <div class="row"><button class="btn sec" id="e-add">+ Position</button><span class="grow"></span><b>Summe: ${fdt(sumM)} dt</b></div>
-  <div class="row">${E.id ? `<button class="btn red" id="e-del">${c.titel} löschen</button>` : ""}<span class="grow"></span><button class="btn" id="e-save">Speichern</button></div>`;
-  wireEdit();
+  <div class="row" style="flex-wrap:nowrap"><button class="btn sec sm" id="e-back" aria-label="zurück">←</button><h2 class="grow" style="min-width:0">${E.id ? c.titel + " " + esc(E.nr) : c.neu}</h2><button class="btn sec sm" id="e-dik-open" type="button">🎤 Diktat</button></div>
+  <div id="e-dikbox" ${E._dikOpen ? "" : "hidden"}>${dikHtml()}</div>
+  ${head}
+  <div id="e-logi">${E.kind === "auf" ? logiHtml() : ""}</div>
+  <div class="posh"><span>Menge dt</span><span>Sorte</span><span>Sort.</span><span>Verp.</span><span></span></div>
+  <div id="e-pos" class="poslist">${E.pos.map((p, i) => posHtml(p, i)).join("")}</div>
+  <div class="row"><span class="hint grow">Neue Zeile entsteht automatisch · Enter springt weiter</span><b id="e-sum"></b></div>
+  <details class="more" ${E._more || (E.kind === "auf" && E.entlade_abweichend) ? "open" : ""}><summary>Weitere Angaben <span class="hint" id="e-more-sum"></span></summary>
+    <div class="grid2">
+      <label class="f">Datum<input type="date" id="e-datum" value="${esc(E.datum || "")}"></label>
+      <label class="f">Status<select id="e-stat">${["Entwurf", "offen", "bestätigt", "geliefert", "storniert"].map(s => `<option ${E.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+    </div>
+    <label class="f">Bemerkung<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
+  </details>
+  <div class="row">${E.id ? `<button class="btn red sm" id="e-del">Löschen</button>` : ""}<span class="grow"></span><button class="btn" id="e-save">Speichern</button></div>`;
+  wireEdit(); updSum();
+}
+function kundeInfo(){
+  if (E.kind !== "auf") return "";
+  const kd = E.kdnr ? D.kunden.find(k => k.kdnr === E.kdnr) : null;
+  if (kd) return esc([kd.strasse, [kd.plz, kd.ort].filter(Boolean).join(" "), kd.telefon || kd.mobil].filter(Boolean).join(" · "));
+  return E.kunde ? "Nicht in der büro+-Liste – wird nur mit Namen gespeichert." : "";
+}
+function updSum(){
+  const s = E.pos.reduce((a, p) => a + num(p.menge_dt), 0), n = E.pos.filter(p => p.sorte || p.menge_dt).length;
+  if ($("#e-sum")) $("#e-sum").textContent = `${n} Pos. · ${fdt(s)} dt`;
+  if ($("#e-more-sum")) $("#e-more-sum").textContent = [E.status, E.datum ? datum(E.datum) : "", E.kind === "auf" && E.tour_id && tourOf(E.tour_id) ? tourOf(E.tour_id).nr : "", E.kind === "auf" && E.entlade_abweichend ? "abw. Entladestelle" : ""].filter(Boolean).join(" · ");
 }
 const tourOf = id => D.touren.find(t => t.id === id);
 const tourLabel = t => `${t.nr} · ${t.spedition}${t.datum ? " · " + datum(t.datum) : ""}${t.status !== "geplant" ? " · " + t.status : ""}`;
@@ -502,102 +571,134 @@ function ladestellen(zuList){
   return Object.entries(m).map(([v, dt]) => { const l = D.lief.find(l => l.name === v && l.typ === "Vermehrer"); return {name: v, dt, adresse: l && l.adresse}; });
 }
 function logiHtml(){
+  if (E.lieferart !== "Anlieferung"){
+    const l = E.abholstelle ? D.lief.find(x => x.name === E.abholstelle && x.typ === "Vermehrer") : null;
+    return `<label class="f">Abholstelle (Vermehrer)<input type="text" id="e-abh" list="dl-verm" autocomplete="off" value="${esc(E.abholstelle || "")}" placeholder="Vermehrer wählen"></label>${l && l.adresse ? `<div class="hint">${esc(l.adresse)}</div>` : ""}`;
+  }
   const tours = D.touren.filter(t => t.status !== "storniert" && t.lieferzeitraum === E.lieferzeitraum);
   const cur = E.tour_id && !tours.some(t => t.id === E.tour_id) ? tourOf(E.tour_id) : null;
-  const ls = ladestellen(E.pos.flatMap(p => p.zu));
-  const lsTxt = ls.length ? ls.map(l => l.name + (l.adresse ? " (" + l.adresse + ")" : "")).join(", ") : "Partie noch nicht zugeordnet – Abholstelle ergibt sich aus der Partie";
   const v = k => esc(E[k] || "");
-  return `<div class="grid" style="grid-template-columns:1.2fr 1.6fr 1.6fr">
-    <label class="f">Lieferart<select id="e-la">${LA.map(x => `<option ${E.lieferart === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
-    ${E.lieferart === "Anlieferung" ? `<label class="f">Tour (Spedition)<select id="e-tour"><option value="">noch keiner Tour zugeordnet</option>${tours.map(t => `<option value="${t.id}" ${E.tour_id === t.id ? "selected" : ""}>${esc(tourLabel(t))}</option>`).join("")}${cur ? `<option value="${cur.id}" selected>${esc(tourLabel(cur))}</option>` : ""}</select></label>
-    <label class="row" style="align-self:end;font-size:14px;gap:6px;padding-bottom:8px"><input type="checkbox" id="e-abw" ${E.entlade_abweichend ? "checked" : ""}> abweichende Entladestelle</label>`
-    : `<p class="hint" style="align-self:end;grid-column:span 2;margin:0 0 8px">Abholung durch den Kunden beim Vermehrer: ${esc(lsTxt)}</p>`}
-  </div>
-  ${E.lieferart === "Anlieferung" && E.entlade_abweichend ? `<div class="grid" style="background:var(--pick);border-radius:10px;padding:10px">
-    <label class="f">Entladestelle (Name)<input type="text" id="e-en" value="${v("entlade_name")}"></label>
-    <label class="f">Straße<input type="text" id="e-es" value="${v("entlade_strasse")}"></label>
-    <label class="f">PLZ<input type="text" id="e-ep" value="${v("entlade_plz")}"></label>
-    <label class="f">Ort<input type="text" id="e-eo" value="${v("entlade_ort")}"></label>
-    <label class="f">Hinweis (Ansprechpartner, Telefon, Zeitfenster)<input type="text" id="e-eh" value="${v("entlade_hinweis")}"></label>
-  </div>` : ""}`;
+  return `<label class="f">Tour (Spedition)<select id="e-tour"><option value="">noch keiner Tour zugeordnet</option>${tours.map(t => `<option value="${t.id}" ${E.tour_id === t.id ? "selected" : ""}>${esc(tourLabel(t))}</option>`).join("")}${cur ? `<option value="${cur.id}" selected>${esc(tourLabel(cur))}</option>` : ""}</select></label>
+    <label class="row chk"><input type="checkbox" id="e-abw" ${E.entlade_abweichend ? "checked" : ""}> abweichende Entladestelle</label>
+    ${E.entlade_abweichend ? `<div class="grid2 abw">
+      <label class="f" style="grid-column:1/-1">Name<input type="text" id="e-en" value="${v("entlade_name")}"></label>
+      <label class="f" style="grid-column:1/-1">Straße<input type="text" id="e-es" value="${v("entlade_strasse")}"></label>
+      <label class="f">PLZ<input type="text" id="e-ep" inputmode="numeric" value="${v("entlade_plz")}"></label>
+      <label class="f">Ort<input type="text" id="e-eo" value="${v("entlade_ort")}"></label>
+      <label class="f" style="grid-column:1/-1">Hinweis (Ansprechpartner, Telefon, Zeitfenster)<input type="text" id="e-eh" value="${v("entlade_hinweis")}"></label>
+    </div>` : ""}`;
 }
 function posHtml(p, i){
-  const zs = p.zu.reduce((a, z) => a + num(z.menge_dt), 0), rest = num(p.menge_dt) - zs;
-  const offen = p.sorte && num(p.menge_dt) > 0 && rest > 0.05;
-  const k = p.sorte ? kandidaten(p) : [];
-  return `<div class="pos ${offen && p.modus === "partie" ? "open" : ""}" data-i="${i}">
-    <div class="grid" style="grid-template-columns:1.8fr 1.4fr 1fr 1.3fr${p.verpackung === "Big Bag" ? " .8fr" : ""} 1.7fr auto">
-      <label class="f">Sorte<input type="text" class="p-sorte" list="dl-sorten" value="${esc(p.sorte)}" placeholder="aus dem Katalog"></label>
-      <label class="f">Sortierung<select class="p-sort">${SORTS.map(s => `<option value="${s}" ${p.sortierung === s ? "selected" : ""}>${SORTNAME[s]}${s === "NS" ? " (NS)" : s === "ÜG" ? " (ÜG)" : ""}</option>`).join("")}</select></label>
-      <label class="f">Menge dt<input type="number" step="0.1" min="0" class="p-m" value="${p.menge_dt == null ? "" : p.menge_dt}"></label>
-      <label class="f">Verpackung<select class="p-vp">${VP.map(x => `<option ${p.verpackung === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
-      ${p.verpackung === "Big Bag" ? `<label class="f">BB-Größe<select class="p-bb">${[11, 12.5].concat([11, 12.5].includes(num(p.bb_dt)) ? [] : [num(p.bb_dt)]).map(x => `<option value="${x}" ${num(p.bb_dt) === x ? "selected" : ""}>${fmt(x, x % 1 ? 1 : 0)} dt</option>`).join("")}</select></label>` : ""}
-      <label class="f">Partie<select class="p-mod"><option value="spaeter" ${p.modus === "spaeter" ? "selected" : ""}>später zuordnen</option><option value="partie" ${p.modus === "partie" ? "selected" : ""}>jetzt auf Partie(n) zuordnen</option></select></label>
-      <div class="row" style="align-self:end"><button class="btn red sm p-x" title="Position entfernen">✕</button></div>
+  return `<div class="pos" data-i="${i}">
+    <div class="pl">
+      <input type="text" class="p-m" inputmode="decimal" enterkeyhint="next" aria-label="Menge dt" placeholder="dt" value="${p.menge_dt == null ? "" : String(p.menge_dt).replace(".", ",")}">
+      <input type="text" class="p-sorte" list="dl-sorten" autocomplete="off" enterkeyhint="next" aria-label="Sorte" placeholder="Sorte" value="${esc(p.sorte)}">
+      <select class="p-sort" aria-label="Sortierung">${SORTS.map(s => `<option value="${s}" ${p.sortierung === s ? "selected" : ""}>${s}</option>`).join("")}</select>
+      <select class="p-vp" aria-label="Verpackung">${vpOpts(p)}</select>
+      <button class="x p-x" type="button" aria-label="Zeile entfernen">✕</button>
     </div>
-    <div class="row hint">${num(p.menge_dt) > 0 ? `<b>${esc(gebinde(p).txt)}</b> · ` : ""}${p.sorte ? `${k.length} passende Partie(n)` : "Sorte wählen"}${zs > 0 ? ` · zugeordnet ${fdt(zs)} dt` : ""} ${offen && zs > 0 ? `· <span class="pill a">offen ${fdt(rest)} dt</span>` : (zs > 0 && !offen ? `· <span class="pill g">vollständig</span>` : "")} ${p.bemerkung && !(/Aufteilung auf \d+ Partien offen/.test(p.bemerkung) && !offen) ? "· " + esc(p.bemerkung) : ""}</div>
-    ${p.modus === "partie" && p.sorte ? allocHtml(p, k) : ""}
+    <div class="pinfo">${posInfoHtml(p)}</div>
   </div>`;
+}
+function posInfoHtml(p){
+  if (!p.sorte && !p.menge_dt) return "";
+  const zs = p.zu.reduce((a, z) => a + num(z.menge_dt), 0), rest = num(p.menge_dt) - zs, k = p.sorte ? kandidaten(p) : [];
+  const bits = [];
+  if (num(p.menge_dt) > 0) bits.push(`<b>${esc(gebinde(p).txt)}</b>`);
+  if (p.sorte && !D.sorten.some(s => s.name === p.sorte)) bits.push(`<span class="pill a">nicht im Katalog</span>`);
+  if (p.modus === "partie") bits.push(zs > 0 ? (rest > 0.05 ? `<span class="pill a">Partie: ${fdt(zs)} von ${fdt(p.menge_dt)} dt</span>` : `<span class="pill g">Partie zugeordnet</span>`) : `<span class="pill a">Partie wählen</span>`);
+  if (p.sorte) bits.push(`<button type="button" class="link p-tog">${p.modus === "partie" ? "Partie später" : k.length ? `Partie zuordnen (${k.length})` : "keine Partie"}</button>`);
+  if (p.bemerkung && !/Aufteilung auf \d+ Partien offen/.test(p.bemerkung)) bits.push(esc(p.bemerkung));
+  return `<div class="hint">${bits.join(" · ")}</div>${p.modus === "partie" && p.sorte ? allocHtml(p, k) : ""}`;
 }
 function allocHtml(p, k){
   const ids = new Set(k.map(x => x.id).concat(p.zu.map(z => z.partie_id)));
   const vk = E.kind === "auf";
   const rows = [...ids].map(id => partie(id)).filter(Boolean).map(x => {
     const z = p.zu.find(z => z.partie_id === x.id), f = frei(x, p.sortierung, p.id);
-    return `<tr><td>${esc(x.anerk_nr || "–")}</td><td>${esc(x.vermehrer)}</td><td>${esc(x.vo || "")}</td><td>${esc(x.kat || "")}</td><td>${esc(x.status || "")}</td><td class="n">${fdt(num(x[FIELD[p.sortierung]]))}</td>${vk ? `<td class="n">${fdt(partieBelegt(x.id, p.sortierung, "best"))}</td>` : ""}<td class="n">${f < -0.05 ? `<span class="pill w">${fdt(f)}</span>` : fdt(f)}</td><td style="width:110px"><input type="number" step="0.1" min="0" class="a-m" data-pid="${x.id}" value="${z ? z.menge_dt : ""}"></td></tr>`;
+    return `<tr><td>${esc(x.vermehrer)}<br><span class="hint">${esc(x.anerk_nr || "–")} · ${esc(x.kat || "")} · ${esc(x.status || "")}</span></td><td class="n">${fdt(num(x[FIELD[p.sortierung]]))}</td>${vk ? `<td class="n">${fdt(partieBelegt(x.id, p.sortierung, "best"))}</td>` : ""}<td class="n">${f < -0.05 ? `<span class="pill w">${fdt(f)}</span>` : fdt(f)}</td><td style="width:84px"><input type="text" inputmode="decimal" class="a-m" data-pid="${x.id}" value="${z ? String(z.menge_dt).replace(".", ",") : ""}"></td></tr>`;
   });
-  return `<div class="alloc"><div class="row"><b class="grow">Aufteilung auf Partien (${esc(SORTNAME[p.sortierung])})</b><button class="btn sm sec a-auto">Rest automatisch verteilen</button></div>
-    ${rows.length ? `<table><thead><tr><th>Anerk.-Nr.</th><th>Vermehrer</th><th>VO</th><th>Kat.</th><th>Status</th><th class="n">Menge dt</th>${vk ? `<th class="n">VG bestellt dt</th><th class="n">frei für Kunden dt</th>` : `<th class="n">frei dt</th>`}<th class="n">zuordnen dt</th></tr></thead><tbody>${rows.join("")}</tbody></table>` : `<p class="hint">Keine passende Partie mit Menge in dieser Sortierung${E.kind === "best" && E.lieferant_typ === "Vermehrer" ? " bei diesem Vermehrer" : ""}.</p>`}</div>`;
+  return `<div class="alloc"><div class="row"><b class="grow">Partien (${esc(SORTNAME[p.sortierung])})</b><button type="button" class="btn sm sec a-auto">Rest verteilen</button></div>
+    ${rows.length ? `<div class="tw"><table><thead><tr><th>Vermehrer / Partie</th><th class="n">Menge</th>${vk ? `<th class="n">VG best.</th><th class="n">frei Kd.</th>` : `<th class="n">frei</th>`}<th class="n">dt</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>` : `<p class="hint">Keine passende Partie mit Menge in dieser Sortierung${E.kind === "best" && E.lieferant_typ === "Vermehrer" ? " bei diesem Vermehrer" : ""}.</p>`}</div>`;
 }
 function readHead(){
-  if (E.kind === "best"){ E.lieferant_typ = $("#e-typ").value; E.lieferant = $("#e-lief").value.trim(); E.vo = $("#e-vo").value.trim(); E.liefertermin = $("#e-lz").value; }
-  else {
-    E.lieferzeitraum = $("#e-lz").value; E.lieferart = $("#e-la").value;
-    E.tour_id = E.lieferart === "Anlieferung" && $("#e-tour") ? ($("#e-tour").value || null) : null;
+  const v = id => $(id) ? $(id).value : null;
+  if (E.kind === "best"){ if ($("#e-lief")) E.lieferant = v("#e-lief").trim(); if ($("#e-vo")) E.vo = v("#e-vo").trim(); }
+  if ($("#e-datum")) E.datum = v("#e-datum"); if ($("#e-stat")) E.status = v("#e-stat"); if ($("#e-bem")) E.bemerkung = v("#e-bem").trim();
+  if (E.kind === "auf"){
+    E.tour_id = E.lieferart === "Anlieferung" && $("#e-tour") ? (v("#e-tour") || null) : (E.lieferart === "Anlieferung" ? E.tour_id : null);
     if ($("#e-abw")) E.entlade_abweichend = $("#e-abw").checked;
     if (E.lieferart !== "Anlieferung") E.entlade_abweichend = false;
     [["#e-en", "entlade_name"], ["#e-es", "entlade_strasse"], ["#e-ep", "entlade_plz"], ["#e-eo", "entlade_ort"], ["#e-eh", "entlade_hinweis"]].forEach(([id, f]) => { if ($(id)) E[f] = $(id).value.trim(); });
   }
-  E.datum = $("#e-datum").value; E.status = $("#e-stat").value; E.bemerkung = $("#e-bem").value.trim();
 }
 function kundeAus(v){
   v = (v || "").trim(); if (!v){ E.kdnr = null; E.kunde = ""; return; }
   const m = D.kunden.find(k => kundeLabel(k) === v) || D.kunden.find(k => k.kdnr === v) || D.kunden.find(k => norm(k.name) === norm(v));
   if (m){ E.kdnr = m.kdnr; E.kunde = m.name; } else { E.kdnr = null; E.kunde = v; }
 }
+// Neuaufbau eines Bereichs mit fokussiertem Feld löst blur/change erneut aus – Sperre gegen Doppelaufruf
+let LOGI_BUSY = false; const INFO_BUSY = new WeakSet();
+function rerenderLogi(){ if (LOGI_BUSY) return; LOGI_BUSY = true; try { readHead(); if ($("#e-logi")) { $("#e-logi").innerHTML = E.kind === "auf" ? logiHtml() : ""; wireLogi(); } updSum(); } finally { LOGI_BUSY = false; } }
+function wireLogi(){
+  if (E.kind !== "auf") return;
+  if ($("#e-abw")) $("#e-abw").onchange = () => { E.entlade_abweichend = $("#e-abw").checked; rerenderLogi(); };
+  ["#e-tour", "#e-en", "#e-es", "#e-ep", "#e-eo", "#e-eh"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); updSum(); }; });
+  if ($("#e-abh")) $("#e-abh").onchange = () => { E.abholstelle = $("#e-abh").value.trim() || null; E.pos.forEach(p => { p.zu = p.zu.filter(z => { const x = partie(z.partie_id); return !E.abholstelle || (x && x.vermehrer === E.abholstelle); }); }); rerenderLogi(); updAllInfo(); };
+}
+function wireSeg(cls, fn){ const g = $("." + cls); if (!g) return; g.onclick = ev => { const b = ev.target.closest("button"); if (!b) return; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); fn(b.dataset.v); }; }
 function wireEdit(){
   wireDik();
   $("#e-back").onclick = () => { if (REC) REC.stop(); closeEdit(); };
-  if (E.kind === "best"){
-    $("#e-typ").onchange = () => { readHead(); renderEdit(); };
-    $("#e-lief").onchange = () => { readHead(); const l = D.lief.find(l => l.name === E.lieferant && l.typ === E.lieferant_typ); if (l && l.vo && !E.vo) E.vo = l.vo; if (E.lieferant_typ === "VO") E.vo = E.lieferant; renderEdit(); };
-    $("#e-vo").onchange = readHead;
-  } else {
-    $("#e-kunde").onchange = ev => { readHead(); kundeAus(ev.target.value); renderEdit(); };
-  }
-  ["#e-datum", "#e-lz", "#e-stat", "#e-bem"].forEach(s => $(s).onchange = readHead);
+  $("#e-dik-open").onclick = () => { E._dikOpen = !E._dikOpen; $("#e-dikbox").hidden = !E._dikOpen; if (E._dikOpen && $("#e-dik")) $("#e-dik").focus(); };
+  $(".more").addEventListener("toggle", ev => { E._more = ev.target.open; });
+  wireSeg("e-lzs", v => { E[lzKey()] = v; rerenderLogi(); });
   if (E.kind === "auf"){
-    ["#e-lz", "#e-la", "#e-abw"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); renderEdit(); }; });
-    ["#e-tour", "#e-en", "#e-es", "#e-ep", "#e-eo", "#e-eh"].forEach(s => { if ($(s)) $(s).onchange = readHead; });
+    wireSeg("e-la", v => { E.lieferart = v; if (v !== "Anlieferung"){ E.tour_id = null; E.entlade_abweichend = false; } rerenderLogi(); });
+    const ki = $("#e-kunde");
+    ki.onchange = () => { kundeAus(ki.value); const kd = E.kdnr ? D.kunden.find(k => k.kdnr === E.kdnr) : null; if (kd) ki.value = kundeLabel(kd); $("#e-kd-info").innerHTML = kundeInfo(); };
+    ki.onkeydown = ev => { if (ev.key === "Enter"){ ev.preventDefault(); const m = $("#e-pos .p-m"); if (m) m.focus(); } };
+    wireLogi();
+  } else {
+    wireSeg("e-typs", v => { readHead(); E.lieferant_typ = v; renderEdit(); });
+    $("#e-lief").onchange = () => { readHead(); const l = D.lief.find(l => l.name === E.lieferant && l.typ === E.lieferant_typ); if (l && l.vo && !E.vo){ E.vo = l.vo; $("#e-vo").value = l.vo; } if (E.lieferant_typ === "VO"){ E.vo = E.lieferant; $("#e-vo").value = E.vo; } updAllInfo(); };
+    $("#e-vo").onchange = readHead;
   }
-  $("#e-add").onclick = () => { readHead(); E.pos.push(newPos()); renderEdit(); const l = $$("#e-pos .p-sorte"); if (l.length) l[l.length - 1].focus(); };
-  $$("#e-pos .pos").forEach(el => {
-    const i = +el.dataset.i, p = E.pos[i];
-    el.querySelector(".p-sorte").onchange = ev => { readHead(); p.sorte = ev.target.value.trim(); p.zu = []; p.bb_dt = bbStd(p.sorte); renderEdit(); };
-    el.querySelector(".p-vp").onchange = ev => { readHead(); p.verpackung = ev.target.value; if (p.verpackung === "Big Bag" && !p.bb_dt) p.bb_dt = p.zu.length ? 11 : bbStd(p.sorte); renderEdit(); };
-    const bbSel = el.querySelector(".p-bb"); if (bbSel) bbSel.onchange = ev => { readHead(); p.bb_dt = num(ev.target.value); renderEdit(); };
-    el.querySelector(".p-sort").onchange = ev => { readHead(); p.sortierung = ev.target.value; p.zu = []; renderEdit(); };
-    el.querySelector(".p-m").onchange = ev => { readHead(); p.menge_dt = numIn(ev.target.value); if (p.modus === "partie" && p.zu.length === 0) autoVerteilen(p); renderEdit(); };
-    el.querySelector(".p-mod").onchange = ev => { readHead(); p.modus = ev.target.value; if (p.modus === "spaeter") p.zu = []; else if (!p.zu.length) autoVerteilen(p); renderEdit(); };
-    el.querySelector(".p-x").onclick = () => { readHead(); E.pos.splice(i, 1); if (!E.pos.length) E.pos.push(newPos()); renderEdit(); };
-    el.querySelectorAll(".a-m").forEach(inp => inp.onchange = ev => {
-      readHead(); const v = numIn(ev.target.value), pid = ev.target.dataset.pid;
-      p.zu = p.zu.filter(z => z.partie_id !== pid); if (v && v > 0) p.zu.push({partie_id: pid, menge_dt: v}); if (p.zu.length && p.verpackung === "Big Bag") p.bb_dt = 11; renderEdit();
-    });
-    const au = el.querySelector(".a-auto"); if (au) au.onclick = () => { readHead(); autoVerteilen(p); renderEdit(); };
-  });
+  ["#e-datum", "#e-stat", "#e-bem"].forEach(s => $(s).onchange = () => { readHead(); updSum(); });
+  $$("#e-pos .pos").forEach(el => wirePos(el));
   if ($("#e-del")) $("#e-del").onclick = delEdit;
   $("#e-save").onclick = saveEdit;
+}
+function updInfo(el){ if (INFO_BUSY.has(el)) return; INFO_BUSY.add(el); try { const p = E.pos[+el.dataset.i]; el.querySelector(".pinfo").innerHTML = posInfoHtml(p); wireInfo(el, p); updSum(); } finally { INFO_BUSY.delete(el); } }
+function updAllInfo(){ $$("#e-pos .pos").forEach(updInfo); }
+function ensureLeer(){
+  const last = E.pos[E.pos.length - 1];
+  if (last && (last.sorte || last.menge_dt)){
+    E.pos.push(newPos()); const i = E.pos.length - 1;
+    $("#e-pos").insertAdjacentHTML("beforeend", posHtml(E.pos[i], i)); wirePos($(`#e-pos .pos[data-i="${i}"]`));
+  }
+}
+function wirePos(el){
+  const i = +el.dataset.i, p = E.pos[i];
+  const m = el.querySelector(".p-m"), so = el.querySelector(".p-sorte"), st = el.querySelector(".p-sort"), vp = el.querySelector(".p-vp");
+  m.onchange = () => { p.menge_dt = numIn(m.value); if (p.modus === "partie" && !p.zu.length) autoVerteilen(p); updInfo(el); ensureLeer(); };
+  so.onchange = () => { const n = sorteFinden(so.value.trim()); p.sorte = n; if (so.value !== n) so.value = n; p.zu = []; if (p.verpackung === "Big Bag"){ p.bb_dt = bbStd(n); vp.innerHTML = vpOpts(p); } updInfo(el); ensureLeer(); };
+  st.onchange = () => { p.sortierung = st.value; p.zu = []; updInfo(el); };
+  vp.onchange = () => { vpSet(p, vp.value); updInfo(el); };
+  m.onkeydown = ev => { if (ev.key === "Enter"){ ev.preventDefault(); so.focus(); } };
+  so.onkeydown = ev => { if (ev.key === "Enter"){ ev.preventDefault(); so.blur(); setTimeout(() => { const nx = $(`#e-pos .pos[data-i="${i + 1}"] .p-m`); if (nx) nx.focus(); }, 30); } };
+  el.querySelector(".p-x").onclick = () => { readHead(); E.pos.splice(i, 1); renderEdit(); };
+  wireInfo(el, p);
+}
+function wireInfo(el, p){
+  const t = el.querySelector(".p-tog"); if (t) t.onclick = () => { p.modus = p.modus === "partie" ? "spaeter" : "partie"; if (p.modus === "spaeter") p.zu = []; else if (!p.zu.length) autoVerteilen(p); if (p.zu.length && p.verpackung === "Big Bag"){ p.bb_dt = 11; el.querySelector(".p-vp").innerHTML = vpOpts(p); } updInfo(el); };
+  el.querySelectorAll(".a-m").forEach(inp => inp.onchange = () => {
+    const v = numIn(inp.value), pid = inp.dataset.pid;
+    p.zu = p.zu.filter(z => z.partie_id !== pid); if (v && v > 0) p.zu.push({partie_id: pid, menge_dt: v});
+    if (p.zu.length && p.verpackung === "Big Bag"){ p.bb_dt = 11; el.querySelector(".p-vp").innerHTML = vpOpts(p); }
+    updInfo(el);
+  });
+  const au = el.querySelector(".a-auto"); if (au) au.onclick = () => { autoVerteilen(p); el.querySelector(".p-vp").innerHTML = vpOpts(p); updInfo(el); };
 }
 function autoVerteilen(p){
   let rest = num(p.menge_dt) - p.zu.reduce((a, z) => a + num(z.menge_dt), 0);
@@ -642,7 +743,7 @@ async function saveEdit(){
     }
     const head = k === "best"
       ? {lieferant: E.lieferant, lieferant_typ: E.lieferant_typ, vo: E.vo || null, liefertermin: E.liefertermin || null}
-      : {kdnr: E.kdnr || null, kunde: E.kunde, lieferzeitraum: E.lieferzeitraum, lieferart: E.lieferart, tour_id: E.tour_id || null, tour_pos: tourPosFuer(E),
+      : {kdnr: E.kdnr || null, kunde: E.kunde, lieferzeitraum: E.lieferzeitraum, lieferart: E.lieferart, abholstelle: E.lieferart === "Anlieferung" ? null : (E.abholstelle || null), tour_id: E.tour_id || null, tour_pos: tourPosFuer(E),
          entlade_abweichend: !!E.entlade_abweichend, entlade_name: E.entlade_abweichend ? (E.entlade_name || null) : null, entlade_strasse: E.entlade_abweichend ? (E.entlade_strasse || null) : null,
          entlade_plz: E.entlade_abweichend ? (E.entlade_plz || null) : null, entlade_ort: E.entlade_abweichend ? (E.entlade_ort || null) : null, entlade_hinweis: E.entlade_abweichend ? (E.entlade_hinweis || null) : null};
     Object.assign(head, {datum: E.datum || null, status: E.status, bemerkung: E.bemerkung || null, bearbeiter: me.name, updated_at: new Date().toISOString()});
@@ -688,10 +789,10 @@ $("#best-csv").onclick = () => {
   csvDownload(rows, "Pflanzgut_Bestellungen");
 };
 $("#auf-csv").onclick = () => {
-  const rows = [["Auftragsnr", "Datum", "Kundennr", "Kunde", "Lieferzeitraum", "Lieferart", "Tour", "Spedition", "Tour_Datum", "Stopp", "Entladestelle", "Entlade_Strasse", "Entlade_PLZ", "Entlade_Ort", "Entlade_Hinweis", "Status", "Pos", "Sorte", "Sortierung", "Verpackung", "BB_dt", "Gebinde", "Menge_dt", "Anerk_Nr", "Vermehrer", "Menge_Partie_dt", "Bemerkung"]];
+  const rows = [["Auftragsnr", "Datum", "Kundennr", "Kunde", "Lieferzeitraum", "Lieferart", "Abholstelle", "Tour", "Spedition", "Tour_Datum", "Stopp", "Entladestelle", "Entlade_Strasse", "Entlade_PLZ", "Entlade_Ort", "Entlade_Hinweis", "Status", "Pos", "Sorte", "Sortierung", "Verpackung", "BB_dt", "Gebinde", "Menge_dt", "Anerk_Nr", "Vermehrer", "Menge_Partie_dt", "Bemerkung"]];
   D.auf.slice().sort((a, b) => a.nr.localeCompare(b.nr)).forEach(a => { const t = a.tour_id ? tourOf(a.tour_id) || {} : {}, e = entladestelle(a);
     posOfK("auf", a.id).forEach(p => {
-      const base = [a.nr, a.datum, a.kdnr || "", a.kunde, a.lieferzeitraum, a.lieferart, t.nr || "", t.spedition || "", t.datum || "", a.tour_pos || "", e.name, e.strasse, e.plz, e.ort, e.hinweis, a.status, p.pos, p.sorte, p.sortierung, p.verpackung, p.verpackung === "Big Bag" ? fmt(p.bb_dt) : "", gebinde(p).n || "", fmt(p.menge_dt)];
+      const base = [a.nr, a.datum, a.kdnr || "", a.kunde, a.lieferzeitraum, a.lieferart, a.abholstelle || "", t.nr || "", t.spedition || "", t.datum || "", a.tour_pos || "", e.name, e.strasse, e.plz, e.ort, e.hinweis, a.status, p.pos, p.sorte, p.sortierung, p.verpackung, p.verpackung === "Big Bag" ? fmt(p.bb_dt) : "", gebinde(p).n || "", fmt(p.menge_dt)];
       const zs = zuOfK("auf", p.id); if (!zs.length) rows.push(base.concat(["", "", "", a.bemerkung || ""]));
       zs.forEach(z => { const x = partie(z.partie_id) || {}; rows.push(base.concat([x.anerk_nr || "", x.vermehrer || "", fmt(z.menge_dt), a.bemerkung || ""])); });
     }); });
@@ -795,20 +896,21 @@ function promptBauen(text, nImg, diktat){
     auf = `Du liest einen Kundenauftrag für Bio-Pflanzkartoffeln an die Vermarktungsgesellschaft Bio-Bauern mbH (VG Bio). Quelle: ${diktat ? "Diktat (Spracherkennung)" : "E-Mail, Bestellschein, Fax, Foto oder Notiz"}.
 ${regeln}
 - kunde: der bestellende Betrieb (nicht VG Bio). Wähle aus KUNDEN den passenden (bei Diktat den lautähnlichsten) und gib dessen kdnr an; sonst nur den Namen.
-- lieferart: "Anlieferung" (Standard) oder "Abholung ab Vermehrer" (wenn der Kunde selbst abholt).
+- lieferart: "Anlieferung" (Standard) oder "Abholung ab Vermehrer" (wenn der Kunde selbst abholt). Bei Abholung "abholstelle" = Name des Vermehrers aus VERMEHRER, wenn genannt.
 - entladestelle nur angeben, wenn ausdrücklich eine andere Lieferadresse als die Kundenadresse genannt ist, sonst null.
 Antworte nur mit JSON:
-{"kunde":{"name":"","kdnr":"","ort":""},"lieferzeitraum":"Frühjahr","lieferart":"Anlieferung","entladestelle":null,"bemerkung":"","positionen":[{"sorte":"Agria","sortierung":"NS","menge_dt":55,"verpackung":"Big Bag","bb_dt":11,"original":"Agria fünf Big Bag"}],"unklar":[]}
+{"kunde":{"name":"","kdnr":"","ort":""},"lieferzeitraum":"Frühjahr","lieferart":"Anlieferung","abholstelle":"","entladestelle":null,"bemerkung":"","positionen":[{"sorte":"Agria","sortierung":"NS","menge_dt":55,"verpackung":"Big Bag","bb_dt":11,"original":"Agria fünf Big Bag"}],"unklar":[]}
 (entladestelle, wenn genannt: {"name":"","strasse":"","plz":"","ort":"","hinweis":""})
 KATALOG (Sorte | Kochtyp | Züchter | Big-Bag-Größe):
 ${kat}
 KUNDEN (Name | PLZ Ort | Kd.-Nr.):
-${kd}`;
+${kd}
+VERMEHRER: ${[...new Set(D.partien.map(p => p.vermehrer))].join("; ")}`;
   } else {
     const lf = D.lief.filter(l => l.typ !== "Spedition").map(l => [l.name, l.typ, l.vo || ""].join(" | ")).join("\n");
     auf = `Du liest eine Pflanzkartoffel-Bestellung der Vermarktungsgesellschaft Bio-Bauern mbH (VG Bio) bei einem Vermehrer, einer VO-Firma oder einem Züchter – oder die Auftragsbestätigung (AB) des Lieferanten dazu. Quelle: ${diktat ? "Diktat (Spracherkennung)" : "AB, E-Mail, PDF, Foto oder Notiz"}.
 ${regeln}
-- lieferant: der Lieferant (Absender der AB bzw. bei wem bestellt wird), nicht VG Bio. Wähle aus LIEFERANTEN, typ "Vermehrer", "VO" oder "Züchter".
+- lieferant: der Lieferant (Absender der AB bzw. bei wem bestellt wird), nicht VG Bio. Wähle aus LIEFERANTEN, typ "Vermehrer", "VO", "Züchter" oder "Händler".
 - ab_nr: Nummer der Auftragsbestätigung bzw. Bestellnummer des Lieferanten, falls vorhanden.
 - liefertermin: "Frühjahr" (Standard) oder "Herbst".
 Antworte nur mit JSON:
@@ -867,13 +969,13 @@ function eintragen(r, quelle){
     if (m){ E.kdnr = m.kdnr; E.kunde = m.name; } else if (k.name && !E.kunde){ E.kdnr = null; E.kunde = k.name; notiz.push(`Kunde „${k.name}“ nicht in der büro+-Liste`); }
     if (LZ.includes(r.lieferzeitraum)) E.lieferzeitraum = r.lieferzeitraum;
     if (LA.includes(r.lieferart)) E.lieferart = r.lieferart;
-    if (E.lieferart !== "Anlieferung") E.tour_id = null;
+    if (E.lieferart !== "Anlieferung"){ E.tour_id = null; if (r.abholstelle){ const v = [...new Set(D.partien.map(p => p.vermehrer))].find(x => norm(x).includes(norm(r.abholstelle).split(/[ ,]/)[0]) ) ; E.abholstelle = v || r.abholstelle; } }
     const e = r.entladestelle;
     if (e && typeof e === "object" && (e.name || e.strasse || e.ort)){ Object.assign(E, {entlade_abweichend: true, entlade_name: e.name || "", entlade_strasse: e.strasse || "", entlade_plz: e.plz || "", entlade_ort: e.ort || "", entlade_hinweis: e.hinweis || ""}); E.lieferart = "Anlieferung"; }
   } else {
     const l = r.lieferant || {};
     if (l.name){
-      const typ = ["Vermehrer", "VO", "Züchter"].includes(l.typ) ? l.typ : E.lieferant_typ;
+      const typ = ["Vermehrer", "VO", "Züchter", "Händler"].includes(l.typ) ? l.typ : E.lieferant_typ;
       const m = D.lief.find(x => norm(x.name) === norm(l.name)) || D.lief.find(x => x.typ !== "Spedition" && (norm(x.name).includes(norm(l.name)) || norm(l.name).includes(norm(x.name))));
       if (m){ E.lieferant = m.name; E.lieferant_typ = m.typ; E.vo = m.vo || (m.typ === "VO" ? m.name : E.vo); } else { E.lieferant = l.name; E.lieferant_typ = typ; if (l.vo) E.vo = l.vo; notiz.push(`Lieferant „${l.name}“ ist neu`); }
     }
@@ -886,6 +988,60 @@ function eintragen(r, quelle){
   E._dikInfo = `✓ ${pos.length} Position(en) aus ${esc(quelle)} übernommen – bitte prüfen und speichern.` + (notiz.length ? " " + esc(notiz.join("; ")) + "." : "") + (unklar.length ? ` <span class="pill a">unklar: ${esc(unklar.join(" · "))}</span>` : "");
   renderEdit(); toast(`${pos.length} Position(en) eingetragen – bitte prüfen`);
 }
+
+// ---------- Zukaufvorschlag: Kundenaufträge minus VG-Anteil aus der Vermehrung minus schon Zugekauftes, je Sorte bei der Bezugsquelle
+const quelleVon = n => { const s = D.sorten.find(x => x.name === n) || {}; return s.bezugsquelle || s.zuechter || ""; };
+const EIGEN = ["Vermehrer", "VO"], ZUKAUF = ["Züchter", "Händler"];
+function zukaufDaten(){
+  const lz = $("#zk-lz").value, Z = {};
+  const get = (n, s) => { const k = n + "|" + s; return Z[k] = Z[k] || {sorte: n, sortierung: s, vk: 0, eigen: 0, zu: 0}; };
+  aktivePos("auf").forEach(p => { const h = headOf("auf", p.auftrag_id); if (!lz || h.lieferzeitraum === lz) get(p.sorte, p.sortierung).vk += num(p.menge_dt); });
+  D.pos.forEach(p => { const b = bestOf(p.bestellung_id); if (!b || b.status === "storniert" || (lz && b.liefertermin && b.liefertermin !== lz)) return;
+    const o = get(p.sorte, p.sortierung); if (EIGEN.includes(b.lieferant_typ)) o.eigen += num(p.menge_dt); else o.zu += num(p.menge_dt); });
+  return Object.values(Z).map(o => { o.fehlt = o.vk - o.eigen - o.zu; const bb = bbStd(o.sorte); o.bb = bb; o.vorschlag = o.fehlt > 0.05 ? Math.ceil(o.fehlt / bb - 0.001) * bb : 0; o.quelle = quelleVon(o.sorte); return o; })
+    .sort((a, b) => a.sorte.localeCompare(b.sorte, "de") || SORTS.indexOf(a.sortierung) - SORTS.indexOf(b.sortierung));
+}
+let ZK = {}; // Auswahl/Mengen je Zeile
+function renderZukauf(){
+  const alle = $("#zk-alle").checked, rows = zukaufDaten();
+  const quellen = [...new Set(D.lief.filter(l => ZUKAUF.includes(l.typ)).map(l => l.name).concat(D.sorten.map(s => s.zuechter).filter(Boolean)))].sort();
+  $("#dl-quelle").innerHTML = quellen.map(q => `<option value="${esc(q)}">`).join("");
+  const offen = rows.filter(r => r.fehlt > 0.05);
+  $("#zk-sum").innerHTML = offen.length ? `<b>${offen.length}</b> Sorten/Sortierungen fehlen, zusammen <b>${fdt(offen.reduce((a, r) => a + r.fehlt, 0))} dt</b>` : "Alles durch eigene Vermehrung und Zukauf gedeckt.";
+  const show = alle ? rows.filter(r => r.vk || r.eigen || r.zu) : offen;
+  const gruppen = {}; show.forEach(r => { const q = r.fehlt > 0.05 ? (r.quelle || "– Bezugsquelle fehlt –") : "gedeckt"; (gruppen[q] = gruppen[q] || []).push(r); });
+  const keys = Object.keys(gruppen).sort((a, b) => (a === "gedeckt") - (b === "gedeckt") || (a.startsWith("–")) - (b.startsWith("–")) || a.localeCompare(b, "de"));
+  $("#zk-body").innerHTML = keys.map(q => {
+    const g = gruppen[q], kann = q !== "gedeckt" && !q.startsWith("–");
+    return `<div class="zkg"><div class="row"><b class="grow">${esc(q)}${kann ? ` <span class="hint">${esc((D.lief.find(l => l.name === q) || {}).typ || "Züchter")}</span>` : ""}</b>${kann ? `<button class="btn sm zk-go" data-q="${esc(q)}">Bestellung als Entwurf anlegen</button>` : ""}</div>
+      <div class="tw"><table><thead><tr>${q !== "gedeckt" ? "<th></th>" : ""}<th>Sorte</th><th class="n">verkauft</th><th class="n">eigene Verm.</th><th class="n">zugekauft</th><th class="n">${q === "gedeckt" ? "frei" : "fehlt"}</th>${q !== "gedeckt" ? `<th class="n">Zukauf dt</th>` : ""}<th>Bezugsquelle</th></tr></thead><tbody>${g.map(r => {
+        const k = r.sorte + "|" + r.sortierung, z = ZK[k] = ZK[k] || {an: true, m: r.vorschlag};
+        return `<tr>${q !== "gedeckt" ? `<td><input type="checkbox" class="zk-an" data-k="${esc(k)}" ${z.an ? "checked" : ""} aria-label="übernehmen"></td>` : ""}<td><b>${esc(r.sorte)}</b>${r.sortierung !== "NS" ? " " + esc(r.sortierung) : ""}</td><td class="n">${fdt(r.vk)}</td><td class="n">${fdt(r.eigen)}</td><td class="n">${fdt(r.zu)}</td><td class="n">${r.fehlt > 0.05 ? `<span class="pill a">${fdt(r.fehlt)}</span>` : fdt(-r.fehlt)}</td>${q !== "gedeckt" ? `<td class="n" style="width:96px"><input type="text" inputmode="decimal" class="zk-m" data-k="${esc(k)}" value="${String(z.m).replace(".", ",")}" title="aufgerundet auf volle Big Bags à ${fmt(r.bb, r.bb % 1 ? 1 : 0)} dt"></td>` : ""}<td style="min-width:140px"><input type="text" class="zk-q" data-s="${esc(r.sorte)}" list="dl-quelle" value="${esc(r.quelle)}" placeholder="Züchter / Händler"></td></tr>`; }).join("")}</tbody></table></div></div>`;
+  }).join("") || `<p class="empty">Keine Kundenaufträge oder Bestellungen in diesem Zeitraum.</p>`;
+  $$("#zk-body .zk-an").forEach(c => c.onchange = () => { ZK[c.dataset.k].an = c.checked; });
+  $$("#zk-body .zk-m").forEach(c => c.onchange = () => { ZK[c.dataset.k].m = numIn(c.value) || 0; });
+  $$("#zk-body .zk-q").forEach(c => c.onchange = async () => {
+    const v = c.value.trim(), { error } = await sb.from("pfg_sorten").update({bezugsquelle: v || null}).eq("name", c.dataset.s);
+    if (error) return toast(error.message); const so = D.sorten.find(s => s.name === c.dataset.s); if (so) so.bezugsquelle = v || null;
+    toast(`${c.dataset.s}: Zukauf bei ${v || "Züchter laut Katalog"}`); renderZukauf(); });
+  $$("#zk-body .zk-go").forEach(b => b.onclick = () => zukaufAnlegen(b.dataset.q, gruppen[b.dataset.q]));
+}
+async function zukaufAnlegen(q, rows){
+  const sel = rows.filter(r => { const z = ZK[r.sorte + "|" + r.sortierung]; return z && z.an && z.m > 0; });
+  if (!sel.length) return toast("Keine Zeile ausgewählt");
+  const l = D.lief.find(x => x.name === q && ZUKAUF.includes(x.typ)), typ = l ? l.typ : "Züchter";
+  try {
+    if (!l){ const { error } = await sb.from("pfg_lieferanten").insert({name: q, typ}); if (error && !/duplicate/.test(error.message)) throw error; }
+    const { data: b, error } = await sb.from("pfg_bestellungen").insert({lieferant: q, lieferant_typ: typ, status: "Entwurf", liefertermin: $("#zk-lz").value || "Frühjahr",
+      bemerkung: "Zukaufvorschlag vom " + new Date().toLocaleDateString("de-DE"), quelle: "Zukaufvorschlag", bearbeiter: me.name}).select().single();
+    if (error) throw error;
+    const { error: e2 } = await sb.from("pfg_bestellpos").insert(sel.map((r, i) => ({bestellung_id: b.id, sorte: r.sorte, sortierung: r.sortierung, menge_dt: ZK[r.sorte + "|" + r.sortierung].m, verpackung: "Big Bag", bb_dt: r.bb, pos: i + 1})));
+    if (e2) throw e2;
+    sel.forEach(r => delete ZK[r.sorte + "|" + r.sortierung]);
+    toast(`Entwurf ${b.nr} bei ${q} angelegt`); await loadAll(); openEdit("best", b.id);
+  } catch (err){ console.error(err); toast("Anlegen fehlgeschlagen: " + (err.message || err)); }
+}
+["#zk-lz", "#zk-alle"].forEach(s => $(s).addEventListener("input", renderZukauf));
 
 // ---------- Touren (Speditionen)
 let TE = null; // offene Tour im Bearbeiten
@@ -1211,9 +1367,12 @@ async function uebernehmen(){
 }
 
 // ---------- Navigation, Start
-function renderAll(){ renderUeb(); renderBestList(); renderAufList(); renderTouren(); renderPart(); renderStamm(); renderKund(); if (E && !$(K[E.kind].edit).hidden) renderEdit(); }
-function show(id){ $$("main").forEach(m => m.hidden = m.id !== id); $$("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === id)); }
+function renderAll(){ renderUeb(); renderBestList(); renderAufList(); renderZukauf(); renderTouren(); renderPart(); renderStamm(); renderKund(); if (E && !$(K[E.kind].edit).hidden) renderEdit(); }
+function show(id){ $$("main").forEach(m => m.hidden = m.id !== id); $$("nav.tabs button").forEach(b => { b.setAttribute("aria-selected", b.dataset.view === id); if (b.dataset.view === id) b.scrollIntoView({block: "nearest", inline: "nearest"}); }); $("nav.tabs").classList.remove("hide"); }
 $$("nav.tabs button").forEach(b => b.onclick = () => show(b.dataset.view));
+// Reiterleiste beim Runterscrollen ausblenden, beim Hochscrollen wieder zeigen
+{ let lastY = window.scrollY; const nav = $("nav.tabs");
+  window.addEventListener("scroll", () => { const y = window.scrollY; if (Math.abs(y - lastY) < 6) return; nav.classList.toggle("hide", y > lastY && y > 80); lastY = y; }, {passive: true}); }
 
 async function start(session){
   const { data: ok } = await sb.rpc("pfg_ok");

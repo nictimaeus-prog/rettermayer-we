@@ -135,6 +135,11 @@ assets/                   App-Symbol und Startbild
   Claude liest Kunde bzw. Lieferant, Lieferzeitraum, Lieferart, Entladestelle und Positionen (Mengen in dt, Big Bags/Säcke umgerechnet)
   und trägt sie in die Maske ein; prüfen und speichern. Supabase-Funktion `pflanzgut-import` (Schlüssel `ANTHROPIC_API_KEY` wie read-ls)
 - Lieferzeitraum steht überall standardmäßig auf Frühjahr
+- Eingabemaske fürs Handy: Erzeuger, Anlieferung/Abholung (bei Abholung Abholstelle = Vermehrer), Frühjahr/Herbst, dann je Zeile
+  Menge · Sorte · Sortierung (NS) · Verpackung (BB 11 / BB 12,5 / Sack / lose); neue Zeile entsteht automatisch, Enter springt weiter.
+  Datum, Status, Tour, abweichende Entladestelle und Bemerkung unter „Weitere Angaben“. Reiterleiste verschwindet beim Runterscrollen
+- Zukaufvorschlag (Tab „Einkauf“): je Sorte und Sortierung Kundenaufträge minus VG-Anteil aus der Vermehrung (Bestellungen bei
+  Vermehrern/VOs) minus Zukauf (Züchter/Händler); Bezugsquelle je Sorte (Standard: Züchter laut Katalog), Entwurf-Bestellung per Knopf
 - Verpackung je Position: Big Bag (Standard 11 dt aus der eigenen Vermehrung; 12,5 dt bei holländischer Ware, je Sorte im Sortenkatalog
   hinterlegt: Avanti, Colomba, Annabelle, Taurus, Emanuelle), Sack 25 kg oder lose; die App rechnet die Gebindezahl aus
 - Lieferart je Kundenauftrag: Anlieferung (mit Tour und optional abweichender Entladestelle) oder Abholung ab Vermehrer
