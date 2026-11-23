@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#5C8A13">
+<title>Pflanzkartoffeln · VG Bio</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{
+  --green:#5C8A13; --green-l:#93C31A; --blue:#2C7FB0; --blue-l:#5FB2DE;
+  --ink:#1F2A1A; --muted:#66705F; --line:#DCE3D3; --bg:#F4F6F0; --card:#FFFFFF; --soft:#EEF5E0;
+  --warn:#B3261E; --warn-bg:#FDECEA; --pick:#E6F2FA; --amber:#8A5A00; --amber-bg:#FFF4DB;
+  --f-display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 var(--f-body);padding-bottom:40px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue-l);outline-offset:2px}
+header{display:flex;align-items:center;gap:12px;padding:12px 18px 10px;background:var(--card)}
+header img{height:36px;width:auto}
+header h1{font:700 21px/1.1 var(--f-display);margin:0;color:var(--green)}
+header small{display:block;font:600 12px var(--f-body);color:var(--muted)}
+.who{margin-left:auto;text-align:right;font-size:12px;color:var(--muted)}
+.stripe{height:4px;background:linear-gradient(90deg,var(--green-l) 0 66%,var(--blue-l) 66% 100%)}
+nav.tabs{display:flex;gap:6px;padding:10px 18px;position:sticky;top:0;z-index:5;background:var(--bg);flex-wrap:wrap;max-width:1280px;margin:0 auto}
+nav.tabs button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:600;color:var(--muted);cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--green);border-color:var(--green);color:#fff}
+main{padding:0 18px;display:grid;gap:14px;max-width:1280px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:10px;min-width:0}
+.card h2{font:700 18px var(--f-display);margin:0;color:var(--green)}
+.card h3{font:700 15px var(--f-display);margin:4px 0 0;color:var(--blue)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row > .grow{flex:1;min-width:180px}
+input[type=text],input[type=search],input[type=number],input[type=date],input[type=email],input[type=password],textarea,select{width:100%;border:1px solid #C9D3BE;border-radius:9px;padding:8px 10px;background:#FCFDFB}
+input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+label.f{display:grid;gap:3px;font-size:12px;color:var(--muted);font-weight:600}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.btn{border:none;border-radius:10px;padding:9px 14px;font-weight:700;background:var(--green);color:#fff;cursor:pointer;white-space:nowrap}
+.btn.sec{background:#fff;color:var(--green);border:1.5px solid var(--green)}
+.btn.blue{background:var(--blue)}
+.btn.red{background:#fff;color:var(--warn);border:1.5px solid #F2B8B5}
+.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.45;cursor:default}
+.link{background:none;border:none;color:var(--blue);font-weight:600;padding:0;cursor:pointer;text-decoration:underline}
+.hint{font-size:13px;color:var(--muted)}
+.err{color:var(--warn);font-size:14px}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:70vh}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{position:sticky;top:0;background:var(--green);color:#fff;text-align:left;padding:7px 8px;font-weight:700;white-space:nowrap;z-index:1}
+td{padding:6px 8px;border-bottom:1px solid #E7ECE0;vertical-align:middle}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--soft)}
+tr.sum td{font-weight:700;background:#F6F9F1;border-top:2px solid var(--green)}
+tr.sub td{background:#FAFCF7}
+td input,td select{padding:5px 7px;font-size:13.5px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 8px;background:#fff;border:1px solid var(--line);white-space:nowrap}
+.pill.g{background:var(--green);color:#fff;border-color:var(--green)}
+.pill.b{background:var(--pick);color:var(--blue);border-color:#BFDDF0}
+.pill.a{background:var(--amber-bg);color:var(--amber);border-color:#E9C46A}
+.pill.w{background:var(--warn-bg);color:var(--warn);border-color:#F2B8B5}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.kpi b{display:block;font:700 24px var(--f-display);color:var(--green);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid #C9D3BE;border-radius:9px;overflow:hidden}
+.seg button{border:none;background:#fff;padding:6px 10px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff}
+.pos{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px;background:#fff}
+.pos.open{border-color:#E9C46A;background:#FFFCF3}
+.pos .h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pos .h b{font-size:15px}
+.alloc{display:grid;gap:6px;background:var(--pick);border-radius:10px;padding:10px}
+.alloc table{background:#fff;border-radius:8px}
+.drop{border:2px dashed #B7C9A1;border-radius:12px;padding:22px 12px;display:grid;justify-items:center;gap:8px;text-align:center;background:#FAFCF6;cursor:pointer}
+.drop.over{border-color:var(--blue);background:var(--pick)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:40;max-width:90vw}
+.gate{position:fixed;inset:0;z-index:30;background:var(--bg);display:grid;place-items:center;padding:20px}
+.gate .card{width:100%;max-width:400px}
+.empty{color:var(--muted);font-size:14px;padding:6px 2px}
+.bar-in{height:8px;border-radius:4px;background:#E7ECE0;overflow:hidden;min-width:60px}
+.bar-in i{display:block;height:100%;background:var(--green-l)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <img src="data:image/jpeg;base64,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" alt="VG Bio">
+  <div><h1>Pflanzkartoffeln 2027</h1><small>Vermarktungsgesellschaft Bio-Bauern mbH · Partien, Bestellungen, Zuordnung</small></div>
+  <div class="who" id="who" hidden><span id="who-n"></span><br><button class="link" id="logout">Abmelden</button></div>
+</header>
+<div class="stripe"></div>
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-view="v-ueb">Übersicht</button>
+  <button role="tab" aria-selected="false" data-view="v-best">Bestellungen</button>
+  <button role="tab" aria-selected="false" data-view="v-part">Partien</button>
+  <button role="tab" aria-selected="false" data-view="v-stamm">Sorten &amp; Lieferanten</button>
+  <button role="tab" aria-selected="false" data-view="v-kund">Kunden</button>
+  <button role="tab" aria-selected="false" data-view="v-imp">Import büro+</button>
+</nav>
+
+<!-- Übersicht -->
+<main id="v-ueb">
+  <div class="kpis" id="kpis"></div>
+  <section class="card">
+    <div class="row"><h2 class="grow">Je Sorte: Partien, Bestellungen, Zuordnung</h2>
+      <div class="seg" id="ueb-sort" role="group" aria-label="Sortierung">
+        <button data-s="NS" aria-pressed="true">Normalsort. (NS)</button><button data-s="Drill" aria-pressed="false">Drillinge</button><button data-s="ÜG" aria-pressed="false">Übergrößen</button><button data-s="alle" aria-pressed="false">alle</button>
+      </div></div>
+    <p class="hint">Verfügbar = Menge der Partien (ohne aberkannt, ergebnisoffen, Direktvermehrung). Bestellt = Positionen offener und bestätigter Bestellungen. Zugeordnet = davon schon auf Partien verteilt.</p>
+    <div class="tw"><table id="ueb-t"></table></div>
+  </section>
+</main>
+
+<!-- Bestellungen -->
+<main id="v-best" hidden>
+  <section class="card" id="best-list-card">
+    <div class="row"><h2 class="grow">Bestellungen bei Züchtern, Vermehrern und VO-Firmen</h2>
+      <button class="btn" id="best-neu">+ Neue Bestellung</button>
+      <button class="btn sec" id="best-csv">CSV für büro+</button></div>
+    <div class="row">
+      <input type="search" id="best-q" class="grow" placeholder="Suchen: Nummer, Lieferant, Sorte …">
+      <select id="best-typ" style="width:auto"><option value="">alle Lieferanten</option><option>Vermehrer</option><option>VO</option><option>Züchter</option></select>
+      <select id="best-stat" style="width:auto"><option value="">alle Status</option><option>Entwurf</option><option>offen</option><option>bestätigt</option><option>geliefert</option><option>storniert</option></select>
+      <label class="row" style="font-size:13px;gap:4px"><input type="checkbox" id="best-offen"> nur mit offener Aufteilung</label>
+    </div>
+    <div class="tw"><table id="best-t"></table></div>
+  </section>
+  <section class="card" id="best-edit" hidden></section>
+</main>
+
+<!-- Partien -->
+<main id="v-part" hidden>
+  <section class="card">
+    <div class="row"><h2 class="grow">Vermehrungspartien</h2><button class="btn" id="part-neu">+ Partie erfassen</button></div>
+    <div class="row">
+      <input type="search" id="part-q" class="grow" placeholder="Suchen: Sorte, Vermehrer, Anerk.-Nr. …">
+      <select id="part-jahr" style="width:auto"></select>
+      <select id="part-stat" style="width:auto"><option value="">alle Status</option></select>
+    </div>
+    <div id="part-form" hidden></div>
+    <div class="tw"><table id="part-t"></table></div>
+  </section>
+</main>
+
+<!-- Stammdaten -->
+<main id="v-stamm" hidden>
+  <section class="card">
+    <div class="row"><h2 class="grow">Sortenkatalog</h2><input type="search" id="sorte-q" placeholder="Sorte suchen" style="max-width:240px"></div>
+    <div class="grid" id="sorte-form">
+      <label class="f">Neue Sorte<input type="text" id="sn-name"></label>
+      <label class="f">Kochtyp<select id="sn-kt"><option></option><option>festkochend</option><option>vorwiegend festkochend</option><option>mehlig</option><option>Chips</option></select></label>
+      <label class="f">Reife<select id="sn-rg"><option></option><option>sehr früh</option><option>früh</option><option>mittelfrüh</option><option>mittelspät</option><option>spät</option></select></label>
+      <label class="f">Züchter<input type="text" id="sn-zue" list="dl-zue"></label>
+      <div class="row" style="align-self:end"><button class="btn sm" id="sn-add">Sorte anlegen</button></div>
+    </div>
+    <div class="tw" style="max-height:46vh"><table id="sorte-t"></table></div>
+  </section>
+  <section class="card">
+    <div class="row"><h2 class="grow">Lieferanten: Züchter, Vermehrer, VO-Firmen</h2></div>
+    <div class="grid">
+      <label class="f">Name<input type="text" id="ln-name"></label>
+      <label class="f">Art<select id="ln-typ"><option>Vermehrer</option><option>VO</option><option>Züchter</option></select></label>
+      <label class="f">VO-Firma (bei Vermehrern)<input type="text" id="ln-vo" list="dl-vo"></label>
+      <label class="f">E-Mail<input type="email" id="ln-mail"></label>
+      <div class="row" style="align-self:end"><button class="btn sm" id="ln-add">Lieferant anlegen</button></div>
+    </div>
+    <div class="tw" style="max-height:46vh"><table id="lief-t"></table></div>
+  </section>
+</main>
+
+<!-- Kunden -->
+<main id="v-kund" hidden>
+  <section class="card">
+    <div class="row"><h2 class="grow">Kunden aus büro+</h2><span class="hint" id="kund-n"></span></div>
+    <input type="search" id="kund-q" placeholder="Suchen: Kundennr., Name, Ort, E-Mail …">
+    <div class="tw"><table id="kund-t"></table></div>
+  </section>
+</main>
+
+<!-- Import -->
+<main id="v-imp" hidden>
+  <section class="card">
+    <h2>Import aus büro+ und Excel</h2>
+    <p class="hint">Excel- oder CSV-Datei hineinziehen. Die App erkennt die Art selbst:<br>
+      <b>Kunden</b> (Spalten Kundennr./Kontonr., Kunde, E-Mail, Versandadresse …) – z. B. der Pflanzgut-Verteiler aus büro+ ·
+      <b>Partien</b> (Vermehrungsliste mit Anerk.-Nr., Sorte, Vermehrer, Normalsortierung …) ·
+      <b>Sorten</b> (Preisliste mit Sorte, Bio/Konv, GHP). Vorhandene Einträge werden aktualisiert, nichts wird gelöscht.</p>
+    <label class="drop" id="imp-drop" for="imp-file">
+      <b>Datei hier ablegen oder klicken</b><span class="hint">.xlsx, .xls oder .csv</span>
+    </label>
+    <input type="file" id="imp-file" accept=".xlsx,.xls,.csv,text/csv" hidden>
+    <div id="imp-prev"></div>
+  </section>
+</main>
+
+<datalist id="dl-sorten"></datalist>
+<datalist id="dl-zue"></datalist>
+<datalist id="dl-vo"></datalist>
+<datalist id="dl-lief"></datalist>
+
+<div class="toast" id="toast" hidden></div>
+
+<div class="gate" id="gate">
+  <form class="card" id="login-form" autocomplete="on">
+    <img src="data:image/jpeg;base64,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" alt="VG Bio" style="height:44px;justify-self:start">
+    <h2>Pflanzkartoffeln 2027</h2>
+    <p class="hint">Anmeldung mit deinem Zugang zur Rettermayer-WE-App.</p>
+    <label class="f" for="li-mail">E-Mail<input id="li-mail" type="email" autocomplete="username" required></label>
+    <label class="f" for="li-pw">Passwort<input id="li-pw" type="password" autocomplete="current-password" required></label>
+    <button class="btn" id="li-go" type="submit">Anmelden</button>
+    <p class="err" id="li-err" hidden></p>
+  </form>
+</div>
+
+<script src="../config.js"></script>
+<script src="../lib/supabase.js"></script>
+<script src="../lib/xlsx.full.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = v => { if (v == null || v === "") return 0; if (typeof v === "number") return v; const n = parseFloat(String(v).replace(/\./g, "").replace(",", ".")); return isNaN(n) ? 0 : n; };
+const numIn = v => { if (v == null || String(v).trim() === "") return null; const n = parseFloat(String(v).trim().replace(",", ".")); return isNaN(n) ? null : n; };
+const fmt = (v, d) => (v == null || v === "") ? "" : Number(v).toLocaleString("de-DE", {minimumFractionDigits: d == null ? 1 : d, maximumFractionDigits: d == null ? 1 : d});
+const fdt = v => v ? fmt(v, Math.abs(v % 1) > 0.001 ? 1 : 0) : "–";
+const norm = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "");
+const SORTS = ["NS", "Drill", "ÜG"];
+const SORTNAME = {NS: "Normalsortierung", Drill: "Drillinge", "ÜG": "Übergrößen"};
+const FIELD = {NS: "ns", Drill: "drill", "ÜG": "ueg"};
+const NICHT_VERF = ["aberkannt", "ergebnisoffen", "Direktvermehrung KSG"];
+const AKTIV = ["Entwurf", "offen", "bestätigt", "geliefert"];
+function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3200); }
+
+const CFG = window.RWE_CONFIG || {};
+const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {auth: {persistSession: true, autoRefreshToken: true, storageKey: "rwe-auth"}});
+let me = null;
+const D = {sorten: [], lief: [], kunden: [], partien: [], best: [], pos: [], zu: []};
+
+async function all(table, order){
+  let out = [], from = 0;
+  for(;;){
+    let q = sb.from(table).select("*").range(from, from + 999);
+    if (order) q = q.order(order);
+    const { data, error } = await q;
+    if (error) throw error;
+    out = out.concat(data); if (data.length < 1000) break; from += 1000;
+  }
+  return out;
+}
+async function loadAll(){
+  const [s, l, k, p, b, pos, z] = await Promise.all([all("pfg_sorten", "name"), all("pfg_lieferanten", "name"), all("pfg_kunden", "name"), all("pfg_partien", "sorte"), all("pfg_bestellungen", "nr"), all("pfg_bestellpos", "pos"), all("pfg_zuordnung")]);
+  Object.assign(D, {sorten: s, lief: l, kunden: k, partien: p, best: b, pos, zu: z});
+  fillLists(); renderAll();
+}
+function fillLists(){
+  $("#dl-sorten").innerHTML = D.sorten.filter(s => s.aktiv).map(s => `<option value="${esc(s.name)}">`).join("");
+  const zue = [...new Set(D.lief.filter(l => l.typ === "Züchter").map(l => l.name).concat(D.sorten.map(s => s.zuechter).filter(Boolean)))].sort();
+  $("#dl-zue").innerHTML = zue.map(z => `<option value="${esc(z)}">`).join("");
+  $("#dl-vo").innerHTML = D.lief.filter(l => l.typ === "VO").map(l => `<option value="${esc(l.name)}">`).join("");
+  const jahre = [...new Set(D.partien.map(p => p.jahr))].sort((a, b) => b - a);
+  const js = $("#part-jahr"), cur = js.value; js.innerHTML = jahre.map(j => `<option>${j}</option>`).join(""); if (cur) js.value = cur;
+  const st = [...new Set(D.partien.map(p => p.status).filter(Boolean))].sort();
+  const ss = $("#part-stat"), cs = ss.value; ss.innerHTML = `<option value="">alle Status</option>` + st.map(s => `<option>${esc(s)}</option>`).join(""); ss.value = cs;
+}
+
+// ---------- Berechnungen
+const posOf = bid => D.pos.filter(p => p.bestellung_id === bid).sort((a, b) => a.pos - b.pos);
+const zuOf = pid => D.zu.filter(z => z.pos_id === pid);
+const zuSum = pid => zuOf(pid).reduce((a, z) => a + num(z.menge_dt), 0);
+const bestOf = id => D.best.find(b => b.id === id);
+const partie = id => D.partien.find(p => p.id === id);
+const verfuegbar = p => !NICHT_VERF.includes(p.status);
+function partieBelegt(pid, sortierung){
+  return D.zu.filter(z => z.partie_id === pid).reduce((a, z) => {
+    const pos = D.pos.find(x => x.id === z.pos_id); const b = pos && bestOf(pos.bestellung_id);
+    return a + (pos && b && b.status !== "storniert" && pos.sortierung === sortierung ? num(z.menge_dt) : 0);
+  }, 0);
+}
+function stat(){
+  const S = {};
+  const get = (n, s) => { S[n] = S[n] || {}; S[n][s] = S[n][s] || {verf: 0, best: 0, zu: 0, partien: 0}; return S[n][s]; };
+  D.partien.filter(p => verfuegbar(p) && p.jahr === Number($("#part-jahr").value || 2026)).forEach(p => SORTS.forEach(s => { const v = num(p[FIELD[s]]); if (v > 0){ const o = get(p.sorte, s); o.verf += v; o.partien++; } }));
+  D.pos.forEach(p => { const b = bestOf(p.bestellung_id); if (!b || !AKTIV.includes(b.status)) return; const o = get(p.sorte, p.sortierung); o.best += num(p.menge_dt); o.zu += Math.min(zuSum(p.id), num(p.menge_dt)); });
+  return S;
+}
+
+// ---------- Übersicht
+let uebSort = "NS";
+function renderUeb(){
+  const S = stat();
+  const aktivPos = D.pos.filter(p => { const b = bestOf(p.bestellung_id); return b && AKTIV.includes(b.status); });
+  const bestNS = aktivPos.filter(p => p.sortierung === "NS").reduce((a, p) => a + num(p.menge_dt), 0);
+  const zuNS = aktivPos.filter(p => p.sortierung === "NS").reduce((a, p) => a + Math.min(zuSum(p.id), num(p.menge_dt)), 0);
+  const verfNS = D.partien.filter(p => verfuegbar(p) && p.jahr === Number($("#part-jahr").value || 2026)).reduce((a, p) => a + num(p.ns), 0);
+  const offenPos = aktivPos.filter(p => zuSum(p.id) + 0.05 < num(p.menge_dt)).length;
+  $("#kpis").innerHTML = [
+    [fdt(verfNS) + " dt", "Normalsortierung in Partien"],
+    [fdt(bestNS) + " dt", "NS bestellt (" + (verfNS ? Math.round(bestNS / verfNS * 100) : 0) + " %)"],
+    [fdt(zuNS) + " dt", "NS auf Partien zugeordnet"],
+    [String(offenPos), "Positionen mit offener Aufteilung"],
+    [String(D.best.filter(b => AKTIV.includes(b.status)).length), "aktive Bestellungen"],
+  ].map(([b, s]) => `<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join("");
+  const names = Object.keys(S).sort((a, b) => a.localeCompare(b, "de"));
+  const cols = uebSort === "alle" ? SORTS : [uebSort];
+  let tot = {verf: 0, best: 0, zu: 0};
+  const rows = [];
+  names.forEach(n => cols.forEach(s => {
+    const o = (S[n] || {})[s]; if (!o || (!o.verf && !o.best)) return;
+    tot.verf += o.verf; tot.best += o.best; tot.zu += o.zu;
+    const frei = o.verf - o.best, pct = o.verf ? Math.min(100, o.best / o.verf * 100) : 100;
+    const so = D.sorten.find(x => x.name === n) || {};
+    rows.push(`<tr><td><b>${esc(n)}</b> <span class="hint">${esc(so.kochtyp || "")}</span></td>${uebSort === "alle" ? `<td>${esc(SORTNAME[s])}</td>` : ""}<td class="n">${o.partien}</td><td class="n">${fdt(o.verf)}</td><td class="n">${fdt(o.best)}</td><td><div class="bar-in" title="${Math.round(pct)} % bestellt"><i style="width:${pct}%"></i></div></td><td class="n">${fdt(o.zu)}</td><td class="n">${o.best - o.zu > 0.05 ? `<span class="pill a">${fdt(o.best - o.zu)}</span>` : "–"}</td><td class="n">${frei < -0.05 ? `<span class="pill w">${fdt(frei)}</span>` : fdt(frei)}</td></tr>`);
+  }));
+  $("#ueb-t").innerHTML = `<thead><tr><th>Sorte</th>${uebSort === "alle" ? "<th>Sortierung</th>" : ""}<th class="n">Partien</th><th class="n">verfügbar dt</th><th class="n">bestellt dt</th><th></th><th class="n">zugeordnet dt</th><th class="n">Aufteilung offen dt</th><th class="n">noch frei dt</th></tr></thead><tbody>${rows.join("") || `<tr><td colspan="9" class="empty">Keine Daten</td></tr>`}</tbody>
+  <tfoot><tr class="sum"><td>Summe</td>${uebSort === "alle" ? "<td></td>" : ""}<td></td><td class="n">${fdt(tot.verf)}</td><td class="n">${fdt(tot.best)}</td><td></td><td class="n">${fdt(tot.zu)}</td><td class="n">${fdt(tot.best - tot.zu)}</td><td class="n">${fdt(tot.verf - tot.best)}</td></tr></tfoot>`;
+}
+$("#ueb-sort").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; uebSort = b.dataset.s; $$("#ueb-sort button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderUeb(); });
+
+// ---------- Bestellungen: Liste
+function bestSumme(b){ return posOf(b.id).reduce((a, p) => a + num(p.menge_dt), 0); }
+function bestOffen(b){ return posOf(b.id).filter(p => zuSum(p.id) + 0.05 < num(p.menge_dt)).length; }
+function statPill(s){ const c = {offen: "b", "bestätigt": "g", geliefert: "g", storniert: "w", Entwurf: "a"}[s] || ""; return `<span class="pill ${c}">${esc(s)}</span>`; }
+function renderBestList(){
+  const q = norm($("#best-q").value), typ = $("#best-typ").value, st = $("#best-stat").value, nurOffen = $("#best-offen").checked;
+  const list = D.best.filter(b => (!typ || b.lieferant_typ === typ) && (!st || b.status === st) && (!nurOffen || bestOffen(b) > 0) &&
+    (!q || norm([b.nr, b.lieferant, b.vo, b.bemerkung, ...posOf(b.id).map(p => p.sorte)].join(" ")).includes(q)))
+    .sort((a, b) => b.nr.localeCompare(a.nr));
+  $("#best-t").innerHTML = `<thead><tr><th>Nr.</th><th>Datum</th><th>Lieferant</th><th>Art</th><th>VO</th><th>Sorten</th><th class="n">Pos.</th><th class="n">Menge dt</th><th>Aufteilung</th><th>Status</th></tr></thead><tbody>` +
+    (list.map(b => { const ps = posOf(b.id), off = bestOffen(b);
+      return `<tr class="click" data-id="${b.id}"><td><b>${esc(b.nr)}</b></td><td>${esc(new Date(b.datum).toLocaleDateString("de-DE"))}</td><td>${esc(b.lieferant)}</td><td>${esc(b.lieferant_typ)}</td><td>${esc(b.vo || "")}</td><td>${esc([...new Set(ps.map(p => p.sorte))].join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(bestSumme(b))}</td><td>${off ? `<span class="pill a">${off} offen</span>` : `<span class="pill g">zugeordnet</span>`}</td><td>${statPill(b.status)}</td></tr>`; }).join("") || `<tr><td colspan="10" class="empty">Keine Bestellungen</td></tr>`) + "</tbody>";
+}
+["#best-q", "#best-typ", "#best-stat", "#best-offen"].forEach(s => $(s).addEventListener("input", renderBestList));
+$("#best-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openBest(tr.dataset.id); });
+$("#best-neu").onclick = () => openBest(null);
+
+// ---------- Bestellung bearbeiten
+let E = null; // Entwurf {id, nr, lieferant, lieferant_typ, vo, datum, liefertermin, status, bemerkung, pos:[{id?, sorte, sortierung, menge_dt, bemerkung, zu:[{partie_id, menge_dt}], modus}]}
+function openBest(id){
+  if (id){
+    const b = bestOf(id);
+    E = Object.assign({}, b, {pos: posOf(id).map(p => ({id: p.id, sorte: p.sorte, sortierung: p.sortierung, menge_dt: num(p.menge_dt), bemerkung: p.bemerkung || "", zu: zuOf(p.id).map(z => ({partie_id: z.partie_id, menge_dt: num(z.menge_dt)})), modus: zuOf(p.id).length ? "partie" : "spaeter"}))});
+  } else {
+    E = {id: null, nr: "neu", lieferant: "", lieferant_typ: "Vermehrer", vo: "", datum: new Date().toISOString().slice(0, 10), liefertermin: "Frühjahr 2027", status: "offen", bemerkung: "", pos: [newPos()]};
+  }
+  $("#best-list-card").hidden = true; $("#best-edit").hidden = false; renderEdit(); window.scrollTo(0, 0);
+}
+function newPos(){ return {id: null, sorte: "", sortierung: "NS", menge_dt: null, bemerkung: "", zu: [], modus: "spaeter"}; }
+function closeEdit(){ E = null; $("#best-edit").hidden = true; $("#best-list-card").hidden = false; renderBestList(); }
+function kandidaten(p){
+  // Partien derselben Sorte; bei Vermehrern nur dessen Partien, bei VO nur Partien dieser VO
+  return D.partien.filter(x => x.sorte === p.sorte && verfuegbar(x) && num(x[FIELD[p.sortierung]]) > 0 &&
+    (E.lieferant_typ === "Vermehrer" ? x.vermehrer === E.lieferant : E.lieferant_typ === "VO" ? (x.vo || "") === E.lieferant : true));
+}
+function frei(x, sortierung, posId){
+  const eigen = posId ? D.zu.filter(z => z.pos_id === posId && z.partie_id === x.id).reduce((a, z) => a + num(z.menge_dt), 0) : 0;
+  return num(x[FIELD[sortierung]]) - partieBelegt(x.id, sortierung) + eigen;
+}
+function renderEdit(){
+  const lfOpts = D.lief.filter(l => l.typ === E.lieferant_typ).map(l => `<option value="${esc(l.name)}">`).join("");
+  $("#dl-lief").innerHTML = lfOpts;
+  const sumM = E.pos.reduce((a, p) => a + num(p.menge_dt), 0);
+  $("#best-edit").innerHTML = `
+  <div class="row"><h2 class="grow">${E.id ? "Bestellung " + esc(E.nr) : "Neue Bestellung"}</h2><button class="btn sec" id="e-back">← zurück</button></div>
+  <div class="grid">
+    <label class="f">Bestellt bei<select id="e-typ"><option ${E.lieferant_typ === "Vermehrer" ? "selected" : ""}>Vermehrer</option><option value="VO" ${E.lieferant_typ === "VO" ? "selected" : ""}>VO-Firma</option><option ${E.lieferant_typ === "Züchter" ? "selected" : ""}>Züchter</option></select></label>
+    <label class="f">Lieferant<input type="text" id="e-lief" list="dl-lief" value="${esc(E.lieferant)}" placeholder="Name wählen oder eintippen"></label>
+    <label class="f">VO-Firma<input type="text" id="e-vo" list="dl-vo" value="${esc(E.vo || "")}"></label>
+    <label class="f">Datum<input type="date" id="e-datum" value="${esc(E.datum)}"></label>
+    <label class="f">Liefertermin<input type="text" id="e-lt" value="${esc(E.liefertermin || "")}"></label>
+    <label class="f">Status<select id="e-stat">${["Entwurf", "offen", "bestätigt", "geliefert", "storniert"].map(s => `<option ${E.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+  </div>
+  <label class="f">Bemerkung<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
+  <h3>Positionen</h3>
+  <div id="e-pos" style="display:grid;gap:8px">${E.pos.map((p, i) => posHtml(p, i)).join("")}</div>
+  <div class="row"><button class="btn sec" id="e-add">+ Position</button><span class="grow"></span><b>Summe: ${fdt(sumM)} dt</b></div>
+  <div class="row">${E.id ? `<button class="btn red" id="e-del">Bestellung löschen</button>` : ""}<span class="grow"></span><button class="btn" id="e-save">Speichern</button></div>`;
+  wireEdit();
+}
+function posHtml(p, i){
+  const zs = p.zu.reduce((a, z) => a + num(z.menge_dt), 0), rest = num(p.menge_dt) - zs;
+  const offen = p.sorte && num(p.menge_dt) > 0 && rest > 0.05;
+  const k = p.sorte ? kandidaten(p) : [];
+  return `<div class="pos ${offen ? "open" : ""}" data-i="${i}">
+    <div class="grid" style="grid-template-columns:2fr 1.3fr 1fr 2fr auto">
+      <label class="f">Sorte<input type="text" class="p-sorte" list="dl-sorten" value="${esc(p.sorte)}" placeholder="aus dem Katalog"></label>
+      <label class="f">Sortierung<select class="p-sort">${SORTS.map(s => `<option value="${s}" ${p.sortierung === s ? "selected" : ""}>${SORTNAME[s]}${s === "NS" ? " (NS)" : ""}</option>`).join("")}</select></label>
+      <label class="f">Menge dt<input type="number" step="0.1" min="0" class="p-m" value="${p.menge_dt == null ? "" : p.menge_dt}"></label>
+      <label class="f">Partie-Zuordnung<select class="p-mod"><option value="spaeter" ${p.modus === "spaeter" ? "selected" : ""}>später aufteilen</option><option value="partie" ${p.modus === "partie" ? "selected" : ""}>jetzt auf Partie(n) zuordnen</option></select></label>
+      <div class="row" style="align-self:end"><button class="btn red sm p-x" title="Position entfernen">✕</button></div>
+    </div>
+    <div class="row hint">${p.sorte ? `${k.length} passende Partie(n)` : "Sorte wählen"} · zugeordnet ${fdt(zs)} dt ${offen ? `· <span class="pill a">offen ${fdt(rest)} dt</span>` : (zs > 0 ? `· <span class="pill g">vollständig</span>` : "")} ${p.bemerkung && !(/Aufteilung auf \d+ Partien offen/.test(p.bemerkung) && !offen) ? "· " + esc(p.bemerkung) : ""}</div>
+    ${p.modus === "partie" && p.sorte ? allocHtml(p, k) : ""}
+  </div>`;
+}
+function allocHtml(p, k){
+  const ids = new Set(k.map(x => x.id).concat(p.zu.map(z => z.partie_id)));
+  const rows = [...ids].map(id => partie(id)).filter(Boolean).map(x => {
+    const z = p.zu.find(z => z.partie_id === x.id), f = frei(x, p.sortierung, p.id);
+    return `<tr><td>${esc(x.anerk_nr || "–")}</td><td>${esc(x.vermehrer)}</td><td>${esc(x.vo || "")}</td><td>${esc(x.kat || "")}</td><td>${esc(x.status || "")}</td><td class="n">${fdt(num(x[FIELD[p.sortierung]]))}</td><td class="n">${fdt(f)}</td><td style="width:110px"><input type="number" step="0.1" min="0" class="a-m" data-pid="${x.id}" value="${z ? z.menge_dt : ""}"></td></tr>`;
+  });
+  return `<div class="alloc"><div class="row"><b class="grow">Aufteilung auf Partien (${esc(SORTNAME[p.sortierung])})</b><button class="btn sm sec a-auto">Rest automatisch verteilen</button></div>
+    ${rows.length ? `<table><thead><tr><th>Anerk.-Nr.</th><th>Vermehrer</th><th>VO</th><th>Kat.</th><th>Status</th><th class="n">Menge dt</th><th class="n">frei inkl. dieser Pos. dt</th><th class="n">zuordnen dt</th></tr></thead><tbody>${rows.join("")}</tbody></table>` : `<p class="hint">Keine passende Partie mit Menge in dieser Sortierung${E.lieferant_typ === "Vermehrer" ? " bei diesem Vermehrer" : ""}.</p>`}</div>`;
+}
+function readHead(){
+  E.lieferant_typ = $("#e-typ").value; E.lieferant = $("#e-lief").value.trim(); E.vo = $("#e-vo").value.trim();
+  E.datum = $("#e-datum").value; E.liefertermin = $("#e-lt").value.trim(); E.status = $("#e-stat").value; E.bemerkung = $("#e-bem").value.trim();
+}
+function wireEdit(){
+  $("#e-back").onclick = () => closeEdit();
+  $("#e-typ").onchange = () => { readHead(); renderEdit(); };
+  $("#e-lief").onchange = () => { readHead(); const l = D.lief.find(l => l.name === E.lieferant && l.typ === E.lieferant_typ); if (l && l.vo && !E.vo) E.vo = l.vo; if (E.lieferant_typ === "VO") E.vo = E.lieferant; renderEdit(); };
+  ["#e-vo", "#e-datum", "#e-lt", "#e-stat", "#e-bem"].forEach(s => $(s).onchange = readHead);
+  $("#e-add").onclick = () => { readHead(); E.pos.push(newPos()); renderEdit(); };
+  $$("#e-pos .pos").forEach(el => {
+    const i = +el.dataset.i, p = E.pos[i];
+    el.querySelector(".p-sorte").onchange = ev => { readHead(); p.sorte = ev.target.value.trim(); p.zu = []; renderEdit(); };
+    el.querySelector(".p-sort").onchange = ev => { readHead(); p.sortierung = ev.target.value; p.zu = []; renderEdit(); };
+    el.querySelector(".p-m").onchange = ev => { readHead(); p.menge_dt = numIn(ev.target.value); if (p.modus === "partie" && p.zu.length === 0) autoVerteilen(p); renderEdit(); };
+    el.querySelector(".p-mod").onchange = ev => { readHead(); p.modus = ev.target.value; if (p.modus === "spaeter") p.zu = []; else if (!p.zu.length) autoVerteilen(p); renderEdit(); };
+    el.querySelector(".p-x").onclick = () => { readHead(); E.pos.splice(i, 1); if (!E.pos.length) E.pos.push(newPos()); renderEdit(); };
+    el.querySelectorAll(".a-m").forEach(inp => inp.onchange = ev => {
+      readHead(); const v = numIn(ev.target.value), pid = ev.target.dataset.pid;
+      p.zu = p.zu.filter(z => z.partie_id !== pid); if (v && v > 0) p.zu.push({partie_id: pid, menge_dt: v}); renderEdit();
+    });
+    const au = el.querySelector(".a-auto"); if (au) au.onclick = () => { readHead(); autoVerteilen(p); renderEdit(); };
+  });
+  if ($("#e-del")) $("#e-del").onclick = delBest;
+  $("#e-save").onclick = saveBest;
+}
+function autoVerteilen(p){
+  let rest = num(p.menge_dt) - p.zu.reduce((a, z) => a + num(z.menge_dt), 0);
+  if (rest <= 0) return;
+  for (const x of kandidaten(p).sort((a, b) => frei(b, p.sortierung, p.id) - frei(a, p.sortierung, p.id))){
+    if (rest <= 0.05) break;
+    const z = p.zu.find(z => z.partie_id === x.id), schon = z ? num(z.menge_dt) : 0;
+    const f = Math.max(0, frei(x, p.sortierung, p.id) - schon); if (f <= 0) continue;
+    const m = Math.round(Math.min(f, rest) * 10) / 10; if (m <= 0) continue;
+    if (z) z.menge_dt = schon + m; else p.zu.push({partie_id: x.id, menge_dt: m});
+    rest -= m;
+  }
+  if (rest > 0.05) toast(`Nicht genug freie Menge in passenden Partien – ${fdt(rest)} dt bleiben offen`);
+}
+async function saveBest(){
+  readHead();
+  if (!E.lieferant) return toast("Bitte Lieferant angeben");
+  const pos = E.pos.filter(p => p.sorte || p.menge_dt);
+  if (!pos.length) return toast("Bitte mindestens eine Position erfassen");
+  for (const p of pos){
+    if (!p.sorte) return toast("Bei einer Position fehlt die Sorte");
+    if (!(num(p.menge_dt) > 0)) return toast(`${p.sorte}: Menge fehlt`);
+    const zs = p.zu.reduce((a, z) => a + num(z.menge_dt), 0);
+    if (zs - num(p.menge_dt) > 0.05) return toast(`${p.sorte}: Zuordnung (${fdt(zs)} dt) ist größer als die Menge`);
+  }
+  const unbekannt = [...new Set(pos.map(p => p.sorte).filter(n => !D.sorten.some(s => s.name === n)))];
+  if (unbekannt.length && !confirm("Diese Sorten stehen nicht im Katalog und werden neu angelegt:\n" + unbekannt.join(", "))) return;
+  const btn = $("#e-save"); btn.disabled = true;
+  try{
+    if (unbekannt.length){ const { error } = await sb.from("pfg_sorten").upsert(unbekannt.map(n => ({name: n}))); if (error) throw error; }
+    if (!D.lief.some(l => l.name === E.lieferant && l.typ === E.lieferant_typ)){
+      const { error } = await sb.from("pfg_lieferanten").insert({name: E.lieferant, typ: E.lieferant_typ, vo: E.lieferant_typ === "Vermehrer" ? (E.vo || null) : null}); if (error) throw error;
+    }
+    const head = {lieferant: E.lieferant, lieferant_typ: E.lieferant_typ, vo: E.vo || null, datum: E.datum || null, liefertermin: E.liefertermin || null, status: E.status, bemerkung: E.bemerkung || null, bearbeiter: me.name, updated_at: new Date().toISOString()};
+    let bid = E.id;
+    if (bid){ const { error } = await sb.from("pfg_bestellungen").update(head).eq("id", bid); if (error) throw error; }
+    else { const { data, error } = await sb.from("pfg_bestellungen").insert(Object.assign(head, {quelle: "Eingabe"})).select().single(); if (error) throw error; bid = data.id; E.nr = data.nr; }
+    // Positionen: entfernte löschen, übrige aktualisieren, neue anlegen
+    const keep = pos.filter(p => p.id).map(p => p.id);
+    const weg = D.pos.filter(p => p.bestellung_id === bid && !keep.includes(p.id)).map(p => p.id);
+    if (weg.length){ const { error } = await sb.from("pfg_bestellpos").delete().in("id", weg); if (error) throw error; }
+    for (let i = 0; i < pos.length; i++){
+      const p = pos[i], zs = p.zu.reduce((a, z) => a + num(z.menge_dt), 0);
+      const bem = (p.bemerkung || "").replace(/Aufteilung auf \d+ Partien offen/, "").trim();
+      const row = {bestellung_id: bid, sorte: p.sorte, sortierung: p.sortierung, menge_dt: num(p.menge_dt), pos: i + 1, bemerkung: bem || null};
+      let pid = p.id;
+      if (pid){ const { error } = await sb.from("pfg_bestellpos").update(row).eq("id", pid); if (error) throw error; }
+      else { const { data, error } = await sb.from("pfg_bestellpos").insert(row).select().single(); if (error) throw error; pid = data.id; }
+      const { error: e1 } = await sb.from("pfg_zuordnung").delete().eq("pos_id", pid); if (e1) throw e1;
+      if (p.zu.length){ const { error: e2 } = await sb.from("pfg_zuordnung").insert(p.zu.map(z => ({pos_id: pid, partie_id: z.partie_id, menge_dt: num(z.menge_dt)}))); if (e2) throw e2; }
+    }
+    toast(`Bestellung ${E.nr} gespeichert`);
+    await loadAll(); openBest(bid);
+  } catch (err){ console.error(err); toast("Speichern fehlgeschlagen: " + (err.message || err)); }
+  finally { const b = $("#e-save"); if (b) b.disabled = false; }
+}
+async function delBest(){
+  if (!confirm(`Bestellung ${E.nr} mit allen Positionen und Zuordnungen löschen?`)) return;
+  const { error } = await sb.from("pfg_bestellungen").delete().eq("id", E.id);
+  if (error) return toast("Löschen fehlgeschlagen: " + error.message);
+  toast("Bestellung gelöscht"); await loadAll(); closeEdit();
+}
+$("#best-csv").onclick = () => {
+  const rows = [["Bestellnr", "Datum", "Lieferant", "Art", "VO", "Status", "Pos", "Sorte", "Sortierung", "Menge_dt", "Anerk_Nr", "Menge_Partie_dt", "Liefertermin"]];
+  D.best.slice().sort((a, b) => a.nr.localeCompare(b.nr)).forEach(b => posOf(b.id).forEach(p => {
+    const zs = zuOf(p.id);
+    if (!zs.length) rows.push([b.nr, b.datum, b.lieferant, b.lieferant_typ, b.vo || "", b.status, p.pos, p.sorte, p.sortierung, fmt(p.menge_dt), "", "", b.liefertermin || ""]);
+    zs.forEach(z => { const x = partie(z.partie_id) || {}; rows.push([b.nr, b.datum, b.lieferant, b.lieferant_typ, b.vo || "", b.status, p.pos, p.sorte, p.sortierung, fmt(p.menge_dt), x.anerk_nr || "", fmt(z.menge_dt), b.liefertermin || ""]); });
+  }));
+  const csv = "﻿" + rows.map(r => r.map(v => { const s = String(v == null ? "" : v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(";")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv;charset=utf-8"})); a.download = "Pflanzgut_Bestellungen_" + new Date().toISOString().slice(0, 10) + ".csv"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+};
+
+// ---------- Partien
+let editPartie = null;
+function renderPart(){
+  const q = norm($("#part-q").value), jahr = Number($("#part-jahr").value || 2026), st = $("#part-stat").value;
+  const list = D.partien.filter(p => p.jahr === jahr && (!st || p.status === st) && (!q || norm([p.sorte, p.vermehrer, p.vo, p.anerk_nr, p.kat, p.status].join(" ")).includes(q)))
+    .sort((a, b) => a.sorte.localeCompare(b.sorte, "de") || a.vermehrer.localeCompare(b.vermehrer, "de"));
+  const t = {ha: 0, drill: 0, ns: 0, ueg: 0, bel: 0};
+  const rows = list.map(p => {
+    const bel = SORTS.reduce((a, s) => a + partieBelegt(p.id, s), 0);
+    t.ha += num(p.ha); t.drill += num(p.drill); t.ns += num(p.ns); t.ueg += num(p.ueg); t.bel += bel;
+    const sc = NICHT_VERF.includes(p.status) ? "w" : (p.status === "Menge offen" ? "a" : (p.status === "gemeldet" ? "g" : "b"));
+    return `<tr class="click" data-id="${p.id}"><td><b>${esc(p.sorte)}</b></td><td>${esc(p.vermehrer)}</td><td>${esc(p.vo || "")}</td><td>${esc(p.anerk_nr || "")}</td><td>${esc(p.kat || "")}</td><td class="n">${fmt(p.ha, 2)}</td><td class="n">${fdt(p.drill)}</td><td class="n">${fdt(p.ns)}</td><td class="n">${fdt(p.ueg)}</td><td class="n">${fdt(bel)}</td><td><span class="pill ${sc}">${esc(p.status || "–")}</span></td></tr>`;
+  });
+  $("#part-t").innerHTML = `<thead><tr><th>Sorte</th><th>Vermehrer</th><th>VO</th><th>Anerk.-Nr.</th><th>Kat.</th><th class="n">ha</th><th class="n">Drill dt</th><th class="n">NS dt</th><th class="n">ÜG dt</th><th class="n">zugeordnet dt</th><th>Status</th></tr></thead><tbody>${rows.join("") || `<tr><td colspan="11" class="empty">Keine Partien</td></tr>`}</tbody>
+  <tfoot><tr class="sum"><td colspan="5">${list.length} Partien</td><td class="n">${fmt(t.ha, 2)}</td><td class="n">${fdt(t.drill)}</td><td class="n">${fdt(t.ns)}</td><td class="n">${fdt(t.ueg)}</td><td class="n">${fdt(t.bel)}</td><td></td></tr></tfoot>`;
+}
+["#part-q", "#part-jahr", "#part-stat"].forEach(s => $(s).addEventListener("input", () => { renderPart(); if (s === "#part-jahr") renderUeb(); }));
+$("#part-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) partForm(partie(tr.dataset.id)); });
+$("#part-neu").onclick = () => partForm(null);
+function partForm(p){
+  editPartie = p ? Object.assign({}, p) : {id: null, jahr: Number($("#part-jahr").value || 2027), anerk_nr: "", vermehrer: "", vo: "", sorte: "", kat: "ZA", ha: null, drill: null, ns: null, ueg: null, status: "gemeldet", bemerkung: ""};
+  const x = editPartie, f = $("#part-form");
+  const verm = [...new Set(D.lief.filter(l => l.typ === "Vermehrer").map(l => l.name).concat(D.partien.map(p => p.vermehrer)))].sort();
+  f.innerHTML = `<div class="card" style="background:var(--soft)"><div class="row"><h3 class="grow">${x.id ? "Partie bearbeiten" : "Neue Partie"}</h3><button class="btn sec sm" id="pf-x">schließen</button></div>
+    <div class="grid">
+      <label class="f">Jahr<input type="number" id="pf-jahr" value="${esc(x.jahr)}"></label>
+      <label class="f">Sorte<input type="text" id="pf-sorte" list="dl-sorten" value="${esc(x.sorte)}"></label>
+      <label class="f">Vermehrer<input type="text" id="pf-verm" list="dl-verm" value="${esc(x.vermehrer)}"></label>
+      <label class="f">VO-Firma<input type="text" id="pf-vo" list="dl-vo" value="${esc(x.vo || "")}"></label>
+      <label class="f">Anerkennungs-Nr.<input type="text" id="pf-an" value="${esc(x.anerk_nr || "")}"></label>
+      <label class="f">Kategorie<select id="pf-kat">${["ZA", "ZB", "BE", "aberkannt", "ergebnisoffen", ""].map(k => `<option ${(x.kat || "") === k ? "selected" : ""}>${k}</option>`).join("")}</select></label>
+      <label class="f">Fläche ha<input type="number" step="0.01" id="pf-ha" value="${x.ha == null ? "" : x.ha}"></label>
+      <label class="f">Drillinge dt<input type="number" step="0.1" id="pf-drill" value="${x.drill == null ? "" : x.drill}"></label>
+      <label class="f">Normalsortierung dt<input type="number" step="0.1" id="pf-ns" value="${x.ns == null ? "" : x.ns}"></label>
+      <label class="f">Übergrößen dt<input type="number" step="0.1" id="pf-ueg" value="${x.ueg == null ? "" : x.ueg}"></label>
+      <label class="f">Status<select id="pf-stat">${["gemeldet", "geschätzt", "vorläufig", "Menge offen", "ergebnisoffen", "aberkannt", "Direktvermehrung KSG"].map(s => `<option ${x.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+    </div>
+    <label class="f">Bemerkung<input type="text" id="pf-bem" value="${esc(x.bemerkung || "")}"></label>
+    <datalist id="dl-verm">${verm.map(v => `<option value="${esc(v)}">`).join("")}</datalist>
+    <div class="row">${x.id ? `<button class="btn red sm" id="pf-del">Partie löschen</button>` : ""}<span class="grow"></span><button class="btn" id="pf-save">Partie speichern</button></div></div>`;
+  f.hidden = false; f.scrollIntoView({behavior: "smooth", block: "nearest"});
+  $("#pf-x").onclick = () => { f.hidden = true; };
+  $("#pf-verm").onchange = ev => { const l = D.lief.find(l => l.name === ev.target.value && l.typ === "Vermehrer"); if (l && l.vo && !$("#pf-vo").value) $("#pf-vo").value = l.vo; };
+  $("#pf-save").onclick = async () => {
+    const row = {jahr: Number($("#pf-jahr").value) || 2027, sorte: $("#pf-sorte").value.trim(), vermehrer: $("#pf-verm").value.trim(), vo: $("#pf-vo").value.trim() || null, anerk_nr: $("#pf-an").value.trim() || null,
+      kat: $("#pf-kat").value || null, ha: numIn($("#pf-ha").value), drill: numIn($("#pf-drill").value), ns: numIn($("#pf-ns").value), ueg: numIn($("#pf-ueg").value), status: $("#pf-stat").value, bemerkung: $("#pf-bem").value.trim() || null, updated_at: new Date().toISOString()};
+    if (!row.sorte || !row.vermehrer) return toast("Sorte und Vermehrer angeben");
+    const q = x.id ? sb.from("pfg_partien").update(row).eq("id", x.id) : sb.from("pfg_partien").insert(Object.assign(row, {quelle: "Eingabe"}));
+    const { error } = await q; if (error) return toast("Speichern fehlgeschlagen: " + error.message);
+    if (!D.sorten.some(s => s.name === row.sorte)) await sb.from("pfg_sorten").upsert({name: row.sorte});
+    if (!D.lief.some(l => l.name === row.vermehrer && l.typ === "Vermehrer")) await sb.from("pfg_lieferanten").insert({name: row.vermehrer, typ: "Vermehrer", vo: row.vo});
+    toast("Partie gespeichert"); f.hidden = true; await loadAll();
+  };
+  if ($("#pf-del")) $("#pf-del").onclick = async () => {
+    if (D.zu.some(z => z.partie_id === x.id)) return toast("Die Partie ist Bestellungen zugeordnet – erst die Zuordnung entfernen");
+    if (!confirm("Partie löschen?")) return;
+    const { error } = await sb.from("pfg_partien").delete().eq("id", x.id); if (error) return toast(error.message);
+    toast("Partie gelöscht"); f.hidden = true; await loadAll();
+  };
+}
+
+// ---------- Stammdaten
+function renderStamm(){
+  const q = norm($("#sorte-q").value);
+  const vm = {}; D.partien.forEach(p => vm[p.sorte] = (vm[p.sorte] || 0) + 1);
+  $("#sorte-t").innerHTML = `<thead><tr><th>Sorte</th><th>Kochtyp</th><th>Reife</th><th>Züchter</th><th>bio</th><th>konv.</th><th class="n">GHP 2026 €/dt</th><th class="n">Partien</th><th>aktiv</th></tr></thead><tbody>` +
+    D.sorten.filter(s => !q || norm(s.name + " " + (s.zuechter || "")).includes(q)).map(s => `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.kochtyp || "")}</td><td>${esc(s.reife || "")}</td><td>${esc(s.zuechter || "")}</td><td>${s.bio ? "✓" : ""}</td><td>${s.konv ? "✓" : ""}</td><td class="n">${s.ghp == null ? "" : fmt(s.ghp, 2)}</td><td class="n">${vm[s.name] || ""}</td><td><input type="checkbox" class="s-akt" data-n="${esc(s.name)}" ${s.aktiv ? "checked" : ""} aria-label="aktiv"></td></tr>`).join("") + "</tbody>";
+  $$(".s-akt").forEach(c => c.onchange = async () => { const { error } = await sb.from("pfg_sorten").update({aktiv: c.checked}).eq("name", c.dataset.n); if (error) toast(error.message); else { D.sorten.find(s => s.name === c.dataset.n).aktiv = c.checked; fillLists(); } });
+  $("#lief-t").innerHTML = `<thead><tr><th>Name</th><th>Art</th><th>VO-Firma</th><th>E-Mail</th><th class="n">Bestellungen</th></tr></thead><tbody>` +
+    D.lief.slice().sort((a, b) => a.typ.localeCompare(b.typ) || a.name.localeCompare(b.name, "de")).map(l => `<tr><td><b>${esc(l.name)}</b></td><td>${esc(l.typ)}</td><td>${esc(l.vo || "")}</td><td>${esc(l.email || "")}</td><td class="n">${D.best.filter(b => b.lieferant === l.name && b.lieferant_typ === l.typ).length || ""}</td></tr>`).join("") + "</tbody>";
+}
+$("#sorte-q").addEventListener("input", renderStamm);
+$("#sn-add").onclick = async () => {
+  const name = $("#sn-name").value.trim(); if (!name) return toast("Sortenname fehlt");
+  const { error } = await sb.from("pfg_sorten").upsert({name, kochtyp: $("#sn-kt").value || null, reife: $("#sn-rg").value || null, zuechter: $("#sn-zue").value.trim() || null});
+  if (error) return toast(error.message); ["#sn-name", "#sn-zue"].forEach(s => $(s).value = ""); toast("Sorte gespeichert"); await loadAll();
+};
+$("#ln-add").onclick = async () => {
+  const name = $("#ln-name").value.trim(); if (!name) return toast("Name fehlt");
+  const { error } = await sb.from("pfg_lieferanten").upsert({name, typ: $("#ln-typ").value, vo: $("#ln-vo").value.trim() || null, email: $("#ln-mail").value.trim() || null}, {onConflict: "name,typ"});
+  if (error) return toast(error.message); ["#ln-name", "#ln-vo", "#ln-mail"].forEach(s => $(s).value = ""); toast("Lieferant gespeichert"); await loadAll();
+};
+
+// ---------- Kunden
+function renderKund(){
+  const q = norm($("#kund-q").value);
+  const list = D.kunden.filter(k => !q || norm([k.kdnr, k.name, k.ort, k.plz, k.email, k.strasse].join(" ")).includes(q));
+  $("#kund-n").textContent = `${D.kunden.length} Kunden${q ? ", " + list.length + " gefunden" : ""}`;
+  $("#kund-t").innerHTML = `<thead><tr><th>Kd.-Nr.</th><th>Name</th><th>Straße</th><th>PLZ</th><th>Ort</th><th>Telefon</th><th>E-Mail</th></tr></thead><tbody>` +
+    (list.slice(0, 400).map(k => `<tr><td>${esc(k.kdnr)}</td><td><b>${esc(k.name)}</b></td><td>${esc(k.strasse || "")}</td><td>${esc(k.plz || "")}</td><td>${esc(k.ort || "")}${k.ortsteil ? " – " + esc(k.ortsteil) : ""}</td><td>${esc(k.telefon || k.mobil || "")}</td><td>${k.email ? `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="7" class="empty">Noch keine Kunden – im Tab „Import büro+“ den Verteiler einlesen.</td></tr>`) +
+    (list.length > 400 ? `<tr><td colspan="7" class="hint">… ${list.length - 400} weitere, bitte Suche eingrenzen</td></tr>` : "") + "</tbody>";
+}
+$("#kund-q").addEventListener("input", renderKund);
+
+// ---------- Import
+const drop = $("#imp-drop");
+["dragover", "dragenter"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, () => drop.classList.remove("over")));
+drop.addEventListener("drop", e => { e.preventDefault(); if (e.dataTransfer.files[0]) lesen(e.dataTransfer.files[0]); });
+$("#imp-file").onchange = e => { if (e.target.files[0]) lesen(e.target.files[0]); e.target.value = ""; };
+const H = s => norm(s).replace(/[^a-z0-9]/g, "");
+function findCol(hdr, ...keys){ for (const k of keys){ const i = hdr.indexOf(k); if (i >= 0) return i; } for (const k of keys){ const i = hdr.findIndex(h => h.startsWith(k)); if (i >= 0) return i; } return -1; }
+let IMP = null;
+async function lesen(file){
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, {type: "array", cellDates: false, codepage: 65001});
+    const kunden = {}, partien = [], sorten = {};
+    let typen = new Set();
+    for (const name of wb.SheetNames){
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header: 1, raw: true, defval: null}).filter(r => r.some(v => v != null && v !== ""));
+      // Kopfzeile in den ersten 8 Zeilen suchen
+      let hi = -1, hdr = [];
+      for (let i = 0; i < Math.min(8, rows.length); i++){
+        const h = rows[i].map(v => H(v));
+        if (h.some(x => /^(kundennr|kontonr|kdnr|kundennummer|kunde)$/.test(x)) || h.includes("anerknr") || (h.includes("sorte") && (h.some(x => x.startsWith("bio")) || h.some(x => x.startsWith("ghp"))))) { hi = i; hdr = h; break; }
+      }
+      if (hi < 0) continue;
+      const body = rows.slice(hi + 1);
+      const c = k => findCol(hdr, ...k);
+      if (hdr.includes("anerknr")){
+        if (typen.has("Partien")) continue; // nur das erste Blatt mit Partien (weitere Blätter sind Auswertungen)
+        typen.add("Partien");
+        const ix = {sorte: c(["sorte"]), verm: c(["vermehrer"]), vo: c(["vo"]), kat: c(["kat"]), ha: c(["ha"]), an: c(["anerknr"]), ns: c(["normalsortierung", "ns", "pflanzkartoffel"]), drill: c(["2835mm", "drill", "drillinge", "untergr"]), ueg: c(["ubergro", "uebergro", "ug"]), bem: c(["bemerkung"])};
+        body.forEach(r => { if (!r[ix.sorte] || !r[ix.verm]) return; const kat = r[ix.kat] ? String(r[ix.kat]) : null;
+          partien.push({jahr: Number($("#part-jahr").value || 2026), sorte: String(r[ix.sorte]).trim(), vermehrer: String(r[ix.verm]).trim(), vo: ix.vo >= 0 && r[ix.vo] ? String(r[ix.vo]) : null, kat: kat === "A" ? "ZA" : kat, ha: ix.ha >= 0 ? numIn(r[ix.ha]) : null, anerk_nr: r[ix.an] ? String(r[ix.an]).trim() : null,
+            ns: ix.ns >= 0 ? numIn(r[ix.ns]) : null, drill: ix.drill >= 0 ? numIn(r[ix.drill]) : null, ueg: ix.ueg >= 0 ? numIn(r[ix.ueg]) : null,
+            status: kat === "aberkannt" ? "aberkannt" : kat === "ergebnisoffen" ? "ergebnisoffen" : (ix.ns >= 0 && r[ix.ns] != null ? "gemeldet" : "Menge offen"), quelle: file.name}); });
+      } else if (hdr.includes("sorte") && !hdr.some(x => /^(kundennr|kontonr)$/.test(x))){
+        typen.add("Sorten");
+        const ix = {sorte: c(["sorte"]), bk: c(["biokonv", "bio"]), ghp: c(["ghp2026", "ghp"]), kt: c(["kochtyp"]), rg: c(["reife"]), zue: c(["zuchter", "zuechter"])};
+        body.forEach(r => { if (!r[ix.sorte]) return; let n = String(r[ix.sorte]).trim().replace(/,$/, ""); if (n.length < 2) return; const s = sorten[n] = sorten[n] || {name: n};
+          const bk = ix.bk >= 0 ? norm(r[ix.bk]) : ""; if (bk.startsWith("bio")) s.bio = true; if (bk.startsWith("konv")) s.konv = true;
+          if (ix.ghp >= 0 && s.ghp == null && bk.startsWith("bio")) s.ghp = numIn(r[ix.ghp]);
+          if (ix.kt >= 0 && r[ix.kt]) s.kochtyp = String(r[ix.kt]); if (ix.rg >= 0 && r[ix.rg]) s.reife = String(r[ix.rg]); if (ix.zue >= 0 && r[ix.zue]) s.zuechter = String(r[ix.zue]); });
+      } else {
+        typen.add("Kunden");
+        // büro+-Export „keine Emailadresse“: Werte stehen eine Spalte zu weit links (unter „Versandadresse“ steht die PLZ) – Köpfe nachziehen
+        const iva = hdr.indexOf("versandadresse");
+        if (iva >= 0 && hdr.indexOf("versandabholstelle") >= 0){
+          const vals = body.map(r => r[iva]).filter(v => v != null && v !== "");
+          if (vals.length && vals.filter(v => /^\d{4,5}$/.test(String(v).trim())).length / vals.length > 0.6){
+            hdr = hdr.slice(0, iva).concat(hdr.slice(iva + 1), ["versandmobil"]);
+          }
+        }
+        const ix = {nr: c(["kundennr", "kontonr", "kdnr", "kundennummer"]), name: c(["kunde", "name", "firma"]), mail: c(["email", "mail"]), str: c(["versandstrasse", "strasse"]), plz: c(["versandplz", "plz"]), ort: c(["versandort"]), ot: c(["versandortsteil", "ortsteil"]), tel: c(["versandtelefon", "telefon"]), mob: c(["versandmobil", "mobil"]), gem: c(["gemuse", "gemuese"]), kat: c(["kategorie"]), va: c(["versandadresse", "versandabholstelle"])};
+        if (ix.ort < 0) ix.ort = c(["ort"]);
+        body.forEach(r => { const nr = ix.nr >= 0 ? r[ix.nr] : null, nm = ix.name >= 0 ? r[ix.name] : null; if (nr == null || !nm) return;
+          const mail = ix.mail >= 0 && r[ix.mail] && /@/.test(r[ix.mail]) ? String(r[ix.mail]).trim() : null; const plz = ix.plz >= 0 && r[ix.plz] != null ? String(r[ix.plz]).trim() : null;
+          const k = String(nr).trim(); const old = kunden[k] || {};
+          kunden[k] = {kdnr: k, name: String(nm).trim(), email: mail || old.email || null, strasse: ix.str >= 0 && r[ix.str] ? String(r[ix.str]) : old.strasse || null, plz: plz && /^\d{4}$/.test(plz) ? "0" + plz : plz,
+            ort: ix.ort >= 0 && r[ix.ort] ? String(r[ix.ort]) : old.ort || null, ortsteil: ix.ot >= 0 && r[ix.ot] ? String(r[ix.ot]) : null, telefon: ix.tel >= 0 && r[ix.tel] ? String(r[ix.tel]) : null, mobil: ix.mob >= 0 && r[ix.mob] ? String(r[ix.mob]) : null,
+            gemuese: ix.gem >= 0 && r[ix.gem] ? true : (old.gemuese || null), kategorie: ix.kat >= 0 && r[ix.kat] ? String(r[ix.kat]) : null, data: {versandadresse: ix.va >= 0 ? r[ix.va] : null, blatt: name}, quelle: file.name, updated_at: new Date().toISOString()}; });
+      }
+    }
+    IMP = {file: file.name, kunden: Object.values(kunden), partien, sorten: Object.values(sorten)};
+    const neuK = IMP.kunden.filter(k => !D.kunden.some(x => x.kdnr === k.kdnr)).length;
+    const neuP = IMP.partien.filter(p => !p.anerk_nr || !D.partien.some(x => x.jahr === p.jahr && x.anerk_nr === p.anerk_nr)).length;
+    const neuS = IMP.sorten.filter(s => !D.sorten.some(x => x.name === s.name)).length;
+    if (!typen.size){ $("#imp-prev").innerHTML = `<p class="err">In „${esc(file.name)}“ wurde keine passende Kopfzeile gefunden (Kundennr./Kunde, Anerk.-Nr. oder Sorte).</p>`; return; }
+    $("#imp-prev").innerHTML = `<div class="card" style="background:var(--soft)"><b>${esc(file.name)}</b>
+      <ul style="margin:0;padding-left:18px">${IMP.kunden.length ? `<li>${IMP.kunden.length} Kunden (${neuK} neu, ${IMP.kunden.length - neuK} werden aktualisiert)</li>` : ""}${IMP.partien.length ? `<li>${IMP.partien.length} Partien (${neuP} neu, ${IMP.partien.length - neuP} werden aktualisiert)</li>` : ""}${IMP.sorten.length ? `<li>${IMP.sorten.length} Sorten (${neuS} neu)</li>` : ""}</ul>
+      <div class="row"><button class="btn" id="imp-go">Übernehmen</button><button class="btn sec" id="imp-no">Abbrechen</button></div></div>`;
+    $("#imp-no").onclick = () => { IMP = null; $("#imp-prev").innerHTML = ""; };
+    $("#imp-go").onclick = uebernehmen;
+  } catch (err){ console.error(err); $("#imp-prev").innerHTML = `<p class="err">Datei konnte nicht gelesen werden: ${esc(err.message || err)}</p>`; }
+}
+async function uebernehmen(){
+  const b = $("#imp-go"); b.disabled = true; b.textContent = "Wird übernommen …";
+  try{
+    for (let i = 0; i < IMP.kunden.length; i += 300){ const { error } = await sb.from("pfg_kunden").upsert(IMP.kunden.slice(i, i + 300), {onConflict: "kdnr"}); if (error) throw error; }
+    if (IMP.sorten.length){
+      const rows = IMP.sorten.map(s => { const o = D.sorten.find(x => x.name === s.name) || {}; return {name: s.name, kochtyp: s.kochtyp || o.kochtyp || null, reife: s.reife || o.reife || null, zuechter: s.zuechter || o.zuechter || null, bio: !!(s.bio || o.bio), konv: !!(s.konv || o.konv), ghp: s.ghp != null ? s.ghp : (o.ghp == null ? null : o.ghp), aktiv: o.aktiv !== false, updated_at: new Date().toISOString()}; });
+      const { error } = await sb.from("pfg_sorten").upsert(rows, {onConflict: "name"}); if (error) throw error;
+    }
+    if (IMP.partien.length){
+      const mitNr = IMP.partien.filter(p => p.anerk_nr), ohne = IMP.partien.filter(p => !p.anerk_nr);
+      // vorhandene Partien: nur Mengen, Fläche und Kategorie aktualisieren; Vermehrer-Namen, VO, Bemerkung und Status
+      // (z. B. „vorläufig“, „Direktvermehrung KSG“) bleiben – außer die Partie ist jetzt aberkannt/ergebnisoffen
+      const seen = new Set();
+      const rows = mitNr.filter(p => { const k = p.jahr + "|" + p.anerk_nr; if (seen.has(k)) return false; seen.add(k); return true; }).map(p => {
+        const o = D.partien.find(x => x.jahr === p.jahr && x.anerk_nr === p.anerk_nr);
+        if (!o) return Object.assign({}, p, {updated_at: new Date().toISOString()});
+        const neg = ["aberkannt", "ergebnisoffen"].includes(p.status);
+        return Object.assign({}, o, {kat: p.kat || o.kat, ha: p.ha != null ? p.ha : o.ha, ns: p.ns != null ? p.ns : o.ns, drill: p.drill != null ? p.drill : o.drill, ueg: p.ueg != null ? p.ueg : o.ueg,
+          status: neg ? p.status : (o.status === "Menge offen" && p.ns != null ? "gemeldet" : o.status), updated_at: new Date().toISOString()});
+      });
+      if (rows.length){ const { error } = await sb.from("pfg_partien").upsert(rows, {onConflict: "jahr,anerk_nr"}); if (error) throw error; }
+      if (ohne.length){ const { error } = await sb.from("pfg_partien").insert(ohne); if (error) throw error; }
+      const neueS = [...new Set(IMP.partien.map(p => p.sorte))].filter(n => !D.sorten.some(s => s.name === n));
+      if (neueS.length) await sb.from("pfg_sorten").upsert(neueS.map(name => ({name})), {onConflict: "name", ignoreDuplicates: true});
+    }
+    toast("Import übernommen"); $("#imp-prev").innerHTML = `<p class="hint">✓ ${esc(IMP.file)} übernommen.</p>`; IMP = null; await loadAll();
+  } catch (err){ console.error(err); toast("Import fehlgeschlagen: " + (err.message || err)); b.disabled = false; b.textContent = "Übernehmen"; }
+}
+
+// ---------- Navigation, Start
+function renderAll(){ renderUeb(); renderBestList(); renderPart(); renderStamm(); renderKund(); if (E && !$("#best-edit").hidden) renderEdit(); }
+function show(id){ $$("main").forEach(m => m.hidden = m.id !== id); $$("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === id)); }
+$$("nav.tabs button").forEach(b => b.onclick = () => show(b.dataset.view));
+
+async function start(session){
+  const { data: ok } = await sb.rpc("pfg_ok");
+  if (!ok){ $("#li-err").textContent = "Dein Zugang ist für die Pflanzkartoffel-Seite noch nicht freigeschaltet."; $("#li-err").hidden = false; await sb.auth.signOut(); return; }
+  const { data: prof } = await sb.from("profiles").select("name").eq("id", session.user.id).maybeSingle();
+  me = {id: session.user.id, name: (prof && prof.name) || session.user.email};
+  $("#who-n").textContent = me.name; $("#who").hidden = false; $("#gate").hidden = true;
+  try { await loadAll(); } catch (err){ console.error(err); toast("Daten konnten nicht geladen werden: " + (err.message || err)); }
+}
+$("#login-form").addEventListener("submit", async ev => {
+  ev.preventDefault(); $("#li-err").hidden = true; $("#li-go").disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({email: $("#li-mail").value.trim(), password: $("#li-pw").value});
+  $("#li-go").disabled = false;
+  if (error){ $("#li-err").textContent = "Anmeldung fehlgeschlagen – E-Mail oder Passwort prüfen."; $("#li-err").hidden = false; return; }
+  start(data.session);
+});
+$("#logout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+sb.auth.getSession().then(({data}) => { if (data && data.session) start(data.session); });
+})();
+</script>
+</body>
+</html>

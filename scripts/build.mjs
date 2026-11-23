@@ -16,6 +16,8 @@ fs.mkdirSync(www, { recursive: true });
 for (const f of ["index.html", "rwe-runtime.js", "knt.js", "la.js"]) cp(path.join(root, "src", f), path.join(www, f));
 // Gemüse-Saatgut: Bestell- und AB-Tool (nur Browser), erreichbar unter /saatgut/
 cp(path.join(root, "src/saatgut/index.html"), path.join(www, "saatgut/index.html"));
+// Pflanzkartoffeln: Partien, Bestellungen bei Züchtern/Vermehrern/VOs, Zuordnung, Import büro+ (nur Browser), erreichbar unter /pflanzgut/
+cp(path.join(root, "src/pflanzgut/index.html"), path.join(www, "pflanzgut/index.html"));
 
 // Bibliotheken
 cp(nm("@supabase/supabase-js/dist/umd/supabase.js"), path.join(www, "lib/supabase.js"));

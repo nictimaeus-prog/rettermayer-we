@@ -120,3 +120,20 @@ assets/                   App-Symbol und Startbild
 - Preise und Erzeuger: im Tab „Aufträge“ die Excel-Preisliste `Preisliste_Saatgut_FJ27_Staffel_….xlsx` hochladen (Tabs Artikelstamm, Staffel-Annahmen, Erzeuger)
 - Bestellschein/E-Mail/Foto auslesen: Supabase-Funktion `saatgut-import`, nutzt den Schlüssel `ANTHROPIC_API_KEY` (wie das Lieferschein-Lesen)
 - Daten: Tabellen `saatgut_stamm` (Preisliste, Erzeuger) und `saatgut_auftraege` (gespeicherte ABs), Migration `20261123000000_saatgut.sql`
+
+
+## Pflanzkartoffeln (Unterseite /pflanzgut)
+
+- Adresse: **https://rettermayer-we.pages.dev/pflanzgut/** – nur im Browser, Anmeldung mit dem WE-App-Zugang
+- Zugriff nur mit Eintrag in `pfg_zugang` (anfangs Nicolai Timaeus, Martin Haunz, Anna Wegner). Weitere freischalten:
+  `insert into public.pfg_zugang (user_id) select id from public.profiles where name = 'Vorname Nachname';`
+- Tabs: Übersicht (je Sorte und Sortierung: verfügbar / bestellt / zugeordnet / offen), Bestellungen, Partien, Sorten & Lieferanten, Kunden, Import büro+
+- Bestellungen bei Vermehrern, VO-Firmen (KSG, EVG, VG BIO) oder Züchtern; je Position Sorte aus dem Katalog, Sortierung
+  Normalsortierung (NS, Standard), Drillinge oder Übergrößen (ÜG), Menge in dt. Partie-Zuordnung sofort („jetzt auf Partie(n) zuordnen“)
+  oder später („später aufteilen“); „Rest automatisch verteilen“ füllt die freien Mengen der passenden Partien auf
+- Import: Excel/CSV in den Tab „Import büro+“ ziehen. Erkannt werden Kundenlisten aus büro+ (Kundennr./Kontonr., Kunde, Versandadresse …,
+  auch das Blatt „keine Emailadresse“ mit verschobenen Spalten), die Vermehrungsliste (Anerk.-Nr.) und die Pflanzgut-Preisliste (Sorte, Bio/Konv, GHP).
+  Vorhandenes wird aktualisiert, nichts gelöscht; bei vorhandenen Partien bleiben Vermehrer-Name, VO und Status erhalten
+- CSV für büro+: Tab Bestellungen → „CSV für büro+“ (eine Zeile je Position bzw. je Partie-Zuordnung, Trennzeichen Semikolon)
+- Daten: `pfg_sorten`, `pfg_lieferanten`, `pfg_kunden`, `pfg_partien`, `pfg_bestellungen` (Nr. PB27-0001 …), `pfg_bestellpos`, `pfg_zuordnung`;
+  Migration `20261123190000_pflanzgut.sql`. Vorbelegung 23.11.2026: je Vermehrer eine Bestellung über 50 % der gemeldeten Mengen 2026
