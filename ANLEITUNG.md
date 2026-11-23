@@ -131,6 +131,10 @@ assets/                   App-Symbol und Startbild
 - Kundenaufträge (Tab „Kundenaufträge“ oder in der Kundenliste „+ Auftrag“): Kunde aus der büro+-Liste, Lieferzeitraum Herbst (Dez. – Mitte Jan.)
   oder Frühjahr (März – April), je Position Sorte, Sortierung (NS Standard, Drillinge, ÜG), Menge dt; Partie sofort oder später zuordnen.
   Nummern KA27-0001 …, Tabellen `pfg_auftraege`, `pfg_auftragpos`, `pfg_auftrag_zuordnung` (Migration `20261123200000_pflanzgut_kundenauftraege.sql`)
+- Diktat / Text / AB / PDF / Foto: in Kundenauftrag und Einkauf oben „diktieren, einfügen oder als Datei übernehmen“ (Liste: „🎤 Diktat / Datei“).
+  Claude liest Kunde bzw. Lieferant, Lieferzeitraum, Lieferart, Entladestelle und Positionen (Mengen in dt, Big Bags/Säcke umgerechnet)
+  und trägt sie in die Maske ein; prüfen und speichern. Supabase-Funktion `pflanzgut-import` (Schlüssel `ANTHROPIC_API_KEY` wie read-ls)
+- Lieferzeitraum steht überall standardmäßig auf Frühjahr
 - Verpackung je Position: Big Bag (Standard 11 dt aus der eigenen Vermehrung; 12,5 dt bei holländischer Ware, je Sorte im Sortenkatalog
   hinterlegt: Avanti, Colomba, Annabelle, Taurus, Emanuelle), Sack 25 kg oder lose; die App rechnet die Gebindezahl aus
 - Lieferart je Kundenauftrag: Anlieferung (mit Tour und optional abweichender Entladestelle) oder Abholung ab Vermehrer

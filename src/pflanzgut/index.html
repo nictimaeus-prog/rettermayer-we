@@ -85,6 +85,12 @@ td input,td select{padding:5px 7px;font-size:13.5px}
 .empty{color:var(--muted);font-size:14px;padding:6px 2px}
 .bar-in{height:8px;border-radius:4px;background:#E7ECE0;overflow:hidden;min-width:60px}
 .bar-in i{display:block;height:100%;background:var(--green-l)}
+.dik{background:var(--pick);border:1px solid #BFDDF0;border-radius:12px;padding:10px 12px;display:grid;gap:8px}
+.dik textarea{min-height:52px;resize:vertical}
+.mic{flex:0 0 52px;border-radius:12px;border:none;background:var(--blue);color:#fff;display:grid;place-items:center;cursor:pointer}
+.mic.on{background:var(--warn);animation:pulse 1.2s infinite}
+.mic svg{width:24px;height:24px}
+@keyframes pulse{50%{opacity:.6}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -124,10 +130,11 @@ td input,td select{padding:5px 7px;font-size:13.5px}
   <section class="card" id="auf-list-card">
     <div class="row"><h2 class="grow">Kundenaufträge</h2>
       <button class="btn" id="auf-neu">+ Neuer Auftrag</button>
+      <button class="btn blue" id="auf-dik">🎤 Diktat / Datei</button>
       <button class="btn sec" id="auf-csv">CSV für büro+</button></div>
     <div class="row">
       <input type="search" id="auf-q" class="grow" placeholder="Suchen: Nummer, Kunde, Kd.-Nr., Sorte …">
-      <select id="auf-lz" style="width:auto"><option value="">Herbst und Frühjahr</option><option value="Herbst">Herbst (Dez. – Mitte Jan.)</option><option value="Frühjahr">Frühjahr (März – April)</option></select>
+      <select id="auf-lz" style="width:auto"><option value="">Herbst und Frühjahr</option><option value="Herbst">Herbst (Dez. – Mitte Jan.)</option><option value="Frühjahr" selected>Frühjahr (März – April)</option></select>
       <select id="auf-stat" style="width:auto"><option value="">alle Status</option><option>Entwurf</option><option>offen</option><option>bestätigt</option><option>geliefert</option><option>storniert</option></select>
       <label class="row" style="font-size:13px;gap:4px"><input type="checkbox" id="auf-offen"> nur ohne Partie</label>
     </div>
@@ -141,6 +148,7 @@ td input,td select{padding:5px 7px;font-size:13.5px}
   <section class="card" id="best-list-card">
     <div class="row"><h2 class="grow">Einkauf: Bestellungen bei Vermehrern, VO-Firmen und Züchtern</h2>
       <button class="btn" id="best-neu">+ Neue Bestellung</button>
+      <button class="btn blue" id="best-dik">🎤 Diktat / AB / Datei</button>
       <button class="btn sec" id="best-csv">CSV für büro+</button></div>
     <div class="row">
       <input type="search" id="best-q" class="grow" placeholder="Suchen: Nummer, Lieferant, Sorte …">
@@ -159,7 +167,7 @@ td input,td select{padding:5px 7px;font-size:13.5px}
     <div class="row"><h2 class="grow">Touren der Speditionen</h2><button class="btn" id="tour-neu">+ Neue Tour</button></div>
     <div class="row">
       <select id="tour-sp" style="width:auto"></select>
-      <select id="tour-lz" style="width:auto"><option value="">Herbst und Frühjahr</option><option value="Herbst">Herbst (Dez. – Mitte Jan.)</option><option value="Frühjahr">Frühjahr (März – April)</option></select>
+      <select id="tour-lz" style="width:auto"><option value="">Herbst und Frühjahr</option><option value="Herbst">Herbst (Dez. – Mitte Jan.)</option><option value="Frühjahr" selected>Frühjahr (März – April)</option></select>
       <select id="tour-stat" style="width:auto"><option value="">alle Status</option><option>geplant</option><option>beauftragt</option><option>gefahren</option><option>storniert</option></select>
     </div>
     <p class="hint" id="tour-ohne"></p>
@@ -269,6 +277,7 @@ const fmt = (v, d) => (v == null || v === "") ? "" : Number(v).toLocaleString("d
 const fdt = v => v ? fmt(v, Math.abs(v % 1) > 0.001 ? 1 : 0) : "–";
 const norm = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "");
 const SORTS = ["NS", "Drill", "ÜG"];
+const SNAME = {"Purple": "Purple Rain", "Queen": "Queen Anne", "Triple": "Triple 7", "BIM 1616": "BIM 16-16"}; // Kurznamen aus Preislisten
 const SORTNAME = {NS: "Normalsortierung", Drill: "Drillinge", "ÜG": "Übergrößen"};
 const FIELD = {NS: "ns", Drill: "drill", "ÜG": "ueg"};
 const NICHT_VERF = ["aberkannt", "ergebnisoffen", "Direktvermehrung KSG"];
@@ -406,6 +415,7 @@ function renderBestList(){
 ["#best-q", "#best-typ", "#best-stat", "#best-offen"].forEach(s => $(s).addEventListener("input", renderBestList));
 $("#best-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openEdit("best", tr.dataset.id); });
 $("#best-neu").onclick = () => openEdit("best", null);
+$("#best-dik").onclick = () => { openEdit("best", null); const t = $("#e-dik"); if (t) t.focus(); };
 
 function renderAufList(){
   const q = norm($("#auf-q").value), lz = $("#auf-lz").value, st = $("#auf-stat").value, nurOffen = $("#auf-offen").checked;
@@ -421,6 +431,7 @@ function renderAufList(){
 ["#auf-q", "#auf-lz", "#auf-stat", "#auf-offen"].forEach(s => $(s).addEventListener("input", renderAufList));
 $("#auf-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openEdit("auf", tr.dataset.id); });
 $("#auf-neu").onclick = () => openEdit("auf", null);
+$("#auf-dik").onclick = () => { openEdit("auf", null); const t = $("#e-dik"); if (t) t.focus(); };
 
 // ---------- Bearbeiten (gemeinsame Maske)
 let E = null;
@@ -475,6 +486,7 @@ function renderEdit(){
   ${kd ? `<p class="hint">${esc([kd.strasse, [kd.plz, kd.ort].filter(Boolean).join(" "), kd.telefon || kd.mobil, kd.email].filter(Boolean).join(" · "))}</p>` : (E.kunde ? `<p class="hint">Kunde nicht in der büro+-Liste – wird nur mit Namen gespeichert.</p>` : "")}`;
   box.innerHTML = `
   <div class="row"><h2 class="grow">${E.id ? c.titel + " " + esc(E.nr) : c.neu}</h2><button class="btn sec" id="e-back">← zurück</button></div>
+  ${dikHtml()}
   ${head}${E.kind === "auf" ? logiHtml() : ""}
   <label class="f">Bemerkung<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
   <h3>Positionen</h3>
@@ -554,7 +566,8 @@ function kundeAus(v){
   if (m){ E.kdnr = m.kdnr; E.kunde = m.name; } else { E.kdnr = null; E.kunde = v; }
 }
 function wireEdit(){
-  $("#e-back").onclick = () => closeEdit();
+  wireDik();
+  $("#e-back").onclick = () => { if (REC) REC.stop(); closeEdit(); };
   if (E.kind === "best"){
     $("#e-typ").onchange = () => { readHead(); renderEdit(); };
     $("#e-lief").onchange = () => { readHead(); const l = D.lief.find(l => l.name === E.lieferant && l.typ === E.lieferant_typ); if (l && l.vo && !E.vo) E.vo = l.vo; if (E.lieferant_typ === "VO") E.vo = E.lieferant; renderEdit(); };
@@ -684,6 +697,195 @@ $("#auf-csv").onclick = () => {
     }); });
   csvDownload(rows, "Pflanzgut_Kundenauftraege");
 };
+
+// ---------- Diktat, Text, AB, PDF, Foto → Auftrag/Bestellung (Auswertung durch Claude, Funktion pflanzgut-import)
+const MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let REC = null, dikCtl = null;
+function dikHtml(){
+  const was = E.kind === "auf" ? "Auftrag" : "Bestellung oder AB";
+  const bsp = E.kind === "auf" ? "z. B. „Abtei Maria Frieden, Frühjahr, Anlieferung: Agria 5 Big Bag, Lea Drillinge 20 Doppelzentner, Annabelle 40 Sack“"
+    : "z. B. „Bestellung bei Europlant, Frühjahr: Annabelle 4 Big Bag, Belana 30 Doppelzentner“ – oder AB als PDF/Foto hochladen";
+  return `<div class="dik">
+    <div class="row"><b class="grow">${esc(was)} diktieren, einfügen oder als Datei übernehmen</b><span class="hint" id="dik-st">${E._dikInfo ? E._dikInfo : ""}</span></div>
+    <div class="row" style="align-items:stretch">
+      <textarea id="e-dik" rows="2" class="grow" placeholder="${esc(bsp)}">${esc(E._dikText || "")}</textarea>
+      ${SR ? `<button class="mic" id="e-mic" type="button" aria-label="Diktat starten">${MIC}</button>` : ""}
+    </div>
+    <div class="row">
+      <button class="btn blue sm" id="e-dik-go" type="button">Auslesen und eintragen</button>
+      <label class="btn sec sm" style="cursor:pointer">Datei / Foto (PDF, E-Mail, Bild)<input type="file" id="e-dik-file" accept=".pdf,.txt,.eml,.msg,image/*" multiple hidden></label>
+      <button class="btn sec sm" id="e-dik-stop" type="button" hidden>Abbrechen</button>
+      <span class="hint">${SR ? "Mikrofon antippen und sprechen." : "Diktat: Mikrofon der Handy-Tastatur nutzen."} Claude trägt die Angaben in die Maske ein – bitte prüfen und speichern.</span>
+    </div>
+  </div>`;
+}
+function wireDik(){
+  const ta = $("#e-dik"); if (!ta) return;
+  ta.oninput = () => { E._dikText = ta.value; };
+  $("#e-dik-go").onclick = () => { const t = ta.value.trim(); if (!t) { toast("Erst sprechen, tippen oder eine Datei wählen"); ta.focus(); return; } auslesen(t, [], "Diktat/Text"); };
+  $("#e-dik-file").onchange = async ev => { const fs = Array.from(ev.target.files || []); ev.target.value = ""; if (fs.length) dateienLesen(fs); };
+  $("#e-dik-stop").onclick = () => { if (dikCtl) dikCtl.abort(); };
+  const mb = $("#e-mic"); if (mb) mb.onclick = () => micToggle(mb, ta);
+}
+function micToggle(btn, ta){
+  if (REC){ REC.stop(); return; }
+  let base = ta.value ? ta.value.replace(/\s*$/, " ") : "";
+  const rec = new SR(); rec.lang = "de-DE"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 3;
+  try { if ("phrases" in rec && window.SpeechRecognitionPhrase){ rec.phrases = D.sorten.map(s => s.name).concat(["Big Bag", "Drillinge", "Übergrößen", "Normalsortierung", "Doppelzentner", "Frühjahr", "Herbst", "Anlieferung", "Abholung"]).slice(0, 300).map(x => new SpeechRecognitionPhrase(x, 5.0)); } } catch (e) {}
+  rec.onresult = ev => { let fin = "", part = "";
+    for (let i = ev.resultIndex; i < ev.results.length; i++){ const r = ev.results[i]; if (r.isFinal) fin += r[0].transcript; else part += r[0].transcript; }
+    if (fin) base = base + fin.trim() + ", ";
+    ta.value = (base + part).trim(); E._dikText = ta.value; };
+  rec.onerror = ev => { if (ev.error === "not-allowed") toast("Mikrofon nicht erlaubt – bitte im Browser freigeben."); };
+  rec.onend = () => { btn.classList.remove("on"); REC = null; };
+  try { rec.start(); REC = rec; btn.classList.add("on"); } catch (e) { REC = null; toast("Diktat gerade nicht möglich"); }
+}
+async function blobToB64(b){ const buf = new Uint8Array(await b.arrayBuffer()); let s = ""; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000)); return btoa(s); }
+async function shrink(blob){
+  try { const bmp = await createImageBitmap(blob); const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement("canvas"); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k); cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
+    return await new Promise(r => cv.toBlob(r, "image/jpeg", 0.85)); } catch (e) { return blob; } }
+function loadScript(src){ return new Promise((res, rej) => { if (document.querySelector(`script[src="${src}"]`)) return res(); const sc = document.createElement("script"); sc.src = src; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
+async function readPdf(file){
+  if (!window.pdfjsLib){ await loadScript("../lib/pdfjs/pdf.min.js"); window.pdfjsLib.GlobalWorkerOptions.workerSrc = "../lib/pdfjs/pdf.worker.min.js"; }
+  const pdf = await window.pdfjsLib.getDocument({data: await file.arrayBuffer(), isEvalSupported: false}).promise;
+  let text = ""; const imgs = [];
+  for (let i = 1; i <= Math.min(pdf.numPages, 6); i++){ const pg = await pdf.getPage(i); const tc = await pg.getTextContent(); text += tc.items.map(x => x.str).join(" ") + "\n"; }
+  if (text.replace(/\s/g, "").length < 40){
+    for (let i = 1; i <= Math.min(pdf.numPages, 4); i++){ const pg = await pdf.getPage(i); const vp = pg.getViewport({scale: 1.6});
+      const cv = document.createElement("canvas"); cv.width = vp.width; cv.height = vp.height; await pg.render({canvasContext: cv.getContext("2d"), viewport: vp}).promise;
+      imgs.push(await new Promise(r => cv.toBlob(r, "image/jpeg", 0.85))); }
+    text = "";
+  }
+  return {text, imgs};
+}
+function cleanMail(t){
+  if (/quoted-printable/i.test(t)) t = t.replace(/=\r?\n/g, "").replace(/(=[0-9A-F]{2})+/g, m => { try { return decodeURIComponent(m.replace(/=/g, "%")); } catch (e) { return m; } });
+  t = t.replace(/^[A-Za-z0-9+\/=]{60,}\s*$/gm, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|tr|li)>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
+  return t.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+}
+async function dateienLesen(files){
+  let text = "", imgs = [];
+  try {
+    for (const f of files){
+      if (/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)){ const r = await readPdf(f); text += r.text + "\n"; imgs = imgs.concat(r.imgs); }
+      else if (/^image\//.test(f.type) || /\.(hei[cf]|jpe?g|png|webp)$/i.test(f.name)){
+        let b = f; if (/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name)){ await loadScript("../lib/heic2any.min.js"); const r = await window.heic2any({blob: f, toType: "image/jpeg", quality: 0.85}); b = Array.isArray(r) ? r[0] : r; }
+        imgs.push(b);
+      } else text += cleanMail(await f.text()) + "\n";
+    }
+  } catch (e){ console.error(e); return toast("Datei konnte nicht gelesen werden"); }
+  const zusatz = ($("#e-dik") && $("#e-dik").value.trim()) ? "\nZUSATZ (Notiz/Diktat): " + $("#e-dik").value.trim() : "";
+  auslesen((text.trim() || "") + zusatz, imgs.slice(0, 4), files.map(f => f.name).join(", "));
+}
+function promptBauen(text, nImg, diktat){
+  const kat = D.sorten.filter(s => s.aktiv !== false).map(s => [s.name, s.kochtyp || "", s.zuechter || "", "BB " + fmt(s.bb_dt || 11, (s.bb_dt || 11) % 1 ? 1 : 0) + " dt"].join(" | ")).join("\n");
+  const regeln = `REGELN:
+- Mengen immer in dt (Doppelzentner) angeben. 1 t = 10 dt, 100 kg = 1 dt.
+- Werden Big Bags gezählt („5 Big Bag“, „5 BB“), menge_dt = Anzahl × Big-Bag-Größe der Sorte (Katalog, sonst 11 dt). Säcke à 25 kg: menge_dt = Anzahl × 0,25.
+- sortierung: "NS" (Normalsortierung, Standard), "Drill" (Drillinge, 28–35 mm, „Drillis“) oder "ÜG" (Übergrößen).
+- verpackung: "Big Bag" (Standard), "Sack 25 kg" oder "lose". bb_dt: 11 oder 12.5 (laut Katalog, wenn genannt die genannte).
+- lieferzeitraum: "Frühjahr" (März/April, Standard) oder "Herbst" (Dezember bis Mitte Januar, auch „Herbstlieferung“, „vor Weihnachten“, „Januar“).
+- sorte: genau ein Name aus dem KATALOG. Bei Spracherkennung lautähnlich zuordnen (z. B. „Anuschka“/„Anuska“, „Simonetta“/„Simoneta“). Nicht zuordenbar → in "unklar".
+- Was du nicht sicher erkennst, kommt in "unklar" (kurz, mit Originalwortlaut).`;
+  let auf;
+  if (E.kind === "auf"){
+    const kd = D.kunden.map(k => [k.name, [k.plz, k.ort].filter(Boolean).join(" "), k.kdnr].join(" | ")).join("\n");
+    auf = `Du liest einen Kundenauftrag für Bio-Pflanzkartoffeln an die Vermarktungsgesellschaft Bio-Bauern mbH (VG Bio). Quelle: ${diktat ? "Diktat (Spracherkennung)" : "E-Mail, Bestellschein, Fax, Foto oder Notiz"}.
+${regeln}
+- kunde: der bestellende Betrieb (nicht VG Bio). Wähle aus KUNDEN den passenden (bei Diktat den lautähnlichsten) und gib dessen kdnr an; sonst nur den Namen.
+- lieferart: "Anlieferung" (Standard) oder "Abholung ab Vermehrer" (wenn der Kunde selbst abholt).
+- entladestelle nur angeben, wenn ausdrücklich eine andere Lieferadresse als die Kundenadresse genannt ist, sonst null.
+Antworte nur mit JSON:
+{"kunde":{"name":"","kdnr":"","ort":""},"lieferzeitraum":"Frühjahr","lieferart":"Anlieferung","entladestelle":null,"bemerkung":"","positionen":[{"sorte":"Agria","sortierung":"NS","menge_dt":55,"verpackung":"Big Bag","bb_dt":11,"original":"Agria fünf Big Bag"}],"unklar":[]}
+(entladestelle, wenn genannt: {"name":"","strasse":"","plz":"","ort":"","hinweis":""})
+KATALOG (Sorte | Kochtyp | Züchter | Big-Bag-Größe):
+${kat}
+KUNDEN (Name | PLZ Ort | Kd.-Nr.):
+${kd}`;
+  } else {
+    const lf = D.lief.filter(l => l.typ !== "Spedition").map(l => [l.name, l.typ, l.vo || ""].join(" | ")).join("\n");
+    auf = `Du liest eine Pflanzkartoffel-Bestellung der Vermarktungsgesellschaft Bio-Bauern mbH (VG Bio) bei einem Vermehrer, einer VO-Firma oder einem Züchter – oder die Auftragsbestätigung (AB) des Lieferanten dazu. Quelle: ${diktat ? "Diktat (Spracherkennung)" : "AB, E-Mail, PDF, Foto oder Notiz"}.
+${regeln}
+- lieferant: der Lieferant (Absender der AB bzw. bei wem bestellt wird), nicht VG Bio. Wähle aus LIEFERANTEN, typ "Vermehrer", "VO" oder "Züchter".
+- ab_nr: Nummer der Auftragsbestätigung bzw. Bestellnummer des Lieferanten, falls vorhanden.
+- liefertermin: "Frühjahr" (Standard) oder "Herbst".
+Antworte nur mit JSON:
+{"lieferant":{"name":"","typ":"Züchter","vo":""},"ab_nr":"","liefertermin":"Frühjahr","bemerkung":"","positionen":[{"sorte":"Annabelle","sortierung":"NS","menge_dt":50,"verpackung":"Big Bag","bb_dt":12.5,"original":"Annabelle 4 BB"}],"unklar":[]}
+KATALOG (Sorte | Kochtyp | Züchter | Big-Bag-Größe):
+${kat}
+LIEFERANTEN (Name | Art | VO):
+${lf}`;
+  }
+  return `${auf}
+
+DOKUMENT${nImg ? " (siehe " + nImg + " Bild(er))" : ""}:
+${text ? text.slice(0, 30000) : "(nur Bild)"}`;
+}
+async function auslesen(text, imgs, quelle){
+  readHead();
+  const diktat = quelle === "Diktat/Text";
+  const st = $("#dik-st"), stop = $("#e-dik-stop"), go = $("#e-dik-go");
+  if (st) st.textContent = "Claude liest …"; if (stop) stop.hidden = false; if (go) go.disabled = true;
+  dikCtl = new AbortController();
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const images = []; for (const b of imgs){ const j = await shrink(b); images.push({media_type: "image/jpeg", data: await blobToB64(j)}); }
+    const r = await fetch(CFG.supabaseUrl + "/functions/v1/pflanzgut-import", {method: "POST", signal: dikCtl.signal,
+      headers: {"Content-Type": "application/json", "apikey": CFG.supabaseAnonKey, "Authorization": "Bearer " + (session ? session.access_token : "")},
+      body: JSON.stringify({input: promptBauen(text, images.length, diktat), images})});
+    const out = await r.json().catch(() => null);
+    if (!r.ok){ const e = new Error("fail"); e.code = out && out.error ? out.error.code : "upstream_error"; throw e; }
+    const t = String(out.text || ""); const m = t.match(/```(?:json)?\s*([\s\S]*?)```/); const raw = m ? m[1] : t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1);
+    let res; try { res = JSON.parse(raw); } catch (e){ const x = new Error("json"); x.code = "invalid_json"; throw x; }
+    eintragen(res || {}, quelle);
+  } catch (e){
+    const c = e && e.code;
+    const msg = e && e.name === "AbortError" ? "Abgebrochen" : c === "not_configured" ? "Auslesen ist noch nicht eingerichtet (API-Schlüssel fehlt)." : c === "not_signed_in" ? "Bitte neu anmelden." : c === "rate_limited" ? "Gerade zu viele Anfragen – gleich nochmal versuchen." : c === "invalid_json" ? "Konnte nicht sicher gelesen werden – bitte nochmal versuchen." : "Auslesen fehlgeschlagen – bitte nochmal versuchen.";
+    toast(msg); if ($("#dik-st")) $("#dik-st").textContent = msg;
+  } finally { dikCtl = null; if ($("#e-dik-stop")) $("#e-dik-stop").hidden = true; if ($("#e-dik-go")) $("#e-dik-go").disabled = false; }
+}
+function sorteFinden(n){
+  if (!n) return "";
+  const x = D.sorten.find(s => s.name === n) || D.sorten.find(s => norm(s.name) === norm(n)) || D.sorten.find(s => norm(s.name).replace(/[^a-z0-9]/g, "") === norm(n).replace(/[^a-z0-9]/g, ""));
+  return x ? x.name : String(n).trim();
+}
+function eintragen(r, quelle){
+  const pos = (Array.isArray(r.positionen) ? r.positionen : []).filter(p => p && (p.sorte || p.menge_dt)).map(p => {
+    const sorte = sorteFinden(p.sorte), vp = VP.includes(p.verpackung) ? p.verpackung : "Big Bag";
+    return Object.assign(newPos(), {sorte, sortierung: SORTS.includes(p.sortierung) ? p.sortierung : "NS", menge_dt: numIn(p.menge_dt), verpackung: vp,
+      bb_dt: num(p.bb_dt) > 0 ? num(p.bb_dt) : bbStd(sorte), bemerkung: p.original && !D.sorten.some(s => s.name === sorte) ? "„" + p.original + "“ – Sorte prüfen" : ""});
+  });
+  const leer = E.pos.every(p => !p.sorte && !p.menge_dt);
+  E.pos = (leer ? [] : E.pos).concat(pos); if (!E.pos.length) E.pos.push(newPos());
+  const notiz = [];
+  if (E.kind === "auf"){
+    const k = r.kunde || {};
+    let m = k.kdnr ? D.kunden.find(x => String(x.kdnr) === String(k.kdnr).trim()) : null;
+    if (!m && k.name) m = D.kunden.find(x => norm(x.name) === norm(k.name)) || D.kunden.find(x => norm(x.name).includes(norm(k.name)) || norm(k.name).includes(norm(x.name)));
+    if (m){ E.kdnr = m.kdnr; E.kunde = m.name; } else if (k.name && !E.kunde){ E.kdnr = null; E.kunde = k.name; notiz.push(`Kunde „${k.name}“ nicht in der büro+-Liste`); }
+    if (LZ.includes(r.lieferzeitraum)) E.lieferzeitraum = r.lieferzeitraum;
+    if (LA.includes(r.lieferart)) E.lieferart = r.lieferart;
+    if (E.lieferart !== "Anlieferung") E.tour_id = null;
+    const e = r.entladestelle;
+    if (e && typeof e === "object" && (e.name || e.strasse || e.ort)){ Object.assign(E, {entlade_abweichend: true, entlade_name: e.name || "", entlade_strasse: e.strasse || "", entlade_plz: e.plz || "", entlade_ort: e.ort || "", entlade_hinweis: e.hinweis || ""}); E.lieferart = "Anlieferung"; }
+  } else {
+    const l = r.lieferant || {};
+    if (l.name){
+      const typ = ["Vermehrer", "VO", "Züchter"].includes(l.typ) ? l.typ : E.lieferant_typ;
+      const m = D.lief.find(x => norm(x.name) === norm(l.name)) || D.lief.find(x => x.typ !== "Spedition" && (norm(x.name).includes(norm(l.name)) || norm(l.name).includes(norm(x.name))));
+      if (m){ E.lieferant = m.name; E.lieferant_typ = m.typ; E.vo = m.vo || (m.typ === "VO" ? m.name : E.vo); } else { E.lieferant = l.name; E.lieferant_typ = typ; if (l.vo) E.vo = l.vo; notiz.push(`Lieferant „${l.name}“ ist neu`); }
+    }
+    if (LZ.includes(r.liefertermin)) E.liefertermin = r.liefertermin;
+    if (r.ab_nr) E.bemerkung = [E.bemerkung, "AB-Nr. " + r.ab_nr].filter(Boolean).join(" · ");
+  }
+  if (r.bemerkung) E.bemerkung = [E.bemerkung, r.bemerkung].filter(Boolean).join(" · ");
+  const unklar = (Array.isArray(r.unklar) ? r.unklar : []).map(String).filter(x => x.trim());
+  E._dikText = "";
+  E._dikInfo = `✓ ${pos.length} Position(en) aus ${esc(quelle)} übernommen – bitte prüfen und speichern.` + (notiz.length ? " " + esc(notiz.join("; ")) + "." : "") + (unklar.length ? ` <span class="pill a">unklar: ${esc(unklar.join(" · "))}</span>` : "");
+  renderEdit(); toast(`${pos.length} Position(en) eingetragen – bitte prüfen`);
+}
 
 // ---------- Touren (Speditionen)
 let TE = null; // offene Tour im Bearbeiten
@@ -943,7 +1145,7 @@ async function lesen(file){
       } else if (hdr.includes("sorte") && !hdr.some(x => /^(kundennr|kontonr)$/.test(x))){
         typen.add("Sorten");
         const ix = {sorte: c(["sorte"]), bk: c(["biokonv", "bio"]), ghp: c(["ghp2026", "ghp"]), kt: c(["kochtyp"]), rg: c(["reife"]), zue: c(["zuchter", "zuechter"])};
-        body.forEach(r => { if (!r[ix.sorte]) return; let n = String(r[ix.sorte]).trim().replace(/,$/, ""); if (n.length < 2) return; const s = sorten[n] = sorten[n] || {name: n};
+        body.forEach(r => { if (!r[ix.sorte]) return; let n = String(r[ix.sorte]).trim().replace(/,$/, ""); if (n.length < 2) return; n = SNAME[n] || n; const s = sorten[n] = sorten[n] || {name: n};
           const bk = ix.bk >= 0 ? norm(r[ix.bk]) : ""; if (bk.startsWith("bio")) s.bio = true; if (bk.startsWith("konv")) s.konv = true;
           if (ix.ghp >= 0 && s.ghp == null && bk.startsWith("bio")) s.ghp = numIn(r[ix.ghp]);
           if (ix.kt >= 0 && r[ix.kt]) s.kochtyp = String(r[ix.kt]); if (ix.rg >= 0 && r[ix.rg]) s.reife = String(r[ix.rg]); if (ix.zue >= 0 && r[ix.zue]) s.zuechter = String(r[ix.zue]); });

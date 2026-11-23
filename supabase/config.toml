@@ -9,3 +9,6 @@ verify_jwt = true
 
 [functions.users]
 verify_jwt = true
+
+[functions.pflanzgut-import]
+verify_jwt = true
