@@ -108,6 +108,10 @@ details summary{cursor:pointer;font-weight:600;color:var(--blue)}
 .spin{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--green);animation:sp 0.9s linear infinite;flex:0 0 18px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .pos .src{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em}
+.newbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.newbar .hint{font-weight:600}
+.btn.newab{display:inline-flex;align-items:center;gap:6px}
+.btn.newab.ask{background:var(--warn);border-color:var(--warn);color:#fff}
 [hidden]{display:none!important}
 /* AB-Vorschau */
 .paper{background:#fff;border:1px solid var(--line);border-radius:6px;padding:28px 30px;font:12px/1.35 Arial,sans-serif;color:#222;width:680px;box-shadow:0 2px 10px rgba(31,42,26,.08)}
@@ -151,6 +155,7 @@ details summary{cursor:pointer;font-weight:600;color:var(--blue)}
 </nav>
 
 <main id="v-best">
+  <div class="newbar"><span class="hint" id="cur-ab">Neue Auftragsbestätigung</span><button class="btn newab" data-new><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Neue AB</span></button></div>
   <section class="card" aria-labelledby="h-erz">
     <h2 id="h-erz"><span class="n">1</span>Erzeuger</h2>
     <div id="erz-chosen" class="chosen" hidden></div>
@@ -221,7 +226,7 @@ details summary{cursor:pointer;font-weight:600;color:var(--blue)}
     </div>
     <div class="sum" id="sum"></div>
     <div class="row" style="flex-wrap:wrap">
-      <button id="neu" class="btn sec">Neue Bestellung</button>
+      <button class="btn sec newab" data-new><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Neue AB</span></button>
     </div>
   </section>
 </main>
@@ -229,6 +234,7 @@ details summary{cursor:pointer;font-weight:600;color:var(--blue)}
 <main id="v-ab" hidden>
   <div class="row" style="flex-wrap:wrap">
     <button id="ab-save" class="btn">Auftrag speichern</button>
+    <button class="btn sec newab" data-new><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Neue AB</span></button>
     <button id="ab-pdf" class="btn blue">PDF erstellen</button>
     <button id="ab-share" class="btn blue" hidden>PDF teilen / mailen</button>
     <button id="ab-copy" class="btn sec">Mailtext kopieren</button>
@@ -470,7 +476,7 @@ function mailText(c){
     c.rows.map((r,i)=>`${i+1}. ${r.a.k} ${r.a.s}, ${r.a.v}${r.a.kal?", Kal. "+r.a.kal:""} (${r.a.n}) – ${num(+r.p.q)} × ${r.a.e} à ${eur(r.price)} (Kat. ${r.kat}) = ${eur(r.total)}`).join("\n") +
     `\n\nSumme netto: ${eur(c.summe)}\nErstbesteller-Rabatt: ${eur(c.rabatt)}\nNetto: ${eur(c.netto)}\n${c.mwstSatz?"zzgl. MwSt. 7 %":"MwSt. 0 %"}: ${eur(c.mwst)}\nGesamtbetrag: ${eur(c.gesamt)}\n\nLiefertermin: ${S.lief}\n\nMit freundlichen Grüßen\n${S.bearb}\n${VG.firma}\n${VG.str} · ${VG.ort} · Tel. ${VG.tel}`;
 }
-function renderAll(){ renderErz(); renderPos(); renderSum(); if(!$("#v-ab").hidden) renderAB(); }
+function renderAll(){ const cc=calc(); const ca=$("#cur-ab"); if(ca) ca.textContent = cc.abnr ? "AB "+cc.abnr+(cc.rows.length?" · "+cc.rows.length+" Pos.":"") : "Neue Auftragsbestätigung"; renderErz(); renderPos(); renderSum(); if(!$("#v-ab").hidden) renderAB(); }
 
 // ---------- Ansichten ----------
 function show(id){
@@ -498,9 +504,18 @@ $("#dik-go").onclick = () => {
 };
 ["erst","lief","ref","nach","bearb"].forEach(id => { const el=$("#"+id); if(el.type==="checkbox") el.checked=S[id]; else el.value=S[id]||"";
   el.oninput = el.onchange = () => { S[id] = el.type==="checkbox" ? el.checked : el.value.trim(); persist(); renderSum(); }; });
-$("#neu").onclick = () => { if($("#neu").dataset.c!=="1"){ $("#neu").dataset.c="1"; $("#neu").textContent="Wirklich leeren? Nochmal tippen"; setTimeout(()=>{ $("#neu").dataset.c=""; $("#neu").textContent="Neue Bestellung"; },3000); return; }
+function neueAB(){
   S=fresh(); persist(); ["erst","lief","ref","nach","bearb"].forEach(id=>{const el=$("#"+id); if(el.type==="checkbox") el.checked=S[id]; else el.value=S[id]||"";});
-  $("#neu").dataset.c=""; $("#neu").textContent="Neue Bestellung"; renderAll(); window.scrollTo(0,0); toast("Neue Bestellung begonnen"); };
+  ["#dik","#erz-q","#art-q"].forEach(q=>{ const el=$(q); if(el) el.value=""; }); const ir=$("#imp-result"); if(ir) ir.hidden=true;
+  renderAll(); renderErzList(); renderArtList(); show("v-best"); toast("Neue AB begonnen");
+}
+document.querySelectorAll("[data-new]").forEach(b => b.onclick = () => {
+  const leer = !S.erz && !S.pos.length;
+  if(leer){ neueAB(); return; }
+  if(b.dataset.c!=="1"){ b.dataset.c="1"; b.classList.add("ask"); b.querySelector("span").textContent="Verwerfen? Nochmal tippen";
+    setTimeout(()=>{ b.dataset.c=""; b.classList.remove("ask"); b.querySelector("span").textContent="Neue AB"; },3500); return; }
+  b.dataset.c=""; b.classList.remove("ask"); b.querySelector("span").textContent="Neue AB"; neueAB();
+});
 $("#ab-copy").onclick = async () => { const c=calc(); try{ await navigator.clipboard.writeText(mailText(c)); toast("Mailtext kopiert – in die E-Mail einfügen"); }catch(e){ toast("Kopieren nicht möglich"); } };
 
 // ---------- Plattform: Supabase, Diktat im Browser, Dateien ----------
