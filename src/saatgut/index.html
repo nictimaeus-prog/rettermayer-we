@@ -112,6 +112,13 @@ details summary{cursor:pointer;font-weight:600;color:var(--blue)}
 .newbar .hint{font-weight:600}
 .btn.newab{display:inline-flex;align-items:center;gap:6px}
 .btn.newab.ask{background:var(--warn);border-color:var(--warn);color:#fff}
+.dik-prev{display:grid;gap:8px;background:var(--pick);border-radius:12px;padding:10px 12px}
+.dik-prev .ttl{font-weight:700;color:var(--blue);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.dik-prev .pr{display:grid;grid-template-columns:1fr 92px;gap:6px;align-items:end}
+.dik-prev .pr .w{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.dik-prev select,.dik-prev input{padding:8px 9px;font-size:15px;background:#fff}
+.dik-prev .u{font-size:12px;color:var(--muted)}
+.pill.gbb{background:#FFF4DB;border-color:#E9C46A;color:#7A5300}
 [hidden]{display:none!important}
 /* AB-Vorschau */
 .paper{background:#fff;border:1px solid var(--line);border-radius:6px;padding:28px 30px;font:12px/1.35 Arial,sans-serif;color:#222;width:680px;box-shadow:0 2px 10px rgba(31,42,26,.08)}
@@ -171,10 +178,13 @@ details summary{cursor:pointer;font-weight:600;color:var(--blue)}
   <section class="card" aria-labelledby="h-dik">
     <h2 id="h-dik"><span class="n">2</span>Bestellung diktieren</h2>
     <div class="row" style="align-items:flex-start">
-      <textarea id="dik" placeholder="z. B. „Käßer, Flexi Kuri 80, Bellesco Öko 12, Boro 25“"></textarea>
+      <textarea id="dik" placeholder="z. B. „Käßer, Flexi Kuri 80 Einheiten, Bellesco Bio 500.000 Korn, Boro 25“"></textarea>
       <button class="mic" data-mic="dik" aria-label="Bestellung diktieren" hidden></button>
     </div>
-    <div class="row"><button id="dik-go" class="btn">Positionen übernehmen</button><span class="hint" id="mic-hint">Tipp: Mikrofon auf der Handy-Tastatur antippen und sprechen.</span></div>
+    <div id="dik-prev" class="dik-prev" hidden></div>
+    <div class="row" style="flex-wrap:wrap"><button id="dik-go" class="btn">Positionen übernehmen</button><button id="dik-ki" class="btn sec">Mit KI abgleichen</button></div>
+    <span class="hint" id="mic-hint">Tipp: Mikrofon auf der Handy-Tastatur antippen und sprechen.</span>
+    <span class="hint">So sprechen: <b>Erzeuger</b>, dann je Position <b>Sorte · Bio/konventionell · geprimt · Menge</b> – z. B. „Käßer, Flexi Kuri 80 Einheiten, Bellesco Bio 500.000 Korn“. Mengen in Korn rechnet die App in Einheiten um. „Mit KI abgleichen“ hilft, wenn Namen falsch verstanden wurden.</span>
   </section>
 
 
@@ -296,11 +306,27 @@ const num = v => (Math.round(v*100)/100).toLocaleString("de-DE",{maximumFraction
 const n2 = v => (Math.round(v*100)/100).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = s => String(s||"").toLowerCase().replace(/ß/g,"ss").normalize("NFD").replace(/[̀-ͯ]/g,"");
+// Erzeuger aus der GBB-App ergänzen (Dubletten zum VG-Verteiler werden übersprungen)
+function mergeGBB(ers, gbb){
+  const SKIP=["gbr","gmbh","gmbg","biohof","hof","und","ehem","bioanbau","demeterhof","biolandhof","ackerbau","agrar","bio","okologischer","gemusebau","co","kg"];
+  const sig = n => norm(n).split(/[^a-z]+/).filter(t=>t.length>=3 && !SKIP.includes(t));
+  const out = ers.slice();
+  (gbb||[]).forEach(g => {
+    const t=sig(g.n); if(!t.length) return;
+    const ort0 = sig(g.o||"")[0]||"";
+    const dup = ers.find(e => { const et=norm(e.n+" "+(e.vn||"")); if(!t.every(x=>et.includes(x))) return false;
+      return t.length>1 || (g.plz && String(e.plz)===String(g.plz)) || (ort0 && norm(e.o).includes(ort0)); });
+    if(dup){ if(g.gbb && !dup.gbb) dup.gbb=g.gbb; return; }
+    out.push(Object.assign({kd:"", vn:"", m:"", e:"A", sk:"", sc:"", la:"DE"}, g, {src:"GBB"}));
+  });
+  return out;
+}
 let ARTS = [], ERS = [], CATALOG = "";
-function initData(cat, ers){
-  D = {arts: cat.arts||[], staffel: cat.staffel||{}, rab: cat.rab||{}, ers: ers||[]};
+function initData(cat, ers, gbb){
+  D = {arts: cat.arts||[], staffel: cat.staffel||{}, rab: cat.rab||{}, ers: ers||[], gbb: gbb||[]};
   ARTS = D.arts.map(a => Object.assign({kal:"",h:"",ha:0}, a, {txt: norm([a.n,a.k,a.s,a.v,a.kal,a.l].join(" ")), na: /nicht lieferbar/i.test(a.h||"")}));
-  ERS = D.ers.map(e => Object.assign({kd:"",vn:"",st:"",plz:"",o:"",la:"DE",m:"",e:"C",sk:"",sc:""}, e, {txt: norm([e.n,e.vn,e.o,e.kd].join(" "))}));
+  ERS = mergeGBB(D.ers.map(e => Object.assign({kd:"",vn:"",st:"",plz:"",o:"",la:"DE",m:"",e:"C",sk:"",sc:""}, e)), D.gbb).map(e => Object.assign(e, {txt: norm([e.n,e.vn,e.o,e.kd].join(" "))}));
+  VOC=null;
   CATALOG = ARTS.map(a=>[a.n,a.k,a.s,a.v,a.kal?"Kal. "+a.kal:"",a.l,"Einheit: "+a.e].filter(Boolean).join(" | ")).join("\n");
 }
 const KAT = {G:0,A:1,B:2,C:3};
@@ -337,7 +363,7 @@ function calc(){
   const land = e ? (e.la||"DE") : "DE";
   const mwstSatz = land==="DE" ? 0.07 : 0;
   const mwst = Math.round(netto*mwstSatz*100)/100;
-  const abnr = e ? (VG.praefix + "-" + (e.kd || norm(e.n).replace(/[^a-z0-9]+/g,"").slice(0,8)) + (S.nach ? "-"+S.nach : "")) : "";
+  const abnr = e ? (VG.praefix + "-" + (e.kd || (e.gbb ? "GBB-"+e.gbb : (e.kr ? "GBB-"+e.kr : norm(e.n).replace(/[^a-z0-9]+/g,"").slice(0,8)))) + (S.nach ? "-"+S.nach : "")) : "";
   return {e, rows, summe, rabatt, best, netto, mwstSatz, mwst, gesamt: netto+mwst, abnr};
 }
 
@@ -358,19 +384,89 @@ function scoreArt(a, toks){
 }
 function searchArts(q, n){ const t=tokens(q); if(!t.length) return [];
   return ARTS.map(a=>({a,s:scoreArt(a,t)})).filter(x=>x.s>0).sort((x,y)=>y.s-x.s).slice(0,n).map(x=>x.a); }
+function searchErzKlang(q){ const r=searchErz(q); if(r.length) return r; return typeof erzCands==="function" ? erzCands(q,8) : []; }
 function searchErz(q){ const t=norm(q).split(/\s+/).filter(Boolean); if(!t.length) return [];
   return ERS.map(e=>({e,s:t.reduce((s,w)=>s+(e.txt.includes(w)?(e.n.toLowerCase().startsWith(w)?3:2):0),0)}))
     .filter(x=>x.s>=t.length*2).sort((x,y)=>y.s-x.s || x.e.n.localeCompare(y.e.n)).slice(0,8).map(x=>x.e); }
 
 // Diktat → Positionen: „Flexi Kuri 80, Bellesco Öko 12 …“
+// ---------- Spracherkennung verbessern: Lautabgleich (Kölner Phonetik) auf Sorten, Kulturen und Erzeuger ----------
+function koeln(w){
+  w = norm(w).replace(/[^a-z]/g,""); if(!w) return "";
+  let out="";
+  for(let i=0;i<w.length;i++){
+    const c=w[i], p=w[i-1]||"", n=w[i+1]||""; let d="";
+    if("aeijouy".includes(c)) d="0";
+    else if(c==="h") d="-";
+    else if(c==="b") d="1";
+    else if(c==="p") d = n==="h" ? "3" : "1";
+    else if(c==="d"||c==="t") d = "csz".includes(n) && n ? "8" : "2";
+    else if("fvw".includes(c)) d="3";
+    else if("gkq".includes(c)) d="4";
+    else if(c==="c"){ if(i===0) d = "ahkloqrux".includes(n)&&n ? "4" : "8"; else d = "sz".includes(p) ? "8" : ("ahkoqux".includes(n)&&n ? "4" : "8"); }
+    else if(c==="x") d = "ckq".includes(p)&&p ? "8" : "48";
+    else if(c==="l") d="5";
+    else if(c==="m"||c==="n") d="6";
+    else if(c==="r") d="7";
+    else if(c==="s"||c==="z") d="8";
+    out+=d;
+  }
+  out=out.replace(/-/g,"");
+  let r=""; for(const ch of out){ if(r[r.length-1]!==ch) r+=ch; }
+  return r[0] + r.slice(1).replace(/0/g,"");
+}
+const simp = w => String(w).replace(/(.)\1+/g,"$1");
+function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let prev=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){ const cur=[i]; for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); prev=cur; } return prev[n]; }
+let VOC=null;
+function vocab(){
+  if(VOC && VOC.n===ARTS.length+ERS.length) return VOC;
+  const mk = words => { const m=new Map(); words.forEach(w=>{ const k=norm(w).replace(/[^a-z]/g,""); if(k.length>=3 && !m.has(k)) m.set(k,{w:k, d:String(w).replace(/[^A-Za-zÄÖÜäöüß]/g,""), code:koeln(k)}); }); return [...m.values()]; };
+  const artW=[]; ARTS.forEach(a=>[a.s,a.k,a.v,a.l].forEach(x=>String(x||"").split(/[\s()\/,.-]+/).forEach(w=>artW.push(w))));
+  ["oeko","bio","konventionell","geprimt","kaliber","rot","gelb"].forEach(w=>artW.push(w));
+  const erzW=[]; [...ERS.filter(e=>e.e==="A"||e.e==="G"), ...ERS.filter(e=>!(e.e==="A"||e.e==="G"))].forEach(e=>[e.n,e.o].forEach(x=>String(x||"").split(/[\s()\/,.&-]+/).forEach(w=>erzW.push(w))));
+  VOC={n:ARTS.length+ERS.length, art:mk(artW), erz:mk(erzW)}; return VOC;
+}
+// ein gesprochenes Wort auf das ähnlichste Wort aus dem Wortschatz abbilden
+function fixWord(w, list){
+  const k=norm(w).replace(/[^a-z]/g,""); if(k.length<3 || STOP.has(k) || NUMW[k]!==undefined || SYN[k]) return w;
+  if(list.some(x=>x.w===k)) return w;
+  const code=koeln(k); let best=null, bs=1e9;
+  for(const x of list){
+    const cd = x.code===code ? 0 : (lev(x.code,code)<=1 && Math.abs(x.code.length-code.length)<=1 ? 1 : 9);
+    if(cd>1) continue;
+    const sc = cd*3 + lev(simp(x.w),simp(k))/Math.max(x.w.length,k.length)*4;
+    if(sc<bs){ bs=sc; best=x.d; }
+  }
+  return best && bs<=4 ? best : w;
+}
+// für die Anzeige im Diktatfeld: Abschnitte mit Zahl = Artikel, ohne Zahl = Erzeuger
+function korrAnzeige(t){ if(!ARTS.length) return t; return t.split(/(,|;|\n)/).map(seg => /[,;\n]/.test(seg) ? seg : fixText(seg, /\d/.test(normZahlen(seg)) ? "art" : "erz")).join(""); }
+function fixText(t, which){ const list=vocab()[which]; return t.replace(/[A-Za-zÄÖÜäöüß]+/g, w => fixWord(w,list)); }
+// Mengen: „400.000“ = 400000 · „400 tausend“ · „3 Millionen“ · Zahlwörter
+function normZahlen(t){
+  t = t.replace(/[A-Za-zÄÖÜäöüß]+/g, w => { const k=w.toLowerCase(); return NUMW[k]!==undefined ? String(NUMW[k]) : w; });
+  t = t.replace(/\b(\d{1,3}(?:\.\d{3})+)\b/g, m => m.replace(/\./g,""));
+  t = t.replace(/(\d+(?:[.,]\d+)?)\s*(millionen|million|mio\.?)/gi, (m,n)=> String(Math.round(parseFloat(n.replace(",","."))*1e6)) + " korn");
+  t = t.replace(/(\d+(?:[.,]\d+)?)\s*(tausend)/gi, (m,n)=> String(Math.round(parseFloat(n.replace(",","."))*1e3)) + " korn");
+  return t;
+}
+// Korn in die Artikel-Einheit umrechnen (EH 250.000 K, Mio. K, 1.000 K …)
+function einheitKorn(a){ const e=String(a.e||""); if(/mio/i.test(e)) return 1e6; const m=e.match(/(\d[\d.]*)\s*K/); return m ? +m[1].replace(/\./g,"") : 0; }
+function mengeFuer(a, q, words){
+  const size=einheitKorn(a); const eh=/einheit|\beh\b|paket|sack|dose/i.test(words||"");
+  if(!eh && size && (q>=1000 || /korn/i.test(words||""))) return Math.round(q/size*100)/100;
+  return q;
+}
 function parseDiktat(txt){
-  const t = txt.replace(/[A-Za-zÄÖÜäöüß]+/g, w => { const k=w.toLowerCase(); return NUMW[k]!==undefined ? String(NUMW[k]) : w; });
+  const t = normZahlen(txt);
   const segs = t.split(/[,;\n]+|\s+und\s+/i).map(x=>x.trim()).filter(Boolean);
   const out=[], rest=[]; const NUM=/\d+(?:[.,]\d+)?/g;
-  const push=(words,q)=>{ words=words.trim(); if(!words) return; out.push({words, q:parseFloat(String(q).replace(",", ".")), cands:searchArts(words,5)}); };
+  const push=(words,q)=>{ words=fixText(words.trim(),"art"); if(!words) return; const qq=parseFloat(String(q).replace(",", "."));
+    out.push({words, q:qq, cands:searchArts(words,5)}); };
   segs.forEach(seg => {
     const nums = seg.match(NUM) || [];
-    if(!nums.length){ rest.push(seg); return; }
+    if(!nums.length){ rest.push(fixText(seg,"erz")); return; }
     if(nums.length===1){ push(seg.replace(nums[0]," "), nums[0]); return; }
     const re=/([^0-9]*?[A-Za-zÄÖÜäöüß][^0-9]*?)\s*(\d+(?:[.,]\d+)?)/g; let m;
     while((m=re.exec(seg))) push(m[1], m[2]);
@@ -385,15 +481,15 @@ function renderErz(){
   if(e){
     const ein = {G:"Kategorie 0 (Großbetrieb)",A:"immer Kategorie 1",B:"mind. Kategorie 2",C:"Kategorie nach Menge"}[e.e]||"";
     $("#erz-chosen").innerHTML = `<b>${esc(e.n)}</b><span class="hint">${esc([e.st, (e.plz+" "+e.o).trim(), e.la!=="DE"?e.la:""].filter(Boolean).join(" · "))}${e.kd?" · Kd-Nr. "+esc(e.kd):""}</span>
-      <div class="pills"><span class="pill g">Einstufung ${esc(e.e)}: ${esc(ein)}</span>${e.sk?`<span class="pill b">Sonder-Kat. ${esc(e.sk)}${e.sc?" für "+esc(e.sc):""}</span>`:""}${e.m?`<span class="pill">${esc(e.m)}</span>`:`<span class="pill w">keine E-Mail</span>`}</div>
+      <div class="pills"><span class="pill g">Einstufung ${esc(e.e)}: ${esc(ein)}</span>${e.src==="GBB"?`<span class="pill gbb">aus GBB-App${e.gbb?" · "+esc(e.gbb):""}</span>`:""}${e.sk?`<span class="pill b">Sonder-Kat. ${esc(e.sk)}${e.sc?" für "+esc(e.sc):""}</span>`:""}${e.m?`<span class="pill">${esc(e.m)}</span>`:`<span class="pill w">keine E-Mail</span>`}</div>
       <div><button class="link" id="erz-change">Erzeuger ändern</button></div>`;
     $("#erz-change").onclick = () => { S.erz=null; persist(); renderAll(); $("#erz-q").focus(); };
   }
 }
 function renderErzList(){
-  const q=$("#erz-q").value; const L=$("#erz-list"); const r=searchErz(q);
+  const q=$("#erz-q").value; const L=$("#erz-list"); const r=searchErzKlang(q);
   L.innerHTML = q && !r.length ? `<div class="empty">Kein Erzeuger gefunden. Neue Erzeuger im Excel-Tool im Tab „Erzeuger“ anlegen.</div>` :
-    r.map((e,i)=>`<button class="opt" data-i="${i}"><b>${esc(e.n)}</b><span class="sub">${esc(e.o)}${e.kd?" · "+esc(e.kd):""} · Einstufung ${esc(e.e)}</span></button>`).join("");
+    r.map((e,i)=>`<button class="opt" data-i="${i}"><b>${esc(e.n)}</b><span class="sub">${esc(e.o)}${e.kd?" · "+esc(e.kd):""} · Einstufung ${esc(e.e)}${e.src==="GBB"?" · GBB":""}</span></button>`).join("");
   L.querySelectorAll(".opt").forEach(b => b.onclick = () => { const e=r[+b.dataset.i]; S.erz={kd:e.kd,n:e.n}; $("#erz-q").value=""; L.innerHTML=""; persist(); renderAll(); });
 }
 function renderArtList(){
@@ -492,21 +588,61 @@ $("#bar-btn").onclick = () => show($("#v-best").hidden ? "v-best" : "v-ab");
 // ---------- Eingaben ----------
 $("#erz-q").oninput = renderErzList;
 $("#art-q").oninput = renderArtList;
+// Erzeuger nach Klang finden (für gesprochene Namen)
+function erzCands(seg, n){
+  const toks = norm(seg).split(/[^a-z]+/).filter(t=>t.length>=3 && !STOP.has(t) && !["gbr","biohof","hof","gmbh","und"].includes(t));
+  if(!toks.length) return [];
+  const tk = toks.map(t=>({t, c:koeln(t)}));
+  const res=[];
+  for(const e of ERS){
+    if(!e._k) e._k = norm(e.n+" "+e.o).split(/[^a-z]+/).filter(w=>w.length>=3).map(w=>({w, c:koeln(w)}));
+    let sc=0;
+    for(const x of tk){ let b=0; for(const y of e._k){ const v = y.w===x.t ? 3 : (y.c===x.c ? 2.2 - lev(simp(y.w),simp(x.t))/Math.max(y.w.length,x.t.length) : (lev(y.c,x.c)<=1 && y.c.length>2 ? 1 : 0)); if(v>b) b=v; } sc+=b; }
+    if(sc>=1.5){ if(e.e==="A"||e.e==="G") sc+=0.4; res.push({e, sc}); }
+  }
+  return res.sort((a,b)=>b.sc-a.sc).slice(0,n||5).map(x=>x.e);
+}
+let dikPrev=null, prevT;
+function buildPrev(){
+  const box=$("#dik-prev"); const txt=$("#dik").value;
+  if(!txt.trim() || !ARTS.length){ box.hidden=true; dikPrev=null; return; }
+  const r=parseDiktat(txt);
+  const seen=new Set(); let ec=[];
+  if(!S.erz){ r.rest.forEach(seg=>{ [...searchErz(seg), ...erzCands(seg,5)].forEach(e=>{ const k=e.n+"|"+e.kd; if(!seen.has(k)){ seen.add(k); ec.push(e); } }); }); ec=ec.slice(0,6); }
+  dikPrev={erz:ec, pos:r.pos.map(x=>({words:x.words, q:x.q, cands:x.cands}))};
+  if(!ec.length && !dikPrev.pos.length){ box.hidden=true; return; }
+  box.hidden=false;
+  box.innerHTML = `<div class="ttl">Erkannt – bitte prüfen</div>` +
+    (ec.length?`<label class="f" for="dp-erz">Erzeuger<select id="dp-erz">${ec.map((e,i)=>`<option value="${i}">${esc(e.n)} – ${esc(e.o)}${e.src==="GBB"?" (GBB)":""}</option>`).join("")}<option value="-1">– keinen übernehmen –</option></select></label>`:"") +
+    dikPrev.pos.map((p,i)=>{ const a=p.cands[0];
+      return `<div class="pr"><span class="w">„${esc(p.words)}“ · ${esc(num(p.q))}</span>
+        <select data-dp="${i}" aria-label="Artikel ${i+1}">${p.cands.map((c,j)=>`<option value="${j}">${esc(c.s)} · ${esc(c.v)}${c.kal?" · "+esc(c.kal):""}${c.na?" ⚠":""}</option>`).join("")}<option value="-1"${a?"":" selected"}>– nicht übernehmen –</option></select>
+        <label class="f"><input data-dq="${i}" type="number" inputmode="decimal" step="any" value="${a?esc(mengeFuer(a,p.q,p.words)):""}" aria-label="Menge ${i+1}"><span class="u" data-du="${i}">${a?"je "+esc(a.e):""}</span></label></div>`; }).join("");
+  box.querySelectorAll("[data-dp]").forEach(sel => sel.onchange = () => { const i=+sel.dataset.dp; const p=dikPrev.pos[i]; const a=p.cands[+sel.value];
+    const q=box.querySelector(`[data-dq="${i}"]`); const u=box.querySelector(`[data-du="${i}"]`); q.value = a ? mengeFuer(a,p.q,p.words) : ""; u.textContent = a ? "je "+a.e : ""; });
+}
+$("#dik").addEventListener("input", () => { clearTimeout(prevT); prevT=setTimeout(buildPrev, 350); });
 $("#dik-go").onclick = () => {
   if(!$("#dik").value.trim()){ toast("Das Feld ist noch leer – erst sprechen (Mikrofon) oder tippen."); $("#dik").focus(); return; }
-  const r = parseDiktat($("#dik").value);
-  if(!S.erz){ for(const w of r.rest){ const e=searchErz(w)[0]; if(e && norm(w).length>2){ S.erz={kd:e.kd,n:e.n}; break; } } }
-  let n=0; r.pos.forEach(x => { if(x.cands.length){ S.pos.push({n:x.cands[0].n, q:String(x.q), m:"", c:x.cands.map(a=>a.n), src:"Diktat", o:x.words}); n++; } });
+  buildPrev();
+  const box=$("#dik-prev"); let n=0, erzOk=false; const miss=[];
+  if(dikPrev){
+    const es=box.querySelector("#dp-erz");
+    if(es && +es.value>=0 && !S.erz){ const e=dikPrev.erz[+es.value]; S.erz={kd:e.kd,n:e.n}; erzOk=true; }
+    dikPrev.pos.forEach((p,i)=>{ const sel=box.querySelector(`[data-dp="${i}"]`); const j=sel?+sel.value:-1; const a=p.cands[j];
+      if(!a){ miss.push("„"+p.words+"“"); return; }
+      const q=box.querySelector(`[data-dq="${i}"]`).value;
+      S.pos.push({n:a.n, q:String(q), m:"", c:p.cands.map(z=>z.n), src:"Diktat", o:p.words}); n++; });
+  }
   persist(); renderAll();
-  const miss = r.pos.filter(x=>!x.cands.length).map(x=>"„"+x.words+"“");
-  toast(n ? `${n} Position${n>1?"en":""} übernommen${miss.length?" · nicht erkannt: "+miss.join(", "):""}` : (S.erz && r.rest.length ? "Erzeuger übernommen" : "Nichts erkannt – bitte z. B. „Flexi Kuri 80“ sprechen (Sorte + Menge)."));
-  if(n || (S.erz && r.rest.length)) $("#dik").value="";
+  toast(n ? `${n} Position${n>1?"en":""} übernommen${erzOk?" · Erzeuger gesetzt":""}${miss.length?" · nicht übernommen: "+miss.join(", "):""}` : (erzOk ? "Erzeuger übernommen" : "Nichts erkannt – bitte z. B. „Flexi Kuri 80“ sprechen (Sorte + Menge)."));
+  if(n || erzOk){ $("#dik").value=""; box.hidden=true; dikPrev=null; }
 };
 ["erst","lief","ref","nach","bearb"].forEach(id => { const el=$("#"+id); if(el.type==="checkbox") el.checked=S[id]; else el.value=S[id]||"";
   el.oninput = el.onchange = () => { S[id] = el.type==="checkbox" ? el.checked : el.value.trim(); persist(); renderSum(); }; });
 function neueAB(){
   S=fresh(); persist(); ["erst","lief","ref","nach","bearb"].forEach(id=>{const el=$("#"+id); if(el.type==="checkbox") el.checked=S[id]; else el.value=S[id]||"";});
-  ["#dik","#erz-q","#art-q"].forEach(q=>{ const el=$(q); if(el) el.value=""; }); const ir=$("#imp-result"); if(ir) ir.hidden=true;
+  ["#dik","#erz-q","#art-q"].forEach(q=>{ const el=$(q); if(el) el.value=""; }); $("#dik-prev").hidden=true; dikPrev=null; const ir=$("#imp-result"); if(ir) ir.hidden=true;
   renderAll(); renderErzList(); renderArtList(); show("v-best"); toast("Neue AB begonnen");
 }
 document.querySelectorAll("[data-new]").forEach(b => b.onclick = () => {
@@ -532,11 +668,16 @@ if(SR){
   document.querySelectorAll(".mic").forEach(b => { b.hidden=false; b.onclick = () => {
     if(rec){ rec.stop(); return; }
     target = $("#"+b.dataset.mic); base = target.value ? target.value.replace(/\s*$/," ") : "";
-    rec = new SR(); rec.lang="de-DE"; rec.interimResults=true; rec.continuous=true;
+    rec = new SR(); rec.lang="de-DE"; rec.interimResults=true; rec.continuous=true; rec.maxAlternatives=5;
+    try{ if("phrases" in rec && window.SpeechRecognitionPhrase){ const v=vocab(); rec.phrases = [...v.art.slice(0,400), ...v.erz.slice(0,200)].map(x=>new SpeechRecognitionPhrase(x.d, 5.0)); } }catch(e){}
     b.classList.add("on");
+    const passt = t => { const v=vocab(); const L=[...v.art,...v.erz]; return norm(t).split(/[^a-z]+/).filter(x=>x.length>=3 && L.some(y=>y.w===x)).length; };
     rec.onresult = ev => { let fin="", part="";
-      for(let i=ev.resultIndex;i<ev.results.length;i++){ const t=ev.results[i][0].transcript; if(ev.results[i].isFinal) fin+=t; else part+=t; }
-      if(fin){ base = base + fin.trim() + (target.id==="dik" ? ", " : " "); }
+      for(let i=ev.resultIndex;i<ev.results.length;i++){
+        const res=ev.results[i];
+        if(res.isFinal){ let bestT=res[0].transcript, bestS=-1; for(let j=0;j<res.length;j++){ const sc=passt(res[j].transcript)*10 + (res[j].confidence||0); if(sc>bestS){ bestS=sc; bestT=res[j].transcript; } } fin+=bestT; }
+        else part+=res[0].transcript; }
+      if(fin){ const f = target.id==="dik" ? korrAnzeige(fin.trim()) : fin.trim(); base = base + f + (target.id==="dik" ? ", " : " "); }
       target.value = (base + part).trim(); target.dispatchEvent(new Event("input")); };
     rec.onerror = ev => { if(ev.error==="not-allowed") toast("Mikrofon nicht erlaubt – bitte in den Browser-Einstellungen freigeben."); };
     rec.onend = () => { b.classList.remove("on"); rec=null; };
@@ -706,7 +847,8 @@ async function handleFiles(list){
   runImport(text, imgs.slice(0,imgMax), names.join(", "));
 }
 function setImpStatus(t){ $("#imp-status").hidden = !t; if(t) $("#imp-status-t").textContent=t; $("#imp-drop").style.pointerEvents = t ? "none" : ""; }
-async function runImport(text, imgs, quelle){
+async function runImport(text, imgs, quelle, opt){
+  opt = opt || {};
   impCtl = new AbortController();
   setImpStatus("Claude liest die Bestellung …"); $("#imp-result").hidden=true;
   const prompt = `Du liest eine Saatgut-Bestellung eines Gemüsebauern an die Vermarktungsgesellschaft Bio-Bauern mbH (VG Bio). Quelle: E-Mail, Bestellschein, Fax, Foto oder Notiz.
@@ -721,7 +863,11 @@ Antworte nur mit JSON in dieser Form:
 KATALOG (Art.-Nr. | Kultur | Sorte | Variante | Kaliber | Züchter | Einheit):
 ${CATALOG}
 
-DOKUMENT${imgs.length? " (siehe "+imgs.length+" Bild(er))":""}:
+${opt.diktat ? `HINWEIS: Der Text stammt aus einer Spracherkennung. Namen können lautähnlich falsch geschrieben sein (z. B. „Flechsig Curi“ = Flexi Kuri, „Käser“ = Käßer, „Belesko“ = Bellesco). Ordne nach Klang zu. Zahlen wie 400.000 sind Korn, außer es heißt Einheiten/EH.
+ERZEUGER (Name | Ort | Kd-Nr.), wähle den lautähnlichsten:
+${ERS.map(e=>[e.n,e.o,e.kd].filter(Boolean).join(" | ")).join("\n")}
+
+` : ""}DOKUMENT${imgs.length? " (siehe "+imgs.length+" Bild(er))":""}:
 ${text ? text.slice(0,40000) : "(nur Bild)"}`;
   try{
     const res = await askClaude(prompt, imgs, impCtl.signal);
@@ -739,6 +885,10 @@ ${text ? text.slice(0,40000) : "(nur Bild)"}`;
   }finally{ setImpStatus(null); impCtl=null; }
 }
 $("#imp-stop").onclick = () => { if(impCtl) impCtl.abort(); };
+$("#dik-ki").onclick = () => { const t=$("#dik").value.trim(); if(!t){ toast("Das Feld ist noch leer – erst sprechen oder tippen."); $("#dik").focus(); return; }
+  if(!sampler){ toast("KI-Abgleich hier nicht verfügbar – bitte „Positionen übernehmen“ nutzen."); return; }
+  $("#imp-card").scrollIntoView({behavior:"smooth", block:"start"});
+  runImport(normZahlen(t), [], "Diktat", {diktat:true}).then(()=>{ if($("#imp-result") && !$("#imp-result").hidden) $("#dik").value=""; }); };
 function applyImport(r, quelle){
   const pos = Array.isArray(r.positionen) ? r.positionen : [];
   const unklar = (Array.isArray(r.unklar) ? r.unklar : []).map(String).filter(x=>x.trim());
@@ -788,9 +938,9 @@ async function loadStamm(){
   if(error) throw error;
   const by = Object.fromEntries((data||[]).map(r => [r.id, r]));
   if(!by.katalog || !by.erzeuger){ $("#stamm-info").textContent = "Noch keine Preisliste hinterlegt – bitte Excel-Datei hochladen."; return false; }
-  initData(by.katalog.data, by.erzeuger.data);
+  initData(by.katalog.data, by.erzeuger.data, by.erzeuger_gbb ? by.erzeuger_gbb.data : []);
   const d = new Date(by.katalog.updated_at).toLocaleDateString("de-DE");
-  $("#stamm-info").textContent = `${ARTS.length} Artikel · ${ERS.length} Erzeuger · ${by.katalog.stand||""} (hochgeladen ${d})`;
+  $("#stamm-info").textContent = `${ARTS.length} Artikel · ${ERS.length} Erzeuger (davon ${ERS.filter(e=>e.src==="GBB").length} aus der GBB-App) · ${by.katalog.stand||""} (hochgeladen ${d})`;
   return true;
 }
 async function excelLesen(file){
