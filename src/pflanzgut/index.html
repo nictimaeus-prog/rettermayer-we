@@ -99,6 +99,7 @@ td input,td select{padding:5px 7px;font-size:13.5px}
   <button role="tab" aria-selected="true" data-view="v-ueb">Übersicht</button>
   <button role="tab" aria-selected="false" data-view="v-auf">Kundenaufträge</button>
   <button role="tab" aria-selected="false" data-view="v-best">Einkauf bei Vermehrern</button>
+  <button role="tab" aria-selected="false" data-view="v-tour">Touren</button>
   <button role="tab" aria-selected="false" data-view="v-part">Partien</button>
   <button role="tab" aria-selected="false" data-view="v-stamm">Sorten &amp; Lieferanten</button>
   <button role="tab" aria-selected="false" data-view="v-kund">Kunden</button>
@@ -152,6 +153,21 @@ td input,td select{padding:5px 7px;font-size:13.5px}
   <section class="card" id="best-edit" hidden></section>
 </main>
 
+<!-- Touren -->
+<main id="v-tour" hidden>
+  <section class="card" id="tour-list-card">
+    <div class="row"><h2 class="grow">Touren der Speditionen</h2><button class="btn" id="tour-neu">+ Neue Tour</button></div>
+    <div class="row">
+      <select id="tour-sp" style="width:auto"></select>
+      <select id="tour-lz" style="width:auto"><option value="">Herbst und Frühjahr</option><option value="Herbst">Herbst (Dez. – Mitte Jan.)</option><option value="Frühjahr">Frühjahr (März – April)</option></select>
+      <select id="tour-stat" style="width:auto"><option value="">alle Status</option><option>geplant</option><option>beauftragt</option><option>gefahren</option><option>storniert</option></select>
+    </div>
+    <p class="hint" id="tour-ohne"></p>
+    <div class="tw"><table id="tour-t"></table></div>
+  </section>
+  <section class="card" id="tour-edit" hidden></section>
+</main>
+
 <!-- Partien -->
 <main id="v-part" hidden>
   <section class="card">
@@ -180,10 +196,10 @@ td input,td select{padding:5px 7px;font-size:13.5px}
     <div class="tw" style="max-height:46vh"><table id="sorte-t"></table></div>
   </section>
   <section class="card">
-    <div class="row"><h2 class="grow">Lieferanten: Züchter, Vermehrer, VO-Firmen</h2></div>
+    <div class="row"><h2 class="grow">Lieferanten: Züchter, Vermehrer, VO-Firmen, Speditionen</h2></div>
     <div class="grid">
       <label class="f">Name<input type="text" id="ln-name"></label>
-      <label class="f">Art<select id="ln-typ"><option>Vermehrer</option><option>VO</option><option>Züchter</option></select></label>
+      <label class="f">Art<select id="ln-typ"><option>Vermehrer</option><option>VO</option><option>Züchter</option><option>Spedition</option></select></label>
       <label class="f">VO-Firma (bei Vermehrern)<input type="text" id="ln-vo" list="dl-vo"></label>
       <label class="f">E-Mail<input type="email" id="ln-mail"></label>
       <div class="row" style="align-self:end"><button class="btn sm" id="ln-add">Lieferant anlegen</button></div>
@@ -222,6 +238,7 @@ td input,td select{padding:5px 7px;font-size:13.5px}
 <datalist id="dl-vo"></datalist>
 <datalist id="dl-lief"></datalist>
 <datalist id="dl-kunden"></datalist>
+<datalist id="dl-sped"></datalist>
 
 <div class="toast" id="toast" hidden></div>
 
@@ -261,9 +278,19 @@ function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false
 const CFG = window.RWE_CONFIG || {};
 const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {auth: {persistSession: true, autoRefreshToken: true, storageKey: "rwe-auth"}});
 let me = null;
-const D = {sorten: [], lief: [], kunden: [], partien: [], best: [], pos: [], zu: [], auf: [], apos: [], azu: []};
+const D = {sorten: [], lief: [], kunden: [], partien: [], best: [], pos: [], zu: [], auf: [], apos: [], azu: [], touren: []};
 const LZ = ["Herbst", "Frühjahr"];
 const LZNAME = {Herbst: "Herbst (Dez. – Mitte Jan.)", "Frühjahr": "Frühjahr (März – April)"};
+const VP = ["Big Bag", "Sack 25 kg", "lose"];
+const LA = ["Anlieferung", "Abholung ab Vermehrer"];
+// Big Bag: Standard 11 dt (eigene Vermehrer/Gruppe), holländische Ware oft 12,5 dt (im Sortenkatalog hinterlegt)
+const bbStd = sorte => { const so = D.sorten.find(x => x.name === sorte); return so && so.bb_dt ? num(so.bb_dt) : 11; };
+function gebinde(p){
+  const m = num(p.menge_dt);
+  if (p.verpackung === "Big Bag"){ const bb = num(p.bb_dt) || 11; return {n: Math.ceil(m / bb - 0.001), txt: `${Math.ceil(m / bb - 0.001)} BB à ${fmt(bb, bb % 1 ? 1 : 0)} dt`}; }
+  if (p.verpackung === "Sack 25 kg") return {n: Math.ceil(m * 4 - 0.001), txt: `${Math.ceil(m * 4 - 0.001)} Sack à 25 kg`};
+  return {n: 0, txt: "lose"};
+}
 // Einkauf (Bestellungen bei Vermehrern, VOs, Züchtern) und Verkauf (Kundenaufträge) teilen sich Maske und Logik
 const K = {
   best: {head: "pfg_bestellungen", pos: "pfg_bestellpos", zu: "pfg_zuordnung", fk: "bestellung_id", H: "best", P: "pos", Z: "zu", list: "#best-list-card", edit: "#best-edit", titel: "Bestellung", neu: "Neue Bestellung"},
@@ -282,9 +309,9 @@ async function all(table, order){
   return out;
 }
 async function loadAll(){
-  const [s, l, k, p, b, pos, z, a, apos, azu] = await Promise.all([all("pfg_sorten", "name"), all("pfg_lieferanten", "name"), all("pfg_kunden", "name"), all("pfg_partien", "sorte"),
-    all("pfg_bestellungen", "nr"), all("pfg_bestellpos", "pos"), all("pfg_zuordnung"), all("pfg_auftraege", "nr"), all("pfg_auftragpos", "pos"), all("pfg_auftrag_zuordnung")]);
-  Object.assign(D, {sorten: s, lief: l, kunden: k, partien: p, best: b, pos, zu: z, auf: a, apos, azu});
+  const [s, l, k, p, b, pos, z, a, apos, azu, tou] = await Promise.all([all("pfg_sorten", "name"), all("pfg_lieferanten", "name"), all("pfg_kunden", "name"), all("pfg_partien", "sorte"),
+    all("pfg_bestellungen", "nr"), all("pfg_bestellpos", "pos"), all("pfg_zuordnung"), all("pfg_auftraege", "nr"), all("pfg_auftragpos", "pos"), all("pfg_auftrag_zuordnung"), all("pfg_touren", "nr")]);
+  Object.assign(D, {sorten: s, lief: l, kunden: k, partien: p, best: b, pos, zu: z, auf: a, apos, azu, touren: tou});
   fillLists(); renderAll();
 }
 const kundeLabel = k => `${k.name} · ${k.kdnr}${k.ort ? " · " + k.ort : ""}`;
@@ -386,10 +413,10 @@ function renderAufList(){
     (!q || norm([a.nr, a.kunde, a.kdnr, a.bemerkung, ...posOfK("auf", a.id).map(p => p.sorte)].join(" ")).includes(q)))
     .sort((a, b) => b.nr.localeCompare(a.nr));
   const tot = list.filter(a => a.status !== "storniert").reduce((s, a) => s + summeK("auf", a), 0);
-  $("#auf-t").innerHTML = `<thead><tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Kd.-Nr.</th><th>Ort</th><th>Lieferung</th><th>Sorten</th><th class="n">Pos.</th><th class="n">Menge dt</th><th>Partien</th><th>Status</th></tr></thead><tbody>` +
+  $("#auf-t").innerHTML = `<thead><tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Kd.-Nr.</th><th>Ort</th><th>Lieferung</th><th>Lieferart / Tour</th><th>Sorten</th><th class="n">Pos.</th><th class="n">Menge dt</th><th>Partien</th><th>Status</th></tr></thead><tbody>` +
     (list.map(a => { const ps = posOfK("auf", a.id), k = D.kunden.find(x => x.kdnr === a.kdnr) || {};
-      return `<tr class="click" data-id="${a.id}"><td><b>${esc(a.nr)}</b></td><td>${esc(datum(a.datum))}</td><td>${esc(a.kunde)}</td><td>${esc(a.kdnr || "")}</td><td>${esc(k.ort || "")}</td><td>${esc(a.lieferzeitraum)}</td><td>${esc(ps.map(p => p.sorte + (p.sortierung !== "NS" ? " " + p.sortierung : "")).join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("auf", a))}</td><td>${aufPill(offenK("auf", a))}</td><td>${statPill(a.status)}</td></tr>`; }).join("") || `<tr><td colspan="11" class="empty">Noch keine Kundenaufträge – mit „+ Neuer Auftrag“ anlegen</td></tr>`) +
-    `</tbody><tfoot><tr class="sum"><td colspan="8">${list.length} Aufträge</td><td class="n">${fdt(tot)}</td><td colspan="2"></td></tr></tfoot>`;
+      return `<tr class="click" data-id="${a.id}"><td><b>${esc(a.nr)}</b></td><td>${esc(datum(a.datum))}</td><td>${esc(a.kunde)}</td><td>${esc(a.kdnr || "")}</td><td>${esc(k.ort || "")}</td><td>${esc(a.lieferzeitraum)}</td><td>${a.lieferart === "Anlieferung" ? (a.tour_id && tourOf(a.tour_id) ? `<span class="pill b">${esc(tourOf(a.tour_id).nr + " " + tourOf(a.tour_id).spedition)}</span>` : `<span class="pill a">Anlieferung, ohne Tour</span>`) : "Abholung"}${a.entlade_abweichend ? ` <span class="pill" title="abweichende Entladestelle">abw. Entladestelle</span>` : ""}</td><td>${esc(ps.map(p => p.sorte + (p.sortierung !== "NS" ? " " + p.sortierung : "")).join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("auf", a))}</td><td>${aufPill(offenK("auf", a))}</td><td>${statPill(a.status)}</td></tr>`; }).join("") || `<tr><td colspan="12" class="empty">Noch keine Kundenaufträge – mit „+ Neuer Auftrag“ anlegen</td></tr>`) +
+    `</tbody><tfoot><tr class="sum"><td colspan="9">${list.length} Aufträge</td><td class="n">${fdt(tot)}</td><td colspan="2"></td></tr></tfoot>`;
 }
 ["#auf-q", "#auf-lz", "#auf-stat", "#auf-offen"].forEach(s => $(s).addEventListener("input", renderAufList));
 $("#auf-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openEdit("auf", tr.dataset.id); });
@@ -397,16 +424,17 @@ $("#auf-neu").onclick = () => openEdit("auf", null);
 
 // ---------- Bearbeiten (gemeinsame Maske)
 let E = null;
-function newPos(){ return {id: null, sorte: "", sortierung: "NS", menge_dt: null, bemerkung: "", zu: [], modus: "spaeter"}; }
+function newPos(){ return {id: null, sorte: "", sortierung: "NS", verpackung: "Big Bag", bb_dt: 11, menge_dt: null, bemerkung: "", zu: [], modus: "spaeter"}; }
 function openEdit(kind, id, preset){
   const c = K[kind];
+  Object.keys(K).forEach(k => { if (k !== kind){ $(K[k].edit).hidden = true; $(K[k].edit).innerHTML = ""; $(K[k].list).hidden = false; } }); // nur eine Maske gleichzeitig
   if (id){
     const h = headOf(kind, id);
-    E = Object.assign({}, h, {kind, pos: posOfK(kind, id).map(p => { const z = zuOfK(kind, p.id); return {id: p.id, sorte: p.sorte, sortierung: p.sortierung, menge_dt: num(p.menge_dt), bemerkung: p.bemerkung || "", zu: z.map(z => ({partie_id: z.partie_id, menge_dt: num(z.menge_dt)})), modus: z.length ? "partie" : "spaeter"}; })});
+    E = Object.assign({}, h, {kind, pos: posOfK(kind, id).map(p => { const z = zuOfK(kind, p.id); return {id: p.id, sorte: p.sorte, sortierung: p.sortierung, verpackung: p.verpackung || "Big Bag", bb_dt: num(p.bb_dt) || 11, menge_dt: num(p.menge_dt), bemerkung: p.bemerkung || "", zu: z.map(z => ({partie_id: z.partie_id, menge_dt: num(z.menge_dt)})), modus: z.length ? "partie" : "spaeter"}; })});
   } else if (kind === "best"){
     E = {kind, id: null, nr: "neu", lieferant: "", lieferant_typ: "Vermehrer", vo: "", datum: new Date().toISOString().slice(0, 10), liefertermin: "Frühjahr", status: "offen", bemerkung: "", pos: [newPos()]};
   } else {
-    E = {kind, id: null, nr: "neu", kdnr: preset ? preset.kdnr : null, kunde: preset ? preset.name : "", datum: new Date().toISOString().slice(0, 10), lieferzeitraum: "Frühjahr", status: "offen", bemerkung: "", pos: [newPos()]};
+    E = {kind, id: null, nr: "neu", kdnr: preset ? preset.kdnr : null, kunde: preset ? preset.name : "", datum: new Date().toISOString().slice(0, 10), lieferzeitraum: "Frühjahr", lieferart: "Anlieferung", entlade_abweichend: false, tour_id: null, status: "offen", bemerkung: "", pos: [newPos()]};
   }
   show(kind === "best" ? "v-best" : "v-auf");
   $(c.list).hidden = true; $(c.edit).hidden = false; renderEdit(); window.scrollTo(0, 0);
@@ -447,7 +475,7 @@ function renderEdit(){
   ${kd ? `<p class="hint">${esc([kd.strasse, [kd.plz, kd.ort].filter(Boolean).join(" "), kd.telefon || kd.mobil, kd.email].filter(Boolean).join(" · "))}</p>` : (E.kunde ? `<p class="hint">Kunde nicht in der büro+-Liste – wird nur mit Namen gespeichert.</p>` : "")}`;
   box.innerHTML = `
   <div class="row"><h2 class="grow">${E.id ? c.titel + " " + esc(E.nr) : c.neu}</h2><button class="btn sec" id="e-back">← zurück</button></div>
-  ${head}
+  ${head}${E.kind === "auf" ? logiHtml() : ""}
   <label class="f">Bemerkung<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
   <h3>Positionen</h3>
   <div id="e-pos" style="display:grid;gap:8px">${E.pos.map((p, i) => posHtml(p, i)).join("")}</div>
@@ -455,19 +483,47 @@ function renderEdit(){
   <div class="row">${E.id ? `<button class="btn red" id="e-del">${c.titel} löschen</button>` : ""}<span class="grow"></span><button class="btn" id="e-save">Speichern</button></div>`;
   wireEdit();
 }
+const tourOf = id => D.touren.find(t => t.id === id);
+const tourLabel = t => `${t.nr} · ${t.spedition}${t.datum ? " · " + datum(t.datum) : ""}${t.status !== "geplant" ? " · " + t.status : ""}`;
+function ladestellen(zuList){
+  const m = {}; zuList.forEach(z => { const x = partie(z.partie_id); if (!x) return; m[x.vermehrer] = (m[x.vermehrer] || 0) + num(z.menge_dt); });
+  return Object.entries(m).map(([v, dt]) => { const l = D.lief.find(l => l.name === v && l.typ === "Vermehrer"); return {name: v, dt, adresse: l && l.adresse}; });
+}
+function logiHtml(){
+  const tours = D.touren.filter(t => t.status !== "storniert" && t.lieferzeitraum === E.lieferzeitraum);
+  const cur = E.tour_id && !tours.some(t => t.id === E.tour_id) ? tourOf(E.tour_id) : null;
+  const ls = ladestellen(E.pos.flatMap(p => p.zu));
+  const lsTxt = ls.length ? ls.map(l => l.name + (l.adresse ? " (" + l.adresse + ")" : "")).join(", ") : "Partie noch nicht zugeordnet – Abholstelle ergibt sich aus der Partie";
+  const v = k => esc(E[k] || "");
+  return `<div class="grid" style="grid-template-columns:1.2fr 1.6fr 1.6fr">
+    <label class="f">Lieferart<select id="e-la">${LA.map(x => `<option ${E.lieferart === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
+    ${E.lieferart === "Anlieferung" ? `<label class="f">Tour (Spedition)<select id="e-tour"><option value="">noch keiner Tour zugeordnet</option>${tours.map(t => `<option value="${t.id}" ${E.tour_id === t.id ? "selected" : ""}>${esc(tourLabel(t))}</option>`).join("")}${cur ? `<option value="${cur.id}" selected>${esc(tourLabel(cur))}</option>` : ""}</select></label>
+    <label class="row" style="align-self:end;font-size:14px;gap:6px;padding-bottom:8px"><input type="checkbox" id="e-abw" ${E.entlade_abweichend ? "checked" : ""}> abweichende Entladestelle</label>`
+    : `<p class="hint" style="align-self:end;grid-column:span 2;margin:0 0 8px">Abholung durch den Kunden beim Vermehrer: ${esc(lsTxt)}</p>`}
+  </div>
+  ${E.lieferart === "Anlieferung" && E.entlade_abweichend ? `<div class="grid" style="background:var(--pick);border-radius:10px;padding:10px">
+    <label class="f">Entladestelle (Name)<input type="text" id="e-en" value="${v("entlade_name")}"></label>
+    <label class="f">Straße<input type="text" id="e-es" value="${v("entlade_strasse")}"></label>
+    <label class="f">PLZ<input type="text" id="e-ep" value="${v("entlade_plz")}"></label>
+    <label class="f">Ort<input type="text" id="e-eo" value="${v("entlade_ort")}"></label>
+    <label class="f">Hinweis (Ansprechpartner, Telefon, Zeitfenster)<input type="text" id="e-eh" value="${v("entlade_hinweis")}"></label>
+  </div>` : ""}`;
+}
 function posHtml(p, i){
   const zs = p.zu.reduce((a, z) => a + num(z.menge_dt), 0), rest = num(p.menge_dt) - zs;
   const offen = p.sorte && num(p.menge_dt) > 0 && rest > 0.05;
   const k = p.sorte ? kandidaten(p) : [];
   return `<div class="pos ${offen && p.modus === "partie" ? "open" : ""}" data-i="${i}">
-    <div class="grid" style="grid-template-columns:2fr 1.3fr 1fr 2fr auto">
+    <div class="grid" style="grid-template-columns:1.8fr 1.4fr 1fr 1.3fr${p.verpackung === "Big Bag" ? " .8fr" : ""} 1.7fr auto">
       <label class="f">Sorte<input type="text" class="p-sorte" list="dl-sorten" value="${esc(p.sorte)}" placeholder="aus dem Katalog"></label>
       <label class="f">Sortierung<select class="p-sort">${SORTS.map(s => `<option value="${s}" ${p.sortierung === s ? "selected" : ""}>${SORTNAME[s]}${s === "NS" ? " (NS)" : s === "ÜG" ? " (ÜG)" : ""}</option>`).join("")}</select></label>
       <label class="f">Menge dt<input type="number" step="0.1" min="0" class="p-m" value="${p.menge_dt == null ? "" : p.menge_dt}"></label>
+      <label class="f">Verpackung<select class="p-vp">${VP.map(x => `<option ${p.verpackung === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
+      ${p.verpackung === "Big Bag" ? `<label class="f">BB-Größe<select class="p-bb">${[11, 12.5].concat([11, 12.5].includes(num(p.bb_dt)) ? [] : [num(p.bb_dt)]).map(x => `<option value="${x}" ${num(p.bb_dt) === x ? "selected" : ""}>${fmt(x, x % 1 ? 1 : 0)} dt</option>`).join("")}</select></label>` : ""}
       <label class="f">Partie<select class="p-mod"><option value="spaeter" ${p.modus === "spaeter" ? "selected" : ""}>später zuordnen</option><option value="partie" ${p.modus === "partie" ? "selected" : ""}>jetzt auf Partie(n) zuordnen</option></select></label>
       <div class="row" style="align-self:end"><button class="btn red sm p-x" title="Position entfernen">✕</button></div>
     </div>
-    <div class="row hint">${p.sorte ? `${k.length} passende Partie(n)` : "Sorte wählen"}${zs > 0 ? ` · zugeordnet ${fdt(zs)} dt` : ""} ${offen && zs > 0 ? `· <span class="pill a">offen ${fdt(rest)} dt</span>` : (zs > 0 && !offen ? `· <span class="pill g">vollständig</span>` : "")} ${p.bemerkung && !(/Aufteilung auf \d+ Partien offen/.test(p.bemerkung) && !offen) ? "· " + esc(p.bemerkung) : ""}</div>
+    <div class="row hint">${num(p.menge_dt) > 0 ? `<b>${esc(gebinde(p).txt)}</b> · ` : ""}${p.sorte ? `${k.length} passende Partie(n)` : "Sorte wählen"}${zs > 0 ? ` · zugeordnet ${fdt(zs)} dt` : ""} ${offen && zs > 0 ? `· <span class="pill a">offen ${fdt(rest)} dt</span>` : (zs > 0 && !offen ? `· <span class="pill g">vollständig</span>` : "")} ${p.bemerkung && !(/Aufteilung auf \d+ Partien offen/.test(p.bemerkung) && !offen) ? "· " + esc(p.bemerkung) : ""}</div>
     ${p.modus === "partie" && p.sorte ? allocHtml(p, k) : ""}
   </div>`;
 }
@@ -483,7 +539,13 @@ function allocHtml(p, k){
 }
 function readHead(){
   if (E.kind === "best"){ E.lieferant_typ = $("#e-typ").value; E.lieferant = $("#e-lief").value.trim(); E.vo = $("#e-vo").value.trim(); E.liefertermin = $("#e-lz").value; }
-  else { E.lieferzeitraum = $("#e-lz").value; }
+  else {
+    E.lieferzeitraum = $("#e-lz").value; E.lieferart = $("#e-la").value;
+    E.tour_id = E.lieferart === "Anlieferung" && $("#e-tour") ? ($("#e-tour").value || null) : null;
+    if ($("#e-abw")) E.entlade_abweichend = $("#e-abw").checked;
+    if (E.lieferart !== "Anlieferung") E.entlade_abweichend = false;
+    [["#e-en", "entlade_name"], ["#e-es", "entlade_strasse"], ["#e-ep", "entlade_plz"], ["#e-eo", "entlade_ort"], ["#e-eh", "entlade_hinweis"]].forEach(([id, f]) => { if ($(id)) E[f] = $(id).value.trim(); });
+  }
   E.datum = $("#e-datum").value; E.status = $("#e-stat").value; E.bemerkung = $("#e-bem").value.trim();
 }
 function kundeAus(v){
@@ -501,17 +563,23 @@ function wireEdit(){
     $("#e-kunde").onchange = ev => { readHead(); kundeAus(ev.target.value); renderEdit(); };
   }
   ["#e-datum", "#e-lz", "#e-stat", "#e-bem"].forEach(s => $(s).onchange = readHead);
+  if (E.kind === "auf"){
+    ["#e-lz", "#e-la", "#e-abw"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); renderEdit(); }; });
+    ["#e-tour", "#e-en", "#e-es", "#e-ep", "#e-eo", "#e-eh"].forEach(s => { if ($(s)) $(s).onchange = readHead; });
+  }
   $("#e-add").onclick = () => { readHead(); E.pos.push(newPos()); renderEdit(); const l = $$("#e-pos .p-sorte"); if (l.length) l[l.length - 1].focus(); };
   $$("#e-pos .pos").forEach(el => {
     const i = +el.dataset.i, p = E.pos[i];
-    el.querySelector(".p-sorte").onchange = ev => { readHead(); p.sorte = ev.target.value.trim(); p.zu = []; renderEdit(); };
+    el.querySelector(".p-sorte").onchange = ev => { readHead(); p.sorte = ev.target.value.trim(); p.zu = []; p.bb_dt = bbStd(p.sorte); renderEdit(); };
+    el.querySelector(".p-vp").onchange = ev => { readHead(); p.verpackung = ev.target.value; if (p.verpackung === "Big Bag" && !p.bb_dt) p.bb_dt = p.zu.length ? 11 : bbStd(p.sorte); renderEdit(); };
+    const bbSel = el.querySelector(".p-bb"); if (bbSel) bbSel.onchange = ev => { readHead(); p.bb_dt = num(ev.target.value); renderEdit(); };
     el.querySelector(".p-sort").onchange = ev => { readHead(); p.sortierung = ev.target.value; p.zu = []; renderEdit(); };
     el.querySelector(".p-m").onchange = ev => { readHead(); p.menge_dt = numIn(ev.target.value); if (p.modus === "partie" && p.zu.length === 0) autoVerteilen(p); renderEdit(); };
     el.querySelector(".p-mod").onchange = ev => { readHead(); p.modus = ev.target.value; if (p.modus === "spaeter") p.zu = []; else if (!p.zu.length) autoVerteilen(p); renderEdit(); };
     el.querySelector(".p-x").onclick = () => { readHead(); E.pos.splice(i, 1); if (!E.pos.length) E.pos.push(newPos()); renderEdit(); };
     el.querySelectorAll(".a-m").forEach(inp => inp.onchange = ev => {
       readHead(); const v = numIn(ev.target.value), pid = ev.target.dataset.pid;
-      p.zu = p.zu.filter(z => z.partie_id !== pid); if (v && v > 0) p.zu.push({partie_id: pid, menge_dt: v}); renderEdit();
+      p.zu = p.zu.filter(z => z.partie_id !== pid); if (v && v > 0) p.zu.push({partie_id: pid, menge_dt: v}); if (p.zu.length && p.verpackung === "Big Bag") p.bb_dt = 11; renderEdit();
     });
     const au = el.querySelector(".a-auto"); if (au) au.onclick = () => { readHead(); autoVerteilen(p); renderEdit(); };
   });
@@ -529,7 +597,14 @@ function autoVerteilen(p){
     if (z) z.menge_dt = schon + m; else p.zu.push({partie_id: x.id, menge_dt: m});
     rest -= m;
   }
+  if (p.zu.length && p.verpackung === "Big Bag") p.bb_dt = 11; // Ware aus der eigenen Vermehrung: Standard-Big-Bag 11 dt
   if (rest > 0.05) toast(`Nicht genug freie Menge in passenden Partien – ${fdt(rest)} dt bleiben offen`);
+}
+function tourPosFuer(e){
+  if (!e.tour_id) return null;
+  const alt = e.id ? headOf("auf", e.id) : null;
+  if (alt && alt.tour_id === e.tour_id && alt.tour_pos != null) return alt.tour_pos;
+  return D.auf.filter(a => a.tour_id === e.tour_id && a.id !== e.id).reduce((m, a) => Math.max(m, a.tour_pos || 0), 0) + 1;
 }
 async function saveEdit(){
   readHead();
@@ -554,7 +629,9 @@ async function saveEdit(){
     }
     const head = k === "best"
       ? {lieferant: E.lieferant, lieferant_typ: E.lieferant_typ, vo: E.vo || null, liefertermin: E.liefertermin || null}
-      : {kdnr: E.kdnr || null, kunde: E.kunde, lieferzeitraum: E.lieferzeitraum};
+      : {kdnr: E.kdnr || null, kunde: E.kunde, lieferzeitraum: E.lieferzeitraum, lieferart: E.lieferart, tour_id: E.tour_id || null, tour_pos: tourPosFuer(E),
+         entlade_abweichend: !!E.entlade_abweichend, entlade_name: E.entlade_abweichend ? (E.entlade_name || null) : null, entlade_strasse: E.entlade_abweichend ? (E.entlade_strasse || null) : null,
+         entlade_plz: E.entlade_abweichend ? (E.entlade_plz || null) : null, entlade_ort: E.entlade_abweichend ? (E.entlade_ort || null) : null, entlade_hinweis: E.entlade_abweichend ? (E.entlade_hinweis || null) : null};
     Object.assign(head, {datum: E.datum || null, status: E.status, bemerkung: E.bemerkung || null, bearbeiter: me.name, updated_at: new Date().toISOString()});
     let hid = E.id;
     if (hid){ const { error } = await sb.from(c.head).update(head).eq("id", hid); if (error) throw error; }
@@ -565,7 +642,7 @@ async function saveEdit(){
     for (let i = 0; i < pos.length; i++){
       const p = pos[i];
       const bem = (p.bemerkung || "").replace(/Aufteilung auf \d+ Partien offen/, "").trim();
-      const row = {[c.fk]: hid, sorte: p.sorte, sortierung: p.sortierung, menge_dt: num(p.menge_dt), pos: i + 1, bemerkung: bem || null};
+      const row = {[c.fk]: hid, sorte: p.sorte, sortierung: p.sortierung, verpackung: p.verpackung || "Big Bag", bb_dt: num(p.bb_dt) || 11, menge_dt: num(p.menge_dt), pos: i + 1, bemerkung: bem || null};
       let pid = p.id;
       if (pid){ const { error } = await sb.from(c.pos).update(row).eq("id", pid); if (error) throw error; }
       else { const { data, error } = await sb.from(c.pos).insert(row).select().single(); if (error) throw error; pid = data.id; }
@@ -598,14 +675,139 @@ $("#best-csv").onclick = () => {
   csvDownload(rows, "Pflanzgut_Bestellungen");
 };
 $("#auf-csv").onclick = () => {
-  const rows = [["Auftragsnr", "Datum", "Kundennr", "Kunde", "Lieferzeitraum", "Status", "Pos", "Sorte", "Sortierung", "Menge_dt", "Anerk_Nr", "Vermehrer", "Menge_Partie_dt", "Bemerkung"]];
-  D.auf.slice().sort((a, b) => a.nr.localeCompare(b.nr)).forEach(a => posOfK("auf", a.id).forEach(p => {
-    const base = [a.nr, a.datum, a.kdnr || "", a.kunde, a.lieferzeitraum, a.status, p.pos, p.sorte, p.sortierung, fmt(p.menge_dt)];
-    const zs = zuOfK("auf", p.id); if (!zs.length) rows.push(base.concat(["", "", "", a.bemerkung || ""]));
-    zs.forEach(z => { const x = partie(z.partie_id) || {}; rows.push(base.concat([x.anerk_nr || "", x.vermehrer || "", fmt(z.menge_dt), a.bemerkung || ""])); });
-  }));
+  const rows = [["Auftragsnr", "Datum", "Kundennr", "Kunde", "Lieferzeitraum", "Lieferart", "Tour", "Spedition", "Tour_Datum", "Stopp", "Entladestelle", "Entlade_Strasse", "Entlade_PLZ", "Entlade_Ort", "Entlade_Hinweis", "Status", "Pos", "Sorte", "Sortierung", "Verpackung", "BB_dt", "Gebinde", "Menge_dt", "Anerk_Nr", "Vermehrer", "Menge_Partie_dt", "Bemerkung"]];
+  D.auf.slice().sort((a, b) => a.nr.localeCompare(b.nr)).forEach(a => { const t = a.tour_id ? tourOf(a.tour_id) || {} : {}, e = entladestelle(a);
+    posOfK("auf", a.id).forEach(p => {
+      const base = [a.nr, a.datum, a.kdnr || "", a.kunde, a.lieferzeitraum, a.lieferart, t.nr || "", t.spedition || "", t.datum || "", a.tour_pos || "", e.name, e.strasse, e.plz, e.ort, e.hinweis, a.status, p.pos, p.sorte, p.sortierung, p.verpackung, p.verpackung === "Big Bag" ? fmt(p.bb_dt) : "", gebinde(p).n || "", fmt(p.menge_dt)];
+      const zs = zuOfK("auf", p.id); if (!zs.length) rows.push(base.concat(["", "", "", a.bemerkung || ""]));
+      zs.forEach(z => { const x = partie(z.partie_id) || {}; rows.push(base.concat([x.anerk_nr || "", x.vermehrer || "", fmt(z.menge_dt), a.bemerkung || ""])); });
+    }); });
   csvDownload(rows, "Pflanzgut_Kundenauftraege");
 };
+
+// ---------- Touren (Speditionen)
+let TE = null; // offene Tour im Bearbeiten
+function entladestelle(a){
+  if (a.entlade_abweichend) return {name: a.entlade_name || a.kunde, strasse: a.entlade_strasse || "", plz: a.entlade_plz || "", ort: a.entlade_ort || "", hinweis: a.entlade_hinweis || "", abw: true};
+  const k = D.kunden.find(x => x.kdnr === a.kdnr) || {};
+  return {name: a.kunde, strasse: k.strasse || "", plz: k.plz || "", ort: k.ort || "", hinweis: [k.telefon, k.mobil].filter(Boolean).join(" / "), abw: false};
+}
+const tourAuf = tid => D.auf.filter(a => a.tour_id === tid && a.status !== "storniert").sort((a, b) => (a.tour_pos || 0) - (b.tour_pos || 0));
+const aufMenge = a => posOfK("auf", a.id).reduce((s, p) => s + num(p.menge_dt), 0);
+function aufGebinde(a){
+  const z = {}; posOfK("auf", a.id).forEach(p => { const g = gebinde(p); const key = p.verpackung === "Big Bag" ? `BB ${fmt(num(p.bb_dt) || 11, (num(p.bb_dt) || 11) % 1 ? 1 : 0)} dt` : p.verpackung === "Sack 25 kg" ? "Sack 25 kg" : "lose dt"; z[key] = (z[key] || 0) + (p.verpackung === "lose" ? num(p.menge_dt) : g.n); });
+  return Object.entries(z).map(([k, n]) => k === "lose dt" ? `${fdt(n)} dt lose` : `${n} × ${k}`).join(", ");
+}
+function renderTouren(){
+  const sp = $("#tour-sp").value, lz = $("#tour-lz").value, st = $("#tour-stat").value;
+  const sps = [...new Set(D.lief.filter(l => l.typ === "Spedition").map(l => l.name).concat(D.touren.map(t => t.spedition)))].sort();
+  const sel = $("#tour-sp"), cur = sel.value; sel.innerHTML = `<option value="">alle Speditionen</option>` + sps.map(x => `<option ${x === cur ? "selected" : ""}>${esc(x)}</option>`).join("");
+  $("#dl-sped").innerHTML = sps.map(x => `<option value="${esc(x)}">`).join("");
+  const list = D.touren.filter(t => (!sp || t.spedition === sp) && (!lz || t.lieferzeitraum === lz) && (!st || t.status === st))
+    .sort((a, b) => String(a.datum || "9999").localeCompare(String(b.datum || "9999")) || a.nr.localeCompare(b.nr));
+  $("#tour-t").innerHTML = `<thead><tr><th>Tour</th><th>Spedition</th><th>Datum</th><th>Lieferzeitraum</th><th>Fahrzeug</th><th class="n">Stopps</th><th>Ladestellen</th><th class="n">Menge dt</th><th class="n">Kapazität dt</th><th>Status</th></tr></thead><tbody>` +
+    (list.map(t => { const as = tourAuf(t.id), m = as.reduce((s, a) => s + aufMenge(a), 0), ls = ladestellen(as.flatMap(a => posOfK("auf", a.id).flatMap(p => zuOfK("auf", p.id))));
+      const ueber = t.kapazitaet_dt && m > num(t.kapazitaet_dt) + 0.05;
+      return `<tr class="click" data-id="${t.id}"><td><b>${esc(t.nr)}</b></td><td>${esc(t.spedition)}</td><td>${esc(datum(t.datum))}</td><td>${esc(t.lieferzeitraum)}</td><td>${esc(t.fahrzeug || "")}</td><td class="n">${as.length}</td><td>${esc(ls.map(l => l.name).join(", ") || "–")}</td><td class="n">${ueber ? `<span class="pill w">${fdt(m)}</span>` : fdt(m)}</td><td class="n">${t.kapazitaet_dt ? fdt(t.kapazitaet_dt) : ""}</td><td>${statPill(t.status)}</td></tr>`; }).join("") || `<tr><td colspan="10" class="empty">Noch keine Touren – mit „+ Neue Tour“ anlegen</td></tr>`) + "</tbody>";
+  const ohne = D.auf.filter(a => a.lieferart === "Anlieferung" && !a.tour_id && AKTIV.includes(a.status) && a.status !== "geliefert");
+  $("#tour-ohne").innerHTML = ohne.length ? `<b>${ohne.length} Anlieferung(en) ohne Tour</b> (Herbst ${ohne.filter(a => a.lieferzeitraum === "Herbst").length} · Frühjahr ${ohne.filter(a => a.lieferzeitraum === "Frühjahr").length}) – in einer Tour unter „Aufträge hinzufügen“ einplanen.` : "Alle Anlieferungen sind einer Tour zugeordnet.";
+  if (TE && !$("#tour-edit").hidden) renderTourEdit();
+}
+["#tour-sp", "#tour-lz", "#tour-stat"].forEach(s => $(s).addEventListener("input", renderTouren));
+$("#tour-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openTour(tr.dataset.id); });
+$("#tour-neu").onclick = () => openTour(null);
+function openTour(id){
+  TE = id ? Object.assign({}, tourOf(id)) : {id: null, nr: "neu", spedition: "", datum: "", lieferzeitraum: $("#tour-lz").value || "Frühjahr", fahrzeug: "", kapazitaet_dt: 240, status: "geplant", bemerkung: ""};
+  show("v-tour"); $("#tour-list-card").hidden = true; $("#tour-edit").hidden = false; renderTourEdit(); window.scrollTo(0, 0);
+}
+function closeTour(){ TE = null; $("#tour-edit").hidden = true; $("#tour-edit").innerHTML = ""; $("#tour-list-card").hidden = false; renderTouren(); }
+function stopHtml(a, i, n){
+  const e = entladestelle(a), ps = posOfK("auf", a.id), ls = ladestellen(ps.flatMap(p => zuOfK("auf", p.id)));
+  const offen = ps.filter(p => zuSumK("auf", p.id) + 0.05 < num(p.menge_dt)).length;
+  return `<tr><td class="n"><b>${i + 1}</b></td><td><b>${esc(e.name)}</b>${a.kdnr ? ` <span class="hint">${esc(a.kdnr)}</span>` : ""}<br><span class="hint">${esc([e.strasse, [e.plz, e.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "))}${e.hinweis ? " · " + esc(e.hinweis) : ""}</span>${e.abw ? ` <span class="pill">abw. Entladestelle</span>` : ""}</td>
+    <td>${esc(ls.map(l => l.name).join(", "))}${offen ? ` <span class="pill a">${offen} Pos. ohne Partie</span>` : ""}</td>
+    <td>${ps.map(p => `${esc(p.sorte)} ${p.sortierung !== "NS" ? esc(p.sortierung) + " " : ""}${fdt(p.menge_dt)} dt <span class="hint">(${esc(gebinde(p).txt)})</span>`).join("<br>")}</td>
+    <td class="n">${fdt(aufMenge(a))}</td><td style="white-space:nowrap"><button class="btn sm sec t-up" data-id="${a.id}" ${i === 0 ? "disabled" : ""} title="nach oben">↑</button> <button class="btn sm sec t-dn" data-id="${a.id}" ${i === n - 1 ? "disabled" : ""} title="nach unten">↓</button> <button class="btn sm sec t-open" data-id="${a.id}" title="Auftrag öffnen">${esc(a.nr)}</button> <button class="btn sm red t-x" data-id="${a.id}" title="aus Tour nehmen">✕</button></td></tr>`;
+}
+function renderTourEdit(){
+  const t = TE, as = t.id ? tourAuf(t.id) : [], m = as.reduce((s, a) => s + aufMenge(a), 0);
+  const kann = D.auf.filter(a => a.lieferart === "Anlieferung" && !a.tour_id && a.lieferzeitraum === t.lieferzeitraum && AKTIV.includes(a.status) && a.status !== "geliefert");
+  const ueber = t.kapazitaet_dt && m > num(t.kapazitaet_dt) + 0.05;
+  $("#tour-edit").innerHTML = `
+  <div class="row"><h2 class="grow">${t.id ? "Tour " + esc(t.nr) : "Neue Tour"}</h2>${t.id ? `<button class="btn sec" id="t-print">Tourenblatt drucken</button>` : ""}<button class="btn sec" id="t-back">← zurück</button></div>
+  <div class="grid">
+    <label class="f">Spedition<input type="text" id="t-sp" list="dl-sped" value="${esc(t.spedition)}" placeholder="Roland oder Röhle"></label>
+    <label class="f">Datum<input type="date" id="t-dat" value="${esc(t.datum || "")}"></label>
+    <label class="f">Lieferzeitraum${lzSelect("t-lz", t.lieferzeitraum)}</label>
+    <label class="f">Fahrzeug / Kennzeichen<input type="text" id="t-fz" value="${esc(t.fahrzeug || "")}"></label>
+    <label class="f">Kapazität dt<input type="number" step="1" id="t-kap" value="${t.kapazitaet_dt == null ? "" : t.kapazitaet_dt}"></label>
+    <label class="f">Status<select id="t-st">${["geplant", "beauftragt", "gefahren", "storniert"].map(x => `<option ${t.status === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
+  </div>
+  <label class="f">Bemerkung<input type="text" id="t-bem" value="${esc(t.bemerkung || "")}"></label>
+  <div class="row">${t.id ? `<button class="btn red" id="t-del">Tour löschen</button>` : ""}<span class="grow"></span><button class="btn" id="t-save">${t.id ? "Tour speichern" : "Tour anlegen"}</button></div>
+  ${t.id ? `<h3>Stopps (Entladestellen in Fahrreihenfolge)</h3>
+  <div class="row hint">${as.length} Stopps · <b>${fdt(m)} dt</b>${t.kapazitaet_dt ? ` von ${fdt(t.kapazitaet_dt)} dt` : ""} ${ueber ? `<span class="pill w">Kapazität überschritten</span>` : ""}</div>
+  <div class="tw"><table><thead><tr><th class="n">#</th><th>Entladestelle</th><th>Ladestelle (Vermehrer)</th><th>Ware</th><th class="n">dt</th><th></th></tr></thead><tbody>${as.map((a, i) => stopHtml(a, i, as.length)).join("") || `<tr><td colspan="6" class="empty">Noch keine Aufträge auf dieser Tour</td></tr>`}</tbody></table></div>
+  <h3>Aufträge hinzufügen (Anlieferung, ${esc(t.lieferzeitraum)}, noch ohne Tour)</h3>
+  ${kann.length ? `<div class="tw" style="max-height:40vh"><table><thead><tr><th></th><th>Auftrag</th><th>Kunde / Entladestelle</th><th>Sorten</th><th class="n">dt</th></tr></thead><tbody>${kann.map(a => { const e = entladestelle(a);
+    return `<tr><td><input type="checkbox" class="t-add" value="${a.id}" aria-label="hinzufügen"></td><td>${esc(a.nr)}</td><td><b>${esc(e.name)}</b> <span class="hint">${esc([e.plz, e.ort].filter(Boolean).join(" "))}</span></td><td>${esc(posOfK("auf", a.id).map(p => p.sorte).join(", "))}</td><td class="n">${fdt(aufMenge(a))}</td></tr>`; }).join("")}</tbody></table></div>
+  <div class="row"><button class="btn blue" id="t-addgo">Markierte zur Tour hinzufügen</button></div>` : `<p class="hint">Keine offenen Anlieferungen in diesem Lieferzeitraum.</p>`}` : `<p class="hint">Nach dem Anlegen kannst du Aufträge auf die Tour legen.</p>`}`;
+  $("#t-back").onclick = closeTour;
+  $("#t-lz").onchange = () => { readTour(); renderTourEdit(); };
+  $("#t-save").onclick = saveTour;
+  if ($("#t-del")) $("#t-del").onclick = async () => {
+    if (!confirm(`Tour ${t.nr} löschen? Die Aufträge bleiben erhalten und sind dann wieder ohne Tour.`)) return;
+    const { error } = await sb.from("pfg_touren").delete().eq("id", t.id); if (error) return toast(error.message);
+    toast("Tour gelöscht"); await loadAll(); closeTour();
+  };
+  if ($("#t-print")) $("#t-print").onclick = () => tourDruck(t);
+  if ($("#t-addgo")) $("#t-addgo").onclick = async () => {
+    const ids = $$(".t-add:checked").map(c => c.value); if (!ids.length) return toast("Bitte Aufträge markieren");
+    let n = as.reduce((mx, a) => Math.max(mx, a.tour_pos || 0), 0);
+    for (const id of ids){ n++; const { error } = await sb.from("pfg_auftraege").update({tour_id: t.id, tour_pos: n, updated_at: new Date().toISOString()}).eq("id", id); if (error) return toast(error.message); }
+    toast(`${ids.length} Auftrag/Aufträge eingeplant`); await loadAll();
+  };
+  $$("#tour-edit .t-x").forEach(b => b.onclick = async () => { const { error } = await sb.from("pfg_auftraege").update({tour_id: null, tour_pos: null}).eq("id", b.dataset.id); if (error) return toast(error.message); await loadAll(); });
+  $$("#tour-edit .t-open").forEach(b => b.onclick = () => openEdit("auf", b.dataset.id));
+  const move = async (id, d) => {
+    const i = as.findIndex(a => a.id === id), j = i + d; if (j < 0 || j >= as.length) return;
+    const neu = as.slice(); [neu[i], neu[j]] = [neu[j], neu[i]];
+    for (let k = 0; k < neu.length; k++){ if (neu[k].tour_pos !== k + 1){ const { error } = await sb.from("pfg_auftraege").update({tour_pos: k + 1}).eq("id", neu[k].id); if (error) return toast(error.message); } }
+    await loadAll();
+  };
+  $$("#tour-edit .t-up").forEach(b => b.onclick = () => move(b.dataset.id, -1));
+  $$("#tour-edit .t-dn").forEach(b => b.onclick = () => move(b.dataset.id, 1));
+}
+function readTour(){
+  Object.assign(TE, {spedition: $("#t-sp").value.trim(), datum: $("#t-dat").value || null, lieferzeitraum: $("#t-lz").value, fahrzeug: $("#t-fz").value.trim() || null, kapazitaet_dt: numIn($("#t-kap").value), status: $("#t-st").value, bemerkung: $("#t-bem").value.trim() || null});
+}
+async function saveTour(){
+  readTour(); const t = TE;
+  if (!t.spedition) return toast("Bitte Spedition angeben");
+  if (t.id && tourAuf(t.id).some(a => a.lieferzeitraum !== t.lieferzeitraum) && !confirm("Auf der Tour sind Aufträge mit anderem Lieferzeitraum. Trotzdem speichern?")) return;
+  const row = {spedition: t.spedition, datum: t.datum, lieferzeitraum: t.lieferzeitraum, fahrzeug: t.fahrzeug, kapazitaet_dt: t.kapazitaet_dt, status: t.status, bemerkung: t.bemerkung, bearbeiter: me.name, updated_at: new Date().toISOString()};
+  if (!D.lief.some(l => l.name === t.spedition && l.typ === "Spedition")) await sb.from("pfg_lieferanten").insert({name: t.spedition, typ: "Spedition"});
+  let id = t.id;
+  if (id){ const { error } = await sb.from("pfg_touren").update(row).eq("id", id); if (error) return toast(error.message); }
+  else { const { data, error } = await sb.from("pfg_touren").insert(row).select().single(); if (error) return toast(error.message); id = data.id; }
+  toast("Tour gespeichert"); await loadAll(); openTour(id);
+}
+function tourDruck(t){
+  const as = tourAuf(t.id), m = as.reduce((s, a) => s + aufMenge(a), 0);
+  const lade = ladestellen(as.flatMap(a => posOfK("auf", a.id).flatMap(p => zuOfK("auf", p.id))));
+  const w = window.open("", "_blank"); if (!w) return toast("Bitte Pop-ups für diese Seite erlauben");
+  const rows = as.map((a, i) => { const e = entladestelle(a), ps = posOfK("auf", a.id), ls = ladestellen(ps.flatMap(p => zuOfK("auf", p.id)));
+    return `<tr><td>${i + 1}</td><td><b>${esc(e.name)}</b><br>${esc(e.strasse)}<br>${esc([e.plz, e.ort].filter(Boolean).join(" "))}${e.hinweis ? "<br>" + esc(e.hinweis) : ""}</td><td>${esc(ls.map(l => l.name + (l.adresse ? ", " + l.adresse : "")).join("; ") || "offen")}</td><td>${ps.map(p => `${esc(p.sorte)} ${esc(SORTNAME[p.sortierung])}: ${fdt(p.menge_dt)} dt – ${esc(gebinde(p).txt)}`).join("<br>")}</td><td style="text-align:right">${fdt(aufMenge(a))}</td><td>${esc(a.nr)}${a.kdnr ? "<br>Kd. " + esc(a.kdnr) : ""}</td></tr>`; }).join("");
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Tour ${esc(t.nr)}</title><style>body{font:12px Arial,sans-serif;margin:18px;color:#1F2A1A}h1{font-size:18px;color:#5C8A13;margin:0 0 4px}table{border-collapse:collapse;width:100%;margin-top:10px}th{background:#5C8A13;color:#fff;text-align:left;padding:5px}td{border-bottom:1px solid #ccc;padding:5px;vertical-align:top}.k{display:flex;gap:24px;flex-wrap:wrap;margin:6px 0}@page{size:A4 landscape;margin:12mm}</style></head><body>
+    <h1>Tourenblatt ${esc(t.nr)} – Spedition ${esc(t.spedition)}</h1>
+    <div class="k"><span><b>Datum:</b> ${esc(datum(t.datum) || "offen")}</span><span><b>Lieferzeitraum:</b> ${esc(t.lieferzeitraum)}</span><span><b>Fahrzeug:</b> ${esc(t.fahrzeug || "–")}</span><span><b>Menge:</b> ${fdt(m)} dt${t.kapazitaet_dt ? " / " + fdt(t.kapazitaet_dt) + " dt" : ""}</span><span><b>Stopps:</b> ${as.length}</span></div>
+    <div><b>Ladestellen:</b> ${esc(lade.map(l => `${l.name} (${fdt(l.dt)} dt)` + (l.adresse ? " – " + l.adresse : "")).join("; ") || "noch offen")}</div>
+    ${t.bemerkung ? `<div><b>Bemerkung:</b> ${esc(t.bemerkung)}</div>` : ""}
+    <table><thead><tr><th>#</th><th>Entladestelle</th><th>Ladestelle</th><th>Ware / Gebinde</th><th style="text-align:right">dt</th><th>Auftrag</th></tr></thead><tbody>${rows}</tbody></table>
+    <p style="margin-top:14px;color:#666">VG Bio Bauern · Pflanzkartoffeln · gedruckt ${new Date().toLocaleString("de-DE")}</p>
+    <script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
 
 // ---------- Partien
 let editPartie = null;
@@ -672,9 +874,10 @@ function partForm(p){
 function renderStamm(){
   const q = norm($("#sorte-q").value);
   const vm = {}; D.partien.forEach(p => vm[p.sorte] = (vm[p.sorte] || 0) + 1);
-  $("#sorte-t").innerHTML = `<thead><tr><th>Sorte</th><th>Kochtyp</th><th>Reife</th><th>Züchter</th><th>bio</th><th>konv.</th><th class="n">GHP 2026 €/dt</th><th class="n">Partien</th><th>aktiv</th></tr></thead><tbody>` +
-    D.sorten.filter(s => !q || norm(s.name + " " + (s.zuechter || "")).includes(q)).map(s => `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.kochtyp || "")}</td><td>${esc(s.reife || "")}</td><td>${esc(s.zuechter || "")}</td><td>${s.bio ? "✓" : ""}</td><td>${s.konv ? "✓" : ""}</td><td class="n">${s.ghp == null ? "" : fmt(s.ghp, 2)}</td><td class="n">${vm[s.name] || ""}</td><td><input type="checkbox" class="s-akt" data-n="${esc(s.name)}" ${s.aktiv ? "checked" : ""} aria-label="aktiv"></td></tr>`).join("") + "</tbody>";
+  $("#sorte-t").innerHTML = `<thead><tr><th>Sorte</th><th>Kochtyp</th><th>Reife</th><th>Züchter</th><th>bio</th><th>konv.</th><th class="n">GHP 2026 €/dt</th><th>Big Bag</th><th class="n">Partien</th><th>aktiv</th></tr></thead><tbody>` +
+    D.sorten.filter(s => !q || norm(s.name + " " + (s.zuechter || "")).includes(q)).map(s => `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.kochtyp || "")}</td><td>${esc(s.reife || "")}</td><td>${esc(s.zuechter || "")}</td><td>${s.bio ? "✓" : ""}</td><td>${s.konv ? "✓" : ""}</td><td class="n">${s.ghp == null ? "" : fmt(s.ghp, 2)}</td><td><select class="s-bb" data-n="${esc(s.name)}" style="width:auto">${[11, 12.5].map(x => `<option value="${x}" ${(num(s.bb_dt) || 11) === x ? "selected" : ""}>${fmt(x, x % 1 ? 1 : 0)} dt</option>`).join("")}</select></td><td class="n">${vm[s.name] || ""}</td><td><input type="checkbox" class="s-akt" data-n="${esc(s.name)}" ${s.aktiv ? "checked" : ""} aria-label="aktiv"></td></tr>`).join("") + "</tbody>";
   $$(".s-akt").forEach(c => c.onchange = async () => { const { error } = await sb.from("pfg_sorten").update({aktiv: c.checked}).eq("name", c.dataset.n); if (error) toast(error.message); else { D.sorten.find(s => s.name === c.dataset.n).aktiv = c.checked; fillLists(); } });
+  $$(".s-bb").forEach(c => c.onchange = async () => { const v = num(c.value), { error } = await sb.from("pfg_sorten").update({bb_dt: v === 11 ? null : v}).eq("name", c.dataset.n); if (error) toast(error.message); else { D.sorten.find(s => s.name === c.dataset.n).bb_dt = v === 11 ? null : v; toast(`${c.dataset.n}: Big Bag ${fmt(v, v % 1 ? 1 : 0)} dt`); } });
   $("#lief-t").innerHTML = `<thead><tr><th>Name</th><th>Art</th><th>VO-Firma</th><th>E-Mail</th><th class="n">Bestellungen</th></tr></thead><tbody>` +
     D.lief.slice().sort((a, b) => a.typ.localeCompare(b.typ) || a.name.localeCompare(b.name, "de")).map(l => `<tr><td><b>${esc(l.name)}</b></td><td>${esc(l.typ)}</td><td>${esc(l.vo || "")}</td><td>${esc(l.email || "")}</td><td class="n">${D.best.filter(b => b.lieferant === l.name && b.lieferant_typ === l.typ).length || ""}</td></tr>`).join("") + "</tbody>";
 }
@@ -806,7 +1009,7 @@ async function uebernehmen(){
 }
 
 // ---------- Navigation, Start
-function renderAll(){ renderUeb(); renderBestList(); renderAufList(); renderPart(); renderStamm(); renderKund(); if (E && !$(K[E.kind].edit).hidden) renderEdit(); }
+function renderAll(){ renderUeb(); renderBestList(); renderAufList(); renderTouren(); renderPart(); renderStamm(); renderKund(); if (E && !$(K[E.kind].edit).hidden) renderEdit(); }
 function show(id){ $$("main").forEach(m => m.hidden = m.id !== id); $$("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === id)); }
 $$("nav.tabs button").forEach(b => b.onclick = () => show(b.dataset.view));
 

@@ -131,6 +131,12 @@ assets/                   App-Symbol und Startbild
 - Kundenaufträge (Tab „Kundenaufträge“ oder in der Kundenliste „+ Auftrag“): Kunde aus der büro+-Liste, Lieferzeitraum Herbst (Dez. – Mitte Jan.)
   oder Frühjahr (März – April), je Position Sorte, Sortierung (NS Standard, Drillinge, ÜG), Menge dt; Partie sofort oder später zuordnen.
   Nummern KA27-0001 …, Tabellen `pfg_auftraege`, `pfg_auftragpos`, `pfg_auftrag_zuordnung` (Migration `20261123200000_pflanzgut_kundenauftraege.sql`)
+- Verpackung je Position: Big Bag (Standard 11 dt aus der eigenen Vermehrung; 12,5 dt bei holländischer Ware, je Sorte im Sortenkatalog
+  hinterlegt: Avanti, Colomba, Annabelle, Taurus, Emanuelle), Sack 25 kg oder lose; die App rechnet die Gebindezahl aus
+- Lieferart je Kundenauftrag: Anlieferung (mit Tour und optional abweichender Entladestelle) oder Abholung ab Vermehrer
+- Touren (Tab „Touren“): je Spedition (Roland, Röhle; weitere als Lieferant Art „Spedition“), Datum, Lieferzeitraum, Fahrzeug, Kapazität;
+  Anlieferungen ohne Tour einplanen, Reihenfolge der Stopps ändern, Tourenblatt drucken (Lade- und Entladestellen, Ware, Gebinde).
+  Tabelle `pfg_touren`, Migration `20261123210000_pflanzgut_logistik_touren.sql`
 - Bestellungen bei Vermehrern, VO-Firmen (KSG, EVG, VG BIO) oder Züchtern; je Position Sorte aus dem Katalog, Sortierung
   Normalsortierung (NS, Standard), Drillinge oder Übergrößen (ÜG), Menge in dt. Partie-Zuordnung sofort („jetzt auf Partie(n) zuordnen“)
   oder später („später aufteilen“); „Rest automatisch verteilen“ füllt die freien Mengen der passenden Partien auf
