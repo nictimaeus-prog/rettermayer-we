@@ -128,6 +128,9 @@ assets/                   App-Symbol und Startbild
 - Zugriff nur mit Eintrag in `pfg_zugang` (anfangs Nicolai Timaeus, Martin Haunz, Anna Wegner). Weitere freischalten:
   `insert into public.pfg_zugang (user_id) select id from public.profiles where name = 'Vorname Nachname';`
 - Tabs: Übersicht (je Sorte und Sortierung: verfügbar / bestellt / zugeordnet / offen), Bestellungen, Partien, Sorten & Lieferanten, Kunden, Import büro+
+- Kundenaufträge (Tab „Kundenaufträge“ oder in der Kundenliste „+ Auftrag“): Kunde aus der büro+-Liste, Lieferzeitraum Herbst (Dez. – Mitte Jan.)
+  oder Frühjahr (März – April), je Position Sorte, Sortierung (NS Standard, Drillinge, ÜG), Menge dt; Partie sofort oder später zuordnen.
+  Nummern KA27-0001 …, Tabellen `pfg_auftraege`, `pfg_auftragpos`, `pfg_auftrag_zuordnung` (Migration `20261123200000_pflanzgut_kundenauftraege.sql`)
 - Bestellungen bei Vermehrern, VO-Firmen (KSG, EVG, VG BIO) oder Züchtern; je Position Sorte aus dem Katalog, Sortierung
   Normalsortierung (NS, Standard), Drillinge oder Übergrößen (ÜG), Menge in dt. Partie-Zuordnung sofort („jetzt auf Partie(n) zuordnen“)
   oder später („später aufteilen“); „Rest automatisch verteilen“ füllt die freien Mengen der passenden Partien auf
