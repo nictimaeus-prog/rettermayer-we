@@ -487,6 +487,7 @@ $("#bar-btn").onclick = () => show($("#v-best").hidden ? "v-best" : "v-ab");
 $("#erz-q").oninput = renderErzList;
 $("#art-q").oninput = renderArtList;
 $("#dik-go").onclick = () => {
+  if(!$("#dik").value.trim()){ toast("Das Feld ist noch leer – erst sprechen (Mikrofon) oder tippen."); $("#dik").focus(); return; }
   const r = parseDiktat($("#dik").value);
   if(!S.erz){ for(const w of r.rest){ const e=searchErz(w)[0]; if(e && norm(w).length>2){ S.erz={kd:e.kd,n:e.n}; break; } } }
   let n=0; r.pos.forEach(x => { if(x.cands.length){ S.pos.push({n:x.cands[0].n, q:String(x.q), m:"", c:x.cands.map(a=>a.n), src:"Diktat", o:x.words}); n++; } });
