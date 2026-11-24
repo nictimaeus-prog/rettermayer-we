@@ -338,6 +338,8 @@ const D = {sorten: [], lief: [], kunden: [], partien: [], best: [], pos: [], zu:
 const LZ = ["Herbst", "Frühjahr"];
 const LZNAME = {Herbst: "Herbst (Dez. – Mitte Jan.)", "Frühjahr": "Frühjahr (März – April)"};
 const VP = ["Big Bag", "Sack 25 kg", "lose"];
+// Konkretes Lieferdatum („bis“): Herbst 15.01., Frühjahr 15.03. der Saison (Aufträge ab Juli zählen zur Saison des Folgejahres)
+function stdLieferdatum(lz, dat){ const d = dat ? new Date(dat) : new Date(); const j = d.getFullYear() + (d.getMonth() >= 6 ? 1 : 0); return `${j}-${lz === "Herbst" ? "01" : "03"}-15`; }
 const LA = ["Anlieferung", "Abholung ab Vermehrer"];
 // Big Bag: Standard 11 dt (eigene Vermehrer/Gruppe), holländische Ware oft 12,5 dt (im Sortenkatalog hinterlegt)
 const bbStd = sorte => { const so = D.sorten.find(x => x.name === sorte); return so && so.bb_dt ? num(so.bb_dt) : 11; };
@@ -450,7 +452,7 @@ const summeK = (k, h) => posOfK(k, h.id).reduce((a, p) => a + num(p.menge_dt), 0
 const offenK = (k, h) => posOfK(k, h.id).filter(p => zuSumK(k, p.id) + 0.05 < num(p.menge_dt)).length;
 function statPill(s){ const c = {offen: "b", "bestätigt": "g", geliefert: "g", storniert: "w", Entwurf: "a"}[s] || ""; return `<span class="pill ${c}">${esc(s)}</span>`; }
 const aufPill = n => n ? `<span class="pill a">${n} ohne Partie</span>` : `<span class="pill g">zugeordnet</span>`;
-const datum = d => d ? new Date(d).toLocaleDateString("de-DE") : "";
+const datum = d => d ? new Date(d).toLocaleDateString("de-DE", {day: "2-digit", month: "2-digit", year: "numeric"}) : "";
 function renderBestList(){
   const q = norm($("#best-q").value), typ = $("#best-typ").value, st = $("#best-stat").value, nurOffen = $("#best-offen").checked;
   const list = D.best.filter(b => (!typ || b.lieferant_typ === typ) && (!st || b.status === st) && (!nurOffen || offenK("best", b) > 0) &&
@@ -458,7 +460,7 @@ function renderBestList(){
     .sort((a, b) => b.nr.localeCompare(a.nr));
   $("#best-t").innerHTML = `<thead><tr><th>Nr.</th><th>Datum</th><th>Lieferant</th><th>Art</th><th>VO</th><th>Lieferung</th><th>Sorten</th><th class="n">Pos.</th><th class="n">Menge dt</th><th>Partien</th><th>Status</th></tr></thead><tbody>` +
     (list.map(b => { const ps = posOf(b.id);
-      return `<tr class="click" data-id="${b.id}"><td><b>${esc(b.nr)}</b></td><td>${esc(datum(b.datum))}</td><td>${esc(b.lieferant)}</td><td>${esc(b.lieferant_typ)}</td><td>${esc(b.vo || "")}</td><td>${esc(b.liefertermin || "")}</td><td>${esc([...new Set(ps.map(p => p.sorte))].join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("best", b))}</td><td>${aufPill(offenK("best", b))}</td><td>${statPill(b.status)}</td></tr>`; }).join("") || `<tr><td colspan="11" class="empty">Keine Bestellungen</td></tr>`) + "</tbody>";
+      return `<tr class="click" data-id="${b.id}"><td><b>${esc(b.nr)}</b></td><td>${esc(datum(b.datum))}</td><td>${esc(b.lieferant)}</td><td>${esc(b.lieferant_typ)}</td><td>${esc(b.vo || "")}</td><td>${esc(b.liefertermin || "")}${b.lieferdatum ? `<br><span class="hint">bis ${esc(datum(b.lieferdatum))}</span>` : ""}</td><td>${esc([...new Set(ps.map(p => p.sorte))].join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("best", b))}</td><td>${aufPill(offenK("best", b))}</td><td>${statPill(b.status)}</td></tr>`; }).join("") || `<tr><td colspan="11" class="empty">Keine Bestellungen</td></tr>`) + "</tbody>";
 }
 ["#best-q", "#best-typ", "#best-stat", "#best-offen"].forEach(s => $(s).addEventListener("input", renderBestList));
 $("#best-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openEdit("best", tr.dataset.id); });
@@ -473,7 +475,7 @@ function renderAufList(){
   const tot = list.filter(a => a.status !== "storniert").reduce((s, a) => s + summeK("auf", a), 0);
   $("#auf-t").innerHTML = `<thead><tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Kd.-Nr.</th><th>Ort</th><th>Lieferung</th><th>Lieferart / Tour</th><th>Sorten</th><th class="n">Pos.</th><th class="n">Menge dt</th><th>Partien</th><th>Status</th></tr></thead><tbody>` +
     (list.map(a => { const ps = posOfK("auf", a.id), k = D.kunden.find(x => x.kdnr === a.kdnr) || {};
-      return `<tr class="click" data-id="${a.id}"><td><b>${esc(a.nr)}</b></td><td>${esc(datum(a.datum))}</td><td>${esc(a.kunde)}</td><td>${esc(a.kdnr || "")}</td><td>${esc(k.ort || "")}</td><td>${esc(a.lieferzeitraum)}</td><td>${a.lieferart === "Anlieferung" ? (a.tour_id && tourOf(a.tour_id) ? `<span class="pill b">${esc(tourOf(a.tour_id).nr + " " + tourOf(a.tour_id).spedition)}</span>` : `<span class="pill a">Anlieferung, ohne Tour</span>`) : "Abholung" + (a.abholstelle ? " (" + esc(a.abholstelle) + ")" : "")}${a.entlade_abweichend ? ` <span class="pill" title="abweichende Entladestelle">abw. Entladestelle</span>` : ""}</td><td>${esc(ps.map(p => p.sorte + (p.sortierung !== "NS" ? " " + p.sortierung : "")).join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("auf", a))}</td><td>${aufPill(offenK("auf", a))}</td><td>${statPill(a.status)}</td></tr>`; }).join("") || `<tr><td colspan="12" class="empty">Noch keine Kundenaufträge – mit „+ Neuer Auftrag“ anlegen</td></tr>`) +
+      return `<tr class="click" data-id="${a.id}"><td><b>${esc(a.nr)}</b></td><td>${esc(datum(a.datum))}</td><td>${esc(a.kunde)}</td><td>${esc(a.kdnr || "")}</td><td>${esc(k.ort || "")}</td><td>${esc(a.lieferzeitraum)}${a.lieferdatum ? `<br><span class="hint">bis ${esc(datum(a.lieferdatum))}</span>` : ""}</td><td>${a.lieferart === "Anlieferung" ? (a.tour_id && tourOf(a.tour_id) ? `<span class="pill b">${esc(tourOf(a.tour_id).nr + " " + tourOf(a.tour_id).spedition)}</span>` : `<span class="pill a">Anlieferung, ohne Tour</span>`) : "Abholung" + (a.abholstelle ? " (" + esc(a.abholstelle) + ")" : "")}${a.entlade_abweichend ? ` <span class="pill" title="abweichende Entladestelle">abw. Entladestelle</span>` : ""}</td><td>${esc(ps.map(p => p.sorte + (p.sortierung !== "NS" ? " " + p.sortierung : "")).join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("auf", a))}</td><td>${aufPill(offenK("auf", a))}</td><td>${statPill(a.status)}</td></tr>`; }).join("") || `<tr><td colspan="12" class="empty">Noch keine Kundenaufträge – mit „+ Neuer Auftrag“ anlegen</td></tr>`) +
     `</tbody><tfoot><tr class="sum"><td colspan="9">${list.length} Aufträge</td><td class="n">${fdt(tot)}</td><td colspan="2"></td></tr></tfoot>`;
 }
 ["#auf-q", "#auf-lz", "#auf-stat", "#auf-offen"].forEach(s => $(s).addEventListener("input", renderAufList));
@@ -492,9 +494,9 @@ function openEdit(kind, id, preset){
     const h = headOf(kind, id);
     E = Object.assign({}, h, {kind, pos: posOfK(kind, id).map(p => { const z = zuOfK(kind, p.id); return {id: p.id, sorte: p.sorte, sortierung: p.sortierung, verpackung: p.verpackung || "Big Bag", bb_dt: num(p.bb_dt) || 11, rhiz: p.rhiz !== false, menge_dt: num(p.menge_dt), bemerkung: p.bemerkung || "", zu: z.map(z => ({partie_id: z.partie_id, menge_dt: num(z.menge_dt)})), modus: z.length ? "partie" : "spaeter"}; })});
   } else if (kind === "best"){
-    E = {kind, id: null, nr: "neu", lieferant: "", lieferant_typ: "Vermehrer", vo: "", datum: new Date().toISOString().slice(0, 10), liefertermin: "Frühjahr", status: "offen", bemerkung: "", pos: [newPos()]};
+    E = {kind, id: null, nr: "neu", lieferant: "", lieferant_typ: "Vermehrer", vo: "", datum: new Date().toISOString().slice(0, 10), liefertermin: "Frühjahr", lieferdatum: stdLieferdatum("Frühjahr"), status: "offen", bemerkung: "", pos: [newPos()]};
   } else {
-    E = {kind, id: null, nr: "neu", kdnr: preset ? preset.kdnr : null, kunde: preset ? preset.name : "", datum: new Date().toISOString().slice(0, 10), lieferzeitraum: "Frühjahr", lieferart: "Anlieferung", entlade_abweichend: false, tour_id: null, status: "offen", bemerkung: "", pos: [newPos()]};
+    E = {kind, id: null, nr: "neu", kdnr: preset ? preset.kdnr : null, kunde: preset ? preset.name : "", datum: new Date().toISOString().slice(0, 10), lieferzeitraum: "Frühjahr", lieferdatum: stdLieferdatum("Frühjahr"), lieferart: "Anlieferung", entlade_abweichend: false, tour_id: null, status: "offen", bemerkung: "", pos: [newPos()]};
   }
   show(kind === "best" ? "v-best" : "v-auf");
   $(c.list).hidden = true; $(c.edit).hidden = false; renderEdit(); window.scrollTo(0, 0);
@@ -548,16 +550,11 @@ function renderEdit(){
   <div class="row"><span class="hint grow">Neue Zeile entsteht automatisch · Enter springt weiter · RHIZ = ${RHIZ_TXT}</span><b id="e-sum"></b></div>
   <details class="more" ${E._more || (E.kind === "auf" && E.entlade_abweichend) ? "open" : ""}><summary>Weitere Angaben <span class="hint" id="e-more-sum"></span></summary>
     <div class="grid2">
-      <label class="f">Datum<input type="date" id="e-datum" value="${esc(E.datum || "")}"></label>
+      <label class="f">Liefertermin bis<input type="date" id="e-ldat" value="${esc(E.lieferdatum || "")}"></label>
+      <label class="f">Auftragsdatum<input type="date" id="e-datum" value="${esc(E.datum || "")}"></label>
       <label class="f">Status<select id="e-stat">${["Entwurf", "offen", "bestätigt", "geliefert", "storniert"].map(s => `<option ${E.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
     </div>
-    <label class="f">Bemerkung (intern)<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
-    ${E.kind === "auf" ? `<div class="grid2">
-      <label class="f">Liefertermin (Text für die AB)<input type="text" id="e-lt" value="${esc(E.liefertermin || "")}" placeholder="z. B. KW 12 oder Dez. 2026"></label>
-      <label class="f">Anrede in der AB<select id="e-du"><option value="0" ${E.anrede_du ? "" : "selected"}>Sie</option><option value="1" ${E.anrede_du ? "selected" : ""}>Du</option></select></label>
-    </div>
-    <label class="f">Begrüßung (leer = Standard)<input type="text" id="e-anr" value="${esc(E.anrede || "")}" placeholder="${esc(ANREDE_STD(E.anrede_du))}"></label>
-    <label class="f">Hinweis auf der AB<textarea id="e-abt" rows="3" placeholder="z. B. Mengenänderung, Liefertermin, Abstimmung – Lieferadresse wird automatisch ergänzt">${esc(E.ab_text || "")}</textarea></label>` : ""}
+    <label class="f">Bemerkung (intern, nicht auf der AB)<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
   </details>
   <div class="row">${E.id ? `<button class="btn red sm" id="e-del">Löschen</button>` : ""}<span class="grow"></span>${E.kind === "auf" ? `<button class="btn blue" id="e-ab" type="button" ${E.id ? "" : "disabled title=\"erst speichern\""}>AB als PDF</button>` : ""}<button class="btn" id="e-save">Speichern</button></div>`;
   wireEdit(); updSum();
@@ -571,7 +568,7 @@ function kundeInfo(){
 function updSum(){
   const s = E.pos.reduce((a, p) => a + num(p.menge_dt), 0), n = E.pos.filter(p => p.sorte || p.menge_dt).length;
   if ($("#e-sum")) $("#e-sum").textContent = `${n} Pos. · ${fdt(s)} dt`;
-  if ($("#e-more-sum")) $("#e-more-sum").textContent = [E.status, E.datum ? datum(E.datum) : "", E.kind === "auf" && E.tour_id && tourOf(E.tour_id) ? tourOf(E.tour_id).nr : "", E.kind === "auf" && E.entlade_abweichend ? "abw. Entladestelle" : ""].filter(Boolean).join(" · ");
+  if ($("#e-more-sum")) $("#e-more-sum").textContent = [E.lieferdatum ? "bis " + datum(E.lieferdatum) : "", E.status, E.kind === "auf" && E.tour_id && tourOf(E.tour_id) ? tourOf(E.tour_id).nr : "", E.kind === "auf" && E.entlade_abweichend ? "abw. Entladestelle" : ""].filter(Boolean).join(" · ");
 }
 const tourOf = id => D.touren.find(t => t.id === id);
 const tourLabel = t => `${t.nr} · ${t.spedition}${t.datum ? " · " + datum(t.datum) : ""}${t.status !== "geplant" ? " · " + t.status : ""}`;
@@ -635,7 +632,7 @@ function readHead(){
   const v = id => $(id) ? $(id).value : null;
   if (E.kind === "best"){ if ($("#e-lief")) E.lieferant = v("#e-lief").trim(); if ($("#e-vo")) E.vo = v("#e-vo").trim(); }
   if ($("#e-datum")) E.datum = v("#e-datum"); if ($("#e-stat")) E.status = v("#e-stat"); if ($("#e-bem")) E.bemerkung = v("#e-bem").trim();
-  if ($("#e-lt")) E.liefertermin = v("#e-lt").trim(); if ($("#e-du")) E.anrede_du = v("#e-du") === "1"; if ($("#e-anr")) E.anrede = v("#e-anr").trim(); if ($("#e-abt")) E.ab_text = v("#e-abt").trim();
+  if ($("#e-ldat")) E.lieferdatum = v("#e-ldat") || null;
   if (E.kind === "auf"){
     E.tour_id = E.lieferart === "Anlieferung" && $("#e-tour") ? (v("#e-tour") || null) : (E.lieferart === "Anlieferung" ? E.tour_id : null);
     if ($("#e-abw")) E.entlade_abweichend = $("#e-abw").checked;
@@ -663,7 +660,7 @@ function wireEdit(){
   $("#e-back").onclick = () => { if (REC) REC.stop(); closeEdit(); };
   $("#e-dik-open").onclick = () => { E._dikOpen = !E._dikOpen; $("#e-dikbox").hidden = !E._dikOpen; if (E._dikOpen && $("#e-dik")) $("#e-dik").focus(); };
   $(".more").addEventListener("toggle", ev => { E._more = ev.target.open; });
-  wireSeg("e-lzs", v => { E[lzKey()] = v; rerenderLogi(); });
+  wireSeg("e-lzs", v => { const alt = E[lzKey()]; if (!E.lieferdatum || E.lieferdatum === stdLieferdatum(alt, E.datum)){ E.lieferdatum = stdLieferdatum(v, E.datum); if ($("#e-ldat")) $("#e-ldat").value = E.lieferdatum; } E[lzKey()] = v; rerenderLogi(); });
   if (E.kind === "auf"){
     wireSeg("e-la", v => { E.lieferart = v; if (v !== "Anlieferung"){ E.tour_id = null; E.entlade_abweichend = false; } rerenderLogi(); });
     const ki = $("#e-kunde");
@@ -675,8 +672,7 @@ function wireEdit(){
     $("#e-lief").onchange = () => { readHead(); const l = D.lief.find(l => l.name === E.lieferant && l.typ === E.lieferant_typ); if (l && l.vo && !E.vo){ E.vo = l.vo; $("#e-vo").value = l.vo; } if (E.lieferant_typ === "VO"){ E.vo = E.lieferant; $("#e-vo").value = E.vo; } updAllInfo(); };
     $("#e-vo").onchange = readHead;
   }
-  ["#e-datum", "#e-stat", "#e-bem", "#e-lt", "#e-anr", "#e-abt"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); updSum(); }; });
-  if ($("#e-du")) $("#e-du").onchange = () => { readHead(); $("#e-anr").placeholder = ANREDE_STD(E.anrede_du); };
+  ["#e-datum", "#e-stat", "#e-bem", "#e-ldat"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); updSum(); }; });
   if ($("#e-ab")) $("#e-ab").onclick = abPdf;
   $$("#e-pos .pos").forEach(el => wirePos(el));
   if ($("#e-del")) $("#e-del").onclick = delEdit;
@@ -759,9 +755,9 @@ async function saveEdit(){
       ? {lieferant: E.lieferant, lieferant_typ: E.lieferant_typ, vo: E.vo || null, liefertermin: E.liefertermin || null}
       : {kdnr: E.kdnr || null, kunde: E.kunde, lieferzeitraum: E.lieferzeitraum, lieferart: E.lieferart, abholstelle: E.lieferart === "Anlieferung" ? null : (E.abholstelle || null), tour_id: E.tour_id || null, tour_pos: tourPosFuer(E),
          entlade_abweichend: !!E.entlade_abweichend, entlade_name: E.entlade_abweichend ? (E.entlade_name || null) : null, entlade_strasse: E.entlade_abweichend ? (E.entlade_strasse || null) : null,
-         liefertermin: E.liefertermin || null, ab_text: E.ab_text || null, anrede_du: !!E.anrede_du, anrede: E.anrede || null,
+
          entlade_plz: E.entlade_abweichend ? (E.entlade_plz || null) : null, entlade_ort: E.entlade_abweichend ? (E.entlade_ort || null) : null, entlade_hinweis: E.entlade_abweichend ? (E.entlade_hinweis || null) : null};
-    Object.assign(head, {datum: E.datum || null, status: E.status, bemerkung: E.bemerkung || null, bearbeiter: me.name, updated_at: new Date().toISOString()});
+    Object.assign(head, {lieferdatum: E.lieferdatum || stdLieferdatum(E[lzKey()], E.datum), datum: E.datum || null, status: E.status, bemerkung: E.bemerkung || null, bearbeiter: me.name, updated_at: new Date().toISOString()});
     let hid = E.id;
     if (hid){ const { error } = await sb.from(c.head).update(head).eq("id", hid); if (error) throw error; }
     else { const { data, error } = await sb.from(c.head).insert(Object.assign(head, {quelle: "Eingabe"})).select().single(); if (error) throw error; hid = data.id; E.nr = data.nr; }
@@ -1074,7 +1070,7 @@ async function abPdf(){
   const G = [92, 138, 19], B = [44, 127, 176], GR = [107, 107, 107], DK = [20, 20, 20];
   const t = (s, x, y, o) => doc.text(String(s), x, y, o);
   const font = (st, sz, col) => { doc.setFont("helvetica", st); doc.setFontSize(sz); doc.setTextColor(...col); };
-  const du = !!E.anrede_du;
+  const du = false; // AB immer standardisiert in Sie-Form
   // Kopf
   font("bold", 15, G); t(VG.firma, 18, 18);
   font("normal", 8.5, GR); t(VG.zusatz, 18, 23); t(`${VG.str} · ${VG.ort} · Tel. ${VG.tel} · ${VG.web}`, 18, 27.5);
@@ -1086,13 +1082,13 @@ async function abPdf(){
   const adr = [E.kunde, kd.strasse, [kd.plz, kd.ort].filter(Boolean).join(" ")].filter(Boolean);
   adr.forEach((l, i) => { font(i ? "normal" : "bold", i ? 10.5 : 11, DK); t(l, 18, y + 6 + i * 5); });
   const lzTxt = E.lieferzeitraum === "Herbst" ? "Herbst (Dez. – Mitte Jan.)" : "Frühjahr (März – April)";
-  const info = [["AB-Nr.", E.nr, 1], ["Datum", new Date().toLocaleDateString("de-DE")], ["Kunden-Nr.", E.kdnr || "–"], ["Ihre Bestellung", E.datum ? "vom " + datum(E.datum) : "–"],
-    ["Lieferzeitraum", lzTxt, 1], ["Liefertermin", E.liefertermin || "nach Absprache", 1], ["Ansprechpartner", me.name], ["E-Mail", VG.bmail]];
+  const info = [["AB-Nr.", E.nr, 1], ["Datum", datum(new Date())], ["Kunden-Nr.", E.kdnr || "–"], ["Ihre Bestellung", E.datum ? "vom " + datum(E.datum) : "–"],
+    ["Lieferzeitraum", lzTxt, 1], ["Liefertermin", "bis " + datum(E.lieferdatum || stdLieferdatum(E.lieferzeitraum, E.datum)), 1], ["Ansprechpartner", me.name], ["E-Mail", VG.bmail]];
   info.forEach((r, i) => { font("normal", 8.5, GR); t(r[0], 124, y + i * 4.6); font(r[2] ? "bold" : "normal", 8.5, DK); t(doc.splitTextToSize(String(r[1]), 40)[0], 152, y + i * 4.6); });
   // Titel
   y = 86; font("bold", 18, G); t("Auftragsbestätigung", 18, y); font("normal", 11, B); t("Nr. " + E.nr, 92, y);
-  font("normal", 9.5, DK); t(E.anrede || ANREDE_STD(du), 18, y + 8);
-  const intro = du ? "vielen Dank für deine Pflanzkartoffelbestellung. Hiermit bestätigen wir dir folgende Positionen:" : "vielen Dank für Ihre Pflanzkartoffelbestellung. Hiermit bestätigen wir Ihnen folgende Positionen:";
+  font("normal", 9.5, DK); t(ANREDE_STD(false), 18, y + 8);
+  const intro = "vielen Dank für Ihre Bestellung. Hiermit bestätigen wir Ihnen folgende Positionen:";
   const il = doc.splitTextToSize(intro, 174); il.forEach((l, i) => t(l, 18, y + 13 + i * 5)); y = y + 13 + il.length * 5 + 6;
   // Tabelle (ohne Preise)
   const cols = [[18, "Pos."], [28, "Sorte"], [72, "Sortierung"], [128, "Menge dt", "r"], [134, "Verpackung / Gebinde"]]; // ohne Züchter
@@ -1122,11 +1118,10 @@ async function abPdf(){
     doc.splitTextToSize(zt, 158).forEach((l, i) => t(l, 34, y + i * 4.8)); y += doc.splitTextToSize(zt, 158).length * 4.8 + 3;
   }
   const ent = entladestelle(E);
-  const lief = E.lieferart === "Anlieferung" ? `Lieferung: Anlieferung an ${[ent.abw ? ent.name : "", ent.strasse, [ent.plz, ent.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "die vereinbarte Adresse"}.`
-    : `Abholung ab Vermehrer${E.abholstelle ? ": " + E.abholstelle : ""}${(() => { const l = E.abholstelle ? D.lief.find(x => x.name === E.abholstelle && x.typ === "Vermehrer") : null; return l && l.adresse ? ", " + l.adresse : ""; })()}.`;
-  const para = [];
-  if (E.ab_text) para.push(E.ab_text);
-  if (!E.ab_text || !/Lieferung|Abholung|Anlieferung/i.test(E.ab_text)) para.push(lief);
+  const bis = datum(E.lieferdatum || stdLieferdatum(E.lieferzeitraum, E.datum));
+  const lief = E.lieferart === "Anlieferung" ? `Lieferung: Anlieferung bis ${bis} an ${[ent.abw ? ent.name : "", ent.strasse, [ent.plz, ent.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "die vereinbarte Adresse"}.`
+    : `Lieferung: Abholung bis ${bis} ab Vermehrer${E.abholstelle ? ": " + E.abholstelle : ""}${(() => { const l = E.abholstelle ? D.lief.find(x => x.name === E.abholstelle && x.typ === "Vermehrer") : null; return l && l.adresse ? ", " + l.adresse : ""; })()}.`;
+  const para = [lief]; // nur lieferrelevante Angaben, keine Zusatztexte aus dem Mailverkehr
   font("normal", 9, DK);
   para.forEach(pa => { doc.splitTextToSize(pa, 174).forEach(l => { if (y > 262){ doc.addPage(); y = 20; } t(l, 18, y); y += 4.8; }); y += 2; });
   y += 4; if (y > 250){ doc.addPage(); y = 20; }

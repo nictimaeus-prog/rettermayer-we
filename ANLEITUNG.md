@@ -138,8 +138,11 @@ assets/                   App-Symbol und Startbild
 - Eingabemaske fürs Handy: Erzeuger, Anlieferung/Abholung (bei Abholung Abholstelle = Vermehrer), Frühjahr/Herbst, dann je Zeile
   Menge · Sorte · Sortierung (NS) · Verpackung (BB 11 / BB 12,5 / Sack / lose); neue Zeile entsteht automatisch, Enter springt weiter.
   Datum, Status, Tour, abweichende Entladestelle und Bemerkung unter „Weitere Angaben“. Reiterleiste verschwindet beim Runterscrollen
-- Auftragsbestätigung: im gespeicherten Kundenauftrag „AB als PDF“ (immer ohne Preise; Briefkopf VG Bio). Unter „Weitere Angaben“:
-  Liefertermin-Text, Anrede Sie/Du, Begrüßung, Hinweis auf der AB; Lieferadresse bzw. Abholstelle wird automatisch ergänzt
+- Auftragsbestätigung: im gespeicherten Kundenauftrag „AB als PDF“ – standardisiert (Sie-Form, ohne Preise, ohne Züchter,
+  ohne Zusatztexte aus dem Mailverkehr). Enthält nur lieferrelevante Angaben: Positionen, Gebinde, Rhizoctonia-Zusatz (Häkchen RHIZ),
+  Lieferart mit Adresse bzw. Abholstelle und konkretes Lieferdatum „bis“
+- Lieferdatum: jeder Auftrag und jede Bestellung hat ein konkretes Datum (Standard Herbst 15.01., Frühjahr 15.03. der Saison),
+  änderbar unter „Weitere Angaben“
 - Zukaufvorschlag (Tab „Einkauf“): je Sorte und Sortierung Kundenaufträge minus VG-Anteil aus der Vermehrung (Bestellungen bei
   Vermehrern/VOs) minus Zukauf (Züchter/Händler); Bezugsquelle je Sorte (Standard: Züchter laut Katalog), Entwurf-Bestellung per Knopf
 - Verpackung je Position: Big Bag (Standard 11 dt aus der eigenen Vermehrung; 12,5 dt bei holländischer Ware, je Sorte im Sortenkatalog

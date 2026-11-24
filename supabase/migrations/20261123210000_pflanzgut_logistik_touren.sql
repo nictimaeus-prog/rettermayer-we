@@ -72,3 +72,7 @@ alter table public.pfg_auftraege
 -- Vermerk RHIZ: Rhizoctonia-Pustelbesatz unter 20 % nach Schweizer Modell (Standard: ja, je Position abwählbar)
 alter table public.pfg_auftragpos add column if not exists rhiz boolean not null default true;
 alter table public.pfg_bestellpos add column if not exists rhiz boolean not null default true;
+
+-- Konkretes Lieferdatum („bis“) für Aufträge und Bestellungen: Standard Herbst 15.01., Frühjahr 15.03. der Saison
+alter table public.pfg_auftraege add column if not exists lieferdatum date;
+alter table public.pfg_bestellungen add column if not exists lieferdatum date;
