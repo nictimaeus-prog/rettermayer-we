@@ -1088,7 +1088,7 @@ async function abPdf(){
   adr.forEach((l, i) => { font(i ? "normal" : "bold", i ? 10.5 : 11, DK); t(l, 18, y + 6 + i * 5); });
   const lzTxt = E.lieferzeitraum === "Herbst" ? "Herbst (Dez. – Mitte Jan.)" : "Frühjahr (März – April)";
   const info = [["AB-Nr.", E.nr, 1], ["Datum", datum(new Date())], ["Kunden-Nr.", E.kdnr || "–"], ["Ihre Bestellung", E.datum ? "vom " + datum(E.datum) : "–"],
-    ["Lieferzeitraum", lzTxt, 1], ["Lieferdatum", datum(E.lieferdatum || stdLieferdatum(E.lieferzeitraum, E.datum)), 1],
+    ["Lieferzeitraum", lzTxt, 1], ["Lieferdatum", datum(E.lieferdatum || stdLieferdatum(E.lieferzeitraum, E.datum)) + " (voraussichtl.)", 1],
     ["Lieferart", E.lieferart === "Anlieferung" ? "Anlieferung" : "Abholung ab Vermehrer", 1], ["Ansprechpartner", bearbStd(E.bearbeiter)], ["E-Mail", bearbMail(bearbStd(E.bearbeiter))]];
   info.forEach((r, i) => { font("normal", 8.5, GR); t(r[0], 124, y + i * 4.6); font(r[2] ? "bold" : "normal", 8.5, DK); t(doc.splitTextToSize(String(r[1]), 40)[0], 152, y + i * 4.6); });
   // Titel
@@ -1131,10 +1131,15 @@ async function abPdf(){
   if (rz.length){
     const zt = (rz.length === pos.length ? "Lieferung" : "Lieferung der Sorten " + [...new Set(rz.map(p => p.sorte))].join(", ")) + " mit unter 20 % Rhizoctonia-Pustelbesatz nach Schweizer Modell.";
     font("bold", 9, DK); t("Zusatz:", 18, y); font("normal", 9, DK);
-    doc.splitTextToSize(zt, 158).forEach((l, i) => t(l, 34, y + i * 4.8)); y += doc.splitTextToSize(zt, 158).length * 4.8 + 3;
+    doc.splitTextToSize(zt, 152).forEach((l, i) => t(l, 40, y + i * 4.8)); y += doc.splitTextToSize(zt, 152).length * 4.8 + 3;
   }
 
 
+  // Standardhinweis Liefertermin (keine Fixtermin-Zusage)
+  const LT_HINWEIS = "Das Lieferdatum ist ein voraussichtlicher Termin, kein Fixtermin. Wir bemühen uns stets um fristgerechte Lieferung. Verzögerungen aus logistischen Gründen oder durch verspätete Verladefreigabe unserer Vorlieferanten bleiben vorbehalten; sie berechtigen nicht zur Annahmeverweigerung der Ware.";
+  if (y > 255){ doc.addPage(); y = 20; }
+  font("bold", 9, DK); t("Liefertermin:", 18, y); font("normal", 9, DK);
+  const lh = doc.splitTextToSize(LT_HINWEIS, 152); lh.forEach((l, i) => t(l, 40, y + i * 4.6)); y += lh.length * 4.6 + 3;
   y += 4; if (y > 250){ doc.addPage(); y = 20; }
   font("normal", 9.5, DK); t(du ? "Vielen Dank für deinen Auftrag. Bei Fragen melde dich gerne." : "Vielen Dank für Ihren Auftrag. Bei Fragen erreichen Sie uns gerne.", 18, y);
   t(du ? "Viele Grüße" : "Mit freundlichen Grüßen", 18, y + 9); font("bold", 9.5, DK); t(bearbStd(E.bearbeiter), 18, y + 19); font("normal", 9.5, DK); t(VG.firma, 18, y + 24);
