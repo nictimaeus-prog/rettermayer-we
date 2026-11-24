@@ -138,6 +138,7 @@ details.more[open]{display:grid;gap:8px}
   <div class="who" id="who" hidden><span id="who-n"></span> · <button class="link" id="logout">Abmelden</button></div>
 </header>
 <div class="stripe"></div>
+<div id="testbar" hidden style="background:#f59e0b;color:#111;padding:8px 12px;font-weight:600;display:flex;gap:10px;flex-wrap:wrap;align-items:center">🧪 TESTMODUS – Kopie der Daten, echte Daten bleiben unberührt <button class="btn" id="test-reset" type="button">Testkopie neu aus Echtdaten füllen</button> <a href="./" style="color:#111">zur echten App</a></div>
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-view="v-ueb">Übersicht</button>
   <button role="tab" aria-selected="false" data-view="v-auf">Kundenaufträge</button>
@@ -410,6 +411,9 @@ function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false
 
 const CFG = window.RWE_CONFIG || {};
 const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {auth: {persistSession: true, autoRefreshToken: true, storageKey: "rwe-auth"}});
+// Testmodus (?test=1): alle pfg_-Tabellen werden auf die Kopie pfgt_ umgeleitet
+const TEST = new URLSearchParams(location.search).has("test");
+if (TEST){ const _from = sb.from.bind(sb); sb.from = n => _from(String(n).replace(/^pfg_/, "pfgt_")); document.title = "TEST · " + document.title; }
 let me = null;
 const D = {sorten: [], lief: [], kunden: [], partien: [], best: [], pos: [], zu: [], auf: [], apos: [], azu: [], touren: [], dist: [], ladestellen: []};
 const LZ = ["Herbst", "Frühjahr"];
@@ -1925,6 +1929,7 @@ async function start(session){
   const { data: prof } = await sb.from("profiles").select("name").eq("id", session.user.id).maybeSingle();
   me = {id: session.user.id, name: (prof && prof.name) || session.user.email};
   $("#who-n").textContent = me.name; $("#who").hidden = false; $("#gate").hidden = true;
+  if (TEST){ $("#testbar").hidden = false; $("#test-reset").onclick = async () => { if (!confirm("Alle Testdaten löschen und neu aus den echten Daten kopieren?")) return; const { error } = await sb.rpc("pfgt_neu_kopieren"); if (error) return toast("Fehler: " + error.message); toast("Testkopie neu gefüllt"); await loadAll(); }; }
   try { await loadAll(); } catch (err){ console.error(err); toast(navigator.onLine === false || /fetch|network|Load failed/i.test(String(err.message || err)) ? "Keine Verbindung – die Daten kommen automatisch, sobald wieder Netz da ist" : "Daten konnten nicht geladen werden: " + (err.message || err)); }
 }
 $("#login-form").addEventListener("submit", async ev => {
