@@ -60,3 +60,11 @@ alter table public.pfg_bestellungen add constraint pfg_bestellungen_lieferant_ty
 
 -- Abholung: Abholstelle (Vermehrer) direkt am Kundenauftrag
 alter table public.pfg_auftraege add column if not exists abholstelle text;
+
+-- Auftragsbestätigung (ohne Preise): Liefertermin als Text, Hinweis, Anrede, Du-Form, Zeitpunkt der letzten AB
+alter table public.pfg_auftraege
+  add column if not exists liefertermin text,
+  add column if not exists ab_text text,
+  add column if not exists anrede_du boolean not null default false,
+  add column if not exists anrede text,
+  add column if not exists ab_am timestamptz;
