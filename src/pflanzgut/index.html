@@ -1105,7 +1105,7 @@ async function abPdf(){
     const so = D.sorten.find(s => s.name === p.sorte) || {}, g = gebinde(p); sum += num(p.menge_dt);
     const gk = p.verpackung === "Big Bag" ? "Big Bags" : p.verpackung === "Sack 25 kg" ? "Säcke à 25 kg" : "lose"; geb[gk] = (geb[gk] || 0) + (p.verpackung === "lose" ? 0 : g.n);
     const gt = p.verpackung === "Big Bag" ? `${g.n} Big Bag${g.n === 1 ? "" : "s"} à ${fmt(num(p.bb_dt) || 11, (num(p.bb_dt) || 11) % 1 ? 1 : 0)} dt` : p.verpackung === "Sack 25 kg" ? `${g.n} Säcke à 25 kg` : "lose";
-    const vals = [String(i + 1), p.sorte, so.zuechter || "–", ({NS: "NS", Drill: "Drillinge", "ÜG": "Übergrößen"})[p.sortierung] + (p.bemerkung && /\d\d\/\d\d/.test(p.bemerkung) ? " " + p.bemerkung.match(/\d\d\/\d\d/)[0] : "") + (p.rhiz !== false ? " · RHIZ" : ""), fmt(p.menge_dt, 1), gt];
+    const vals = [String(i + 1), p.sorte, so.zuechter || "–", ({NS: "NS", Drill: "Drillinge", "ÜG": "Übergrößen"})[p.sortierung] + (p.bemerkung && /\d\d\/\d\d/.test(p.bemerkung) ? " " + p.bemerkung.match(/\d\d\/\d\d/)[0] : ""), fmt(p.menge_dt, 1), gt];
     cols.forEach((c, j) => { font(j === 1 ? "bold" : "normal", 9, DK); t(doc.splitTextToSize(vals[j], j === 3 ? 42 : j === 2 ? 33 : 60)[0], c[0] + (c[2] ? 0 : 0.5), y, c[2] ? {align: "right"} : undefined); });
     y += 5.6;
   });
@@ -1114,7 +1114,13 @@ async function abPdf(){
   font("normal", 9.5, DK); t(Object.entries(geb).filter(([k, n]) => n).map(([k, n]) => k === "Big Bags" ? `${n} Big Bag${n === 1 ? "" : "s"}` : `${n} ${k}`).join(", "), 143.5, y + 1);
   // Hinweise
   y += 11;
-  if (pos.some(p => p.rhiz !== false)){ font("normal", 8.5, GR); t("RHIZ: " + RHIZ_TXT + ".", 18, y); y += 7; }
+  // Zusatz Rhizoctonia ausgeschrieben (in der App nur als Häkchen „RHIZ“)
+  const rz = pos.filter(p => p.rhiz !== false);
+  if (rz.length){
+    const zt = (rz.length === pos.length ? "Lieferung" : "Lieferung der Sorten " + [...new Set(rz.map(p => p.sorte))].join(", ")) + " mit unter 20 % Rhizoctonia-Pustelbesatz nach Schweizer Modell.";
+    font("bold", 9, DK); t("Zusatz:", 18, y); font("normal", 9, DK);
+    doc.splitTextToSize(zt, 158).forEach((l, i) => t(l, 34, y + i * 4.8)); y += doc.splitTextToSize(zt, 158).length * 4.8 + 3;
+  }
   const ent = entladestelle(E);
   const lief = E.lieferart === "Anlieferung" ? `Lieferung: Anlieferung an ${[ent.abw ? ent.name : "", ent.strasse, [ent.plz, ent.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "die vereinbarte Adresse"}.`
     : `Abholung ab Vermehrer${E.abholstelle ? ": " + E.abholstelle : ""}${(() => { const l = E.abholstelle ? D.lief.find(x => x.name === E.abholstelle && x.typ === "Vermehrer") : null; return l && l.adresse ? ", " + l.adresse : ""; })()}.`;
