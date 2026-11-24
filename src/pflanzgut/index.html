@@ -94,6 +94,8 @@ td input,td select{padding:5px 7px;font-size:13.5px}
 .mic svg{width:24px;height:24px}
 @keyframes pulse{50%{opacity:.6}}
 .grid2{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+.rz{display:inline-flex;align-items:center;gap:3px;font-weight:600;color:var(--ink);cursor:pointer}
+.rz input{width:16px;height:16px;margin:0}
 .zkg{border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;gap:6px}
 .posh,.pl{display:grid;grid-template-columns:76px minmax(110px,1fr) 74px 92px 34px;gap:6px;align-items:center}
 .posh{font-size:12px;color:var(--muted);font-weight:600;padding:0 2px}
@@ -481,13 +483,14 @@ $("#auf-dik").onclick = () => { openEdit("auf", null); E._dikOpen = true; $("#e-
 
 // ---------- Bearbeiten (gemeinsame Maske)
 let E = null;
-function newPos(){ return {id: null, sorte: "", sortierung: "NS", verpackung: "Big Bag", bb_dt: 11, menge_dt: null, bemerkung: "", zu: [], modus: "spaeter"}; }
+const RHIZ_TXT = "Rhizoctonia-Pustelbesatz unter 20 % nach Schweizer Modell";
+function newPos(){ return {id: null, sorte: "", sortierung: "NS", verpackung: "Big Bag", bb_dt: 11, rhiz: true, menge_dt: null, bemerkung: "", zu: [], modus: "spaeter"}; }
 function openEdit(kind, id, preset){
   const c = K[kind];
   Object.keys(K).forEach(k => { if (k !== kind){ $(K[k].edit).hidden = true; $(K[k].edit).innerHTML = ""; $(K[k].list).hidden = false; } }); // nur eine Maske gleichzeitig
   if (id){
     const h = headOf(kind, id);
-    E = Object.assign({}, h, {kind, pos: posOfK(kind, id).map(p => { const z = zuOfK(kind, p.id); return {id: p.id, sorte: p.sorte, sortierung: p.sortierung, verpackung: p.verpackung || "Big Bag", bb_dt: num(p.bb_dt) || 11, menge_dt: num(p.menge_dt), bemerkung: p.bemerkung || "", zu: z.map(z => ({partie_id: z.partie_id, menge_dt: num(z.menge_dt)})), modus: z.length ? "partie" : "spaeter"}; })});
+    E = Object.assign({}, h, {kind, pos: posOfK(kind, id).map(p => { const z = zuOfK(kind, p.id); return {id: p.id, sorte: p.sorte, sortierung: p.sortierung, verpackung: p.verpackung || "Big Bag", bb_dt: num(p.bb_dt) || 11, rhiz: p.rhiz !== false, menge_dt: num(p.menge_dt), bemerkung: p.bemerkung || "", zu: z.map(z => ({partie_id: z.partie_id, menge_dt: num(z.menge_dt)})), modus: z.length ? "partie" : "spaeter"}; })});
   } else if (kind === "best"){
     E = {kind, id: null, nr: "neu", lieferant: "", lieferant_typ: "Vermehrer", vo: "", datum: new Date().toISOString().slice(0, 10), liefertermin: "Frühjahr", status: "offen", bemerkung: "", pos: [newPos()]};
   } else {
@@ -542,7 +545,7 @@ function renderEdit(){
   <div id="e-logi">${E.kind === "auf" ? logiHtml() : ""}</div>
   <div class="posh"><span>Menge dt</span><span>Sorte</span><span>Sort.</span><span>Verp.</span><span></span></div>
   <div id="e-pos" class="poslist">${E.pos.map((p, i) => posHtml(p, i)).join("")}</div>
-  <div class="row"><span class="hint grow">Neue Zeile entsteht automatisch · Enter springt weiter</span><b id="e-sum"></b></div>
+  <div class="row"><span class="hint grow">Neue Zeile entsteht automatisch · Enter springt weiter · RHIZ = ${RHIZ_TXT}</span><b id="e-sum"></b></div>
   <details class="more" ${E._more || (E.kind === "auf" && E.entlade_abweichend) ? "open" : ""}><summary>Weitere Angaben <span class="hint" id="e-more-sum"></span></summary>
     <div class="grid2">
       <label class="f">Datum<input type="date" id="e-datum" value="${esc(E.datum || "")}"></label>
@@ -610,6 +613,7 @@ function posInfoHtml(p){
   if (!p.sorte && !p.menge_dt) return "";
   const zs = p.zu.reduce((a, z) => a + num(z.menge_dt), 0), rest = num(p.menge_dt) - zs, k = p.sorte ? kandidaten(p) : [];
   const bits = [];
+  bits.push(`<label class="rz" title="${RHIZ_TXT}"><input type="checkbox" class="p-rhiz" ${p.rhiz !== false ? "checked" : ""}> RHIZ &lt;20 %</label>`);
   if (num(p.menge_dt) > 0) bits.push(`<b>${esc(gebinde(p).txt)}</b>`);
   if (p.sorte && !D.sorten.some(s => s.name === p.sorte)) bits.push(`<span class="pill a">nicht im Katalog</span>`);
   if (p.modus === "partie") bits.push(zs > 0 ? (rest > 0.05 ? `<span class="pill a">Partie: ${fdt(zs)} von ${fdt(p.menge_dt)} dt</span>` : `<span class="pill g">Partie zugeordnet</span>`) : `<span class="pill a">Partie wählen</span>`);
@@ -700,6 +704,7 @@ function wirePos(el){
   wireInfo(el, p);
 }
 function wireInfo(el, p){
+  const rz = el.querySelector(".p-rhiz"); if (rz) rz.onchange = () => { p.rhiz = rz.checked; };
   const t = el.querySelector(".p-tog"); if (t) t.onclick = () => { p.modus = p.modus === "partie" ? "spaeter" : "partie"; if (p.modus === "spaeter") p.zu = []; else if (!p.zu.length) autoVerteilen(p); if (p.zu.length && p.verpackung === "Big Bag"){ p.bb_dt = 11; el.querySelector(".p-vp").innerHTML = vpOpts(p); } updInfo(el); };
   el.querySelectorAll(".a-m").forEach(inp => inp.onchange = () => {
     const v = numIn(inp.value), pid = inp.dataset.pid;
@@ -766,7 +771,7 @@ async function saveEdit(){
     for (let i = 0; i < pos.length; i++){
       const p = pos[i];
       const bem = (p.bemerkung || "").replace(/Aufteilung auf \d+ Partien offen/, "").trim();
-      const row = {[c.fk]: hid, sorte: p.sorte, sortierung: p.sortierung, verpackung: p.verpackung || "Big Bag", bb_dt: num(p.bb_dt) || 11, menge_dt: num(p.menge_dt), pos: i + 1, bemerkung: bem || null};
+      const row = {[c.fk]: hid, sorte: p.sorte, sortierung: p.sortierung, verpackung: p.verpackung || "Big Bag", bb_dt: num(p.bb_dt) || 11, rhiz: p.rhiz !== false, menge_dt: num(p.menge_dt), pos: i + 1, bemerkung: bem || null};
       let pid = p.id;
       if (pid){ const { error } = await sb.from(c.pos).update(row).eq("id", pid); if (error) throw error; }
       else { const { data, error } = await sb.from(c.pos).insert(row).select().single(); if (error) throw error; pid = data.id; }
@@ -799,10 +804,10 @@ $("#best-csv").onclick = () => {
   csvDownload(rows, "Pflanzgut_Bestellungen");
 };
 $("#auf-csv").onclick = () => {
-  const rows = [["Auftragsnr", "Datum", "Kundennr", "Kunde", "Lieferzeitraum", "Lieferart", "Abholstelle", "Tour", "Spedition", "Tour_Datum", "Stopp", "Entladestelle", "Entlade_Strasse", "Entlade_PLZ", "Entlade_Ort", "Entlade_Hinweis", "Status", "Pos", "Sorte", "Sortierung", "Verpackung", "BB_dt", "Gebinde", "Menge_dt", "Anerk_Nr", "Vermehrer", "Menge_Partie_dt", "Bemerkung"]];
+  const rows = [["Auftragsnr", "Datum", "Kundennr", "Kunde", "Lieferzeitraum", "Lieferart", "Abholstelle", "Tour", "Spedition", "Tour_Datum", "Stopp", "Entladestelle", "Entlade_Strasse", "Entlade_PLZ", "Entlade_Ort", "Entlade_Hinweis", "Status", "Pos", "Sorte", "Sortierung", "Verpackung", "BB_dt", "Gebinde", "RHIZ_unter_20", "Menge_dt", "Anerk_Nr", "Vermehrer", "Menge_Partie_dt", "Bemerkung"]];
   D.auf.slice().sort((a, b) => a.nr.localeCompare(b.nr)).forEach(a => { const t = a.tour_id ? tourOf(a.tour_id) || {} : {}, e = entladestelle(a);
     posOfK("auf", a.id).forEach(p => {
-      const base = [a.nr, a.datum, a.kdnr || "", a.kunde, a.lieferzeitraum, a.lieferart, a.abholstelle || "", t.nr || "", t.spedition || "", t.datum || "", a.tour_pos || "", e.name, e.strasse, e.plz, e.ort, e.hinweis, a.status, p.pos, p.sorte, p.sortierung, p.verpackung, p.verpackung === "Big Bag" ? fmt(p.bb_dt) : "", gebinde(p).n || "", fmt(p.menge_dt)];
+      const base = [a.nr, a.datum, a.kdnr || "", a.kunde, a.lieferzeitraum, a.lieferart, a.abholstelle || "", t.nr || "", t.spedition || "", t.datum || "", a.tour_pos || "", e.name, e.strasse, e.plz, e.ort, e.hinweis, a.status, p.pos, p.sorte, p.sortierung, p.verpackung, p.verpackung === "Big Bag" ? fmt(p.bb_dt) : "", gebinde(p).n || "", p.rhiz !== false ? "ja" : "nein", fmt(p.menge_dt)];
       const zs = zuOfK("auf", p.id); if (!zs.length) rows.push(base.concat(["", "", "", a.bemerkung || ""]));
       zs.forEach(z => { const x = partie(z.partie_id) || {}; rows.push(base.concat([x.anerk_nr || "", x.vermehrer || "", fmt(z.menge_dt), a.bemerkung || ""])); });
     }); });
@@ -899,6 +904,7 @@ function promptBauen(text, nImg, diktat){
 - verpackung: "Big Bag" (Standard), "Sack 25 kg" oder "lose". bb_dt: 11 oder 12.5 (laut Katalog, wenn genannt die genannte).
 - lieferzeitraum: "Frühjahr" (März/April, Standard) oder "Herbst" (Dezember bis Mitte Januar, auch „Herbstlieferung“, „vor Weihnachten“, „Januar“).
 - sorte: genau ein Name aus dem KATALOG. Bei Spracherkennung lautähnlich zuordnen (z. B. „Anuschka“/„Anuska“, „Simonetta“/„Simoneta“). Nicht zuordenbar → in "unklar".
+- rhiz: true (Standard, Rhizoctonia-Pustelbesatz unter 20 % nach Schweizer Modell); nur false, wenn ausdrücklich anders vereinbart.
 - Was du nicht sicher erkennst, kommt in "unklar" (kurz, mit Originalwortlaut).`;
   let auf;
   if (E.kind === "auf"){
@@ -967,7 +973,7 @@ function eintragen(r, quelle){
   const pos = (Array.isArray(r.positionen) ? r.positionen : []).filter(p => p && (p.sorte || p.menge_dt)).map(p => {
     const sorte = sorteFinden(p.sorte), vp = VP.includes(p.verpackung) ? p.verpackung : "Big Bag";
     return Object.assign(newPos(), {sorte, sortierung: SORTS.includes(p.sortierung) ? p.sortierung : "NS", menge_dt: numIn(p.menge_dt), verpackung: vp,
-      bb_dt: num(p.bb_dt) > 0 ? num(p.bb_dt) : bbStd(sorte), bemerkung: p.original && !D.sorten.some(s => s.name === sorte) ? "„" + p.original + "“ – Sorte prüfen" : ""});
+      bb_dt: num(p.bb_dt) > 0 ? num(p.bb_dt) : bbStd(sorte), rhiz: p.rhiz !== false, bemerkung: p.original && !D.sorten.some(s => s.name === sorte) ? "„" + p.original + "“ – Sorte prüfen" : ""});
   });
   const leer = E.pos.every(p => !p.sorte && !p.menge_dt);
   E.pos = (leer ? [] : E.pos).concat(pos); if (!E.pos.length) E.pos.push(newPos());
@@ -1099,7 +1105,7 @@ async function abPdf(){
     const so = D.sorten.find(s => s.name === p.sorte) || {}, g = gebinde(p); sum += num(p.menge_dt);
     const gk = p.verpackung === "Big Bag" ? "Big Bags" : p.verpackung === "Sack 25 kg" ? "Säcke à 25 kg" : "lose"; geb[gk] = (geb[gk] || 0) + (p.verpackung === "lose" ? 0 : g.n);
     const gt = p.verpackung === "Big Bag" ? `${g.n} Big Bag${g.n === 1 ? "" : "s"} à ${fmt(num(p.bb_dt) || 11, (num(p.bb_dt) || 11) % 1 ? 1 : 0)} dt` : p.verpackung === "Sack 25 kg" ? `${g.n} Säcke à 25 kg` : "lose";
-    const vals = [String(i + 1), p.sorte, so.zuechter || "–", ({NS: "NS", Drill: "Drillinge", "ÜG": "Übergrößen"})[p.sortierung] + (p.bemerkung && /\d\d\/\d\d/.test(p.bemerkung) ? " " + p.bemerkung.match(/\d\d\/\d\d/)[0] : ""), fmt(p.menge_dt, 1), gt];
+    const vals = [String(i + 1), p.sorte, so.zuechter || "–", ({NS: "NS", Drill: "Drillinge", "ÜG": "Übergrößen"})[p.sortierung] + (p.bemerkung && /\d\d\/\d\d/.test(p.bemerkung) ? " " + p.bemerkung.match(/\d\d\/\d\d/)[0] : "") + (p.rhiz !== false ? " · RHIZ" : ""), fmt(p.menge_dt, 1), gt];
     cols.forEach((c, j) => { font(j === 1 ? "bold" : "normal", 9, DK); t(doc.splitTextToSize(vals[j], j === 3 ? 42 : j === 2 ? 33 : 60)[0], c[0] + (c[2] ? 0 : 0.5), y, c[2] ? {align: "right"} : undefined); });
     y += 5.6;
   });
@@ -1108,6 +1114,7 @@ async function abPdf(){
   font("normal", 9.5, DK); t(Object.entries(geb).filter(([k, n]) => n).map(([k, n]) => k === "Big Bags" ? `${n} Big Bag${n === 1 ? "" : "s"}` : `${n} ${k}`).join(", "), 143.5, y + 1);
   // Hinweise
   y += 11;
+  if (pos.some(p => p.rhiz !== false)){ font("normal", 8.5, GR); t("RHIZ: " + RHIZ_TXT + ".", 18, y); y += 7; }
   const ent = entladestelle(E);
   const lief = E.lieferart === "Anlieferung" ? `Lieferung: Anlieferung an ${[ent.abw ? ent.name : "", ent.strasse, [ent.plz, ent.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "die vereinbarte Adresse"}.`
     : `Abholung ab Vermehrer${E.abholstelle ? ": " + E.abholstelle : ""}${(() => { const l = E.abholstelle ? D.lief.find(x => x.name === E.abholstelle && x.typ === "Vermehrer") : null; return l && l.adresse ? ", " + l.adresse : ""; })()}.`;

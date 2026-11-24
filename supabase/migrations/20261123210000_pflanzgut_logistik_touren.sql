@@ -68,3 +68,7 @@ alter table public.pfg_auftraege
   add column if not exists anrede_du boolean not null default false,
   add column if not exists anrede text,
   add column if not exists ab_am timestamptz;
+
+-- Vermerk RHIZ: Rhizoctonia-Pustelbesatz unter 20 % nach Schweizer Modell (Standard: ja, je Position abwählbar)
+alter table public.pfg_auftragpos add column if not exists rhiz boolean not null default true;
+alter table public.pfg_bestellpos add column if not exists rhiz boolean not null default true;
