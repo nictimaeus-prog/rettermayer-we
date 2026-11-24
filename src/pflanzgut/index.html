@@ -1298,8 +1298,13 @@ async function kuerzungVorschlagen(){
     // Standard: anteilig nur Big-Bag-Positionen, auf ganze Big Bags gerundet
     daten.forEach(o => {
       const bb = o.pos.filter(p => p.verpackung === "Big Bag"), sumBB = bb.reduce((a, p) => a + num(p.menge_dt), 0);
-      if (!sumBB) return; const q = Math.max(0, 1 - o.fehlt / sumBB);
-      bb.forEach(p => { const g = num(p.bb_dt) || 11, neu = Math.floor(num(p.menge_dt) * q / g + 1e-6) * g; if (neu < num(p.menge_dt) - 0.05) vorschlag.push({pos_id: p.id, neu}); });
+      if (!sumBB) return;
+      // anteilig, aber nur so viele ganze Big Bags wie nötig (größter Rest zuerst) – keine Überkürzung
+      const t = bb.map(p => { const g = num(p.bb_dt) || 11, m = num(p.menge_dt), ziel = Math.min(m, o.fehlt * m / sumBB), n = Math.floor(ziel / g + 1e-6); return {p, g, m, n, rest: ziel - n * g}; });
+      let gekuerzt = t.reduce((a, x) => a + x.n * x.g, 0);
+      t.slice().sort((a, b) => b.rest - a.rest).forEach(x => { if (gekuerzt < o.fehlt - 0.05 && (x.n + 1) * x.g <= x.m){ x.n++; gekuerzt += x.g; } });
+      while (gekuerzt < o.fehlt - 0.05){ const x = t.filter(x => (x.n + 1) * x.g <= x.m).sort((a, b) => (b.m - b.n * b.g) - (a.m - a.n * a.g))[0]; if (!x) break; x.n++; gekuerzt += x.g; }
+      t.forEach(x => { if (x.n) vorschlag.push({pos_id: x.p.id, neu: Math.round((x.m - x.n * x.g) * 10) / 10}); });
     });
   } else {
     const st = $("#vt-kst"); st.textContent = "Claude rechnet die Kürzung …";
