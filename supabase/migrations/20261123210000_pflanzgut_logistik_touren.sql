@@ -76,3 +76,12 @@ alter table public.pfg_bestellpos add column if not exists rhiz boolean not null
 -- Konkretes Lieferdatum („bis“) für Aufträge und Bestellungen: Standard Herbst 15.01., Frühjahr 15.03. der Saison
 alter table public.pfg_auftraege add column if not exists lieferdatum date;
 alter table public.pfg_bestellungen add column if not exists lieferdatum date;
+
+-- VG-Anteil je Partie (Standard 50 %), Bonitur (Virus nur intern), Kundenklasse; Vorbelegung als Bestellung entfällt
+alter table public.pfg_partien
+  add column if not exists vg_pct numeric,
+  add column if not exists rhiz_pct numeric,
+  add column if not exists virus_pct numeric,
+  add column if not exists hkg_kg numeric,
+  add column if not exists maengel text;
+alter table public.pfg_kunden add column if not exists klasse text check (klasse in ('A','B','C'));

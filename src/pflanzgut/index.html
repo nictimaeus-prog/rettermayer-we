@@ -141,7 +141,7 @@ details.more[open]{display:grid;gap:8px}
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-view="v-ueb">Übersicht</button>
   <button role="tab" aria-selected="false" data-view="v-auf">Kundenaufträge</button>
-  <button role="tab" aria-selected="false" data-view="v-best">Einkauf bei Vermehrern</button>
+  <button role="tab" aria-selected="false" data-view="v-best">Einkauf &amp; Zukauf</button>
   <button role="tab" aria-selected="false" data-view="v-tour">Touren</button>
   <button role="tab" aria-selected="false" data-view="v-part">Partien</button>
   <button role="tab" aria-selected="false" data-view="v-stamm">Sorten &amp; Lieferanten</button>
@@ -157,7 +157,7 @@ details.more[open]{display:grid;gap:8px}
       <div class="seg" id="ueb-sort" role="group" aria-label="Sortierung">
         <button data-s="NS" aria-pressed="true">Normalsort. (NS)</button><button data-s="Drill" aria-pressed="false">Drillinge</button><button data-s="ÜG" aria-pressed="false">Übergrößen</button><button data-s="alle" aria-pressed="false">alle</button>
       </div></div>
-    <p class="hint">In Partien = gemeldete Mengen (ohne aberkannt, ergebnisoffen, Direktvermehrung). Bestellt = Einkauf bei Vermehrern/VOs/Züchtern. Verkauft = Kundenaufträge je Lieferzeitraum. Noch zu verkaufen = bestellt minus verkauft. „Ohne Partie“ = Mengen, die noch keiner Partie zugeordnet sind.</p>
+    <p class="hint">VG verfügbar = unser Anteil an den Partien (VG-Anteil je Partie, Standard 50 %; ohne aberkannt, ergebnisoffen, Direktvermehrung). Zukauf = Bestellungen bei Züchtern/Händlern. Saldo = verfügbar + Zukauf − verkauft (negativ = fehlt). „Ohne Partie“ = verkaufte Mengen, die noch keiner Partie zugeordnet sind.</p>
     <div class="tw"><table id="ueb-t"></table></div>
   </section>
 </main>
@@ -186,7 +186,7 @@ details.more[open]{display:grid;gap:8px}
     <div class="row"><h2 class="grow">Zukaufvorschlag</h2>
       <select id="zk-lz" style="width:auto"><option value="">Herbst und Frühjahr</option><option value="Frühjahr">nur Frühjahr</option><option value="Herbst">nur Herbst</option></select>
       <label class="row" style="font-size:13px;gap:4px"><input type="checkbox" id="zk-alle"> alle Sorten zeigen</label></div>
-    <p class="hint">Kundenaufträge minus VG-Anteil aus der eigenen Vermehrung (Bestellungen bei Vermehrern/VOs) minus schon Zugekauftes (Züchter/Händler). Vorschlag aufgerundet auf volle Big Bags. Die Bezugsquelle gilt je Sorte und wird gespeichert.</p>
+    <p class="hint">Kundenaufträge minus VG-Anteil der eigenen Partien (Standard 50 %) minus schon Zugekauftes (Züchter/Händler). Vorschlag aufgerundet auf volle Big Bags. Die Bezugsquelle gilt je Sorte und wird gespeichert.</p>
     <div id="zk-sum" class="hint"></div>
     <div id="zk-body" style="display:grid;gap:10px"></div>
   </section>
@@ -328,6 +328,22 @@ const SNAME = {"Purple": "Purple Rain", "Queen": "Queen Anne", "Triple": "Triple
 const SORTNAME = {NS: "Normalsortierung", Drill: "Drillinge", "ÜG": "Übergrößen"};
 const FIELD = {NS: "ns", Drill: "drill", "ÜG": "ueg"};
 const NICHT_VERF = ["aberkannt", "ergebnisoffen", "Direktvermehrung KSG"];
+// VG-Anteil je Partie (Standard 50 %): nur dieser Teil steht uns zur Verfügung
+const vgPct = x => x && x.vg_pct != null && x.vg_pct !== "" ? num(x.vg_pct) : 50;
+const vgMenge = (x, s) => Math.round(num(x[FIELD[s]]) * vgPct(x)) / 100;
+// Kundenklasse: manuell (Liste) oder automatisch nach Bestellmenge der Saison – A ab 100 dt, C Sackbesteller bis 3 dt, sonst B
+function klasseAuto(kdnr){
+  const ps = D.auf.filter(a => a.kdnr === kdnr && AKTIV.includes(a.status)).flatMap(a => posOfK("auf", a.id));
+  const sum = ps.reduce((s, p) => s + num(p.menge_dt), 0);
+  if (!ps.length) return "";
+  if (sum >= 100) return "A";
+  if (sum <= 3 && ps.every(p => p.verpackung === "Sack 25 kg")) return "C";
+  return "B";
+}
+const klasseVon = kdnr => { const k = D.kunden.find(x => x.kdnr === kdnr); return (k && k.klasse) || (kdnr ? klasseAuto(kdnr) : ""); };
+const klassePill = kl => kl ? `<span class="pill ${kl === "A" ? "g" : kl === "B" ? "b" : ""}" title="Kundenklasse">${kl}-Kunde</span>` : "";
+// Bonitur: Partie für A-Kunden ungeeignet?
+function bonWarn(x){ const w = []; if ((x.kat || "") === "ZB") w.push("ZB"); if (x.maengel) w.push(x.maengel); if (num(x.rhiz_pct) >= 20) w.push("Rhiz. " + fmt(x.rhiz_pct, 0) + " %"); return w; }
 const AKTIV = ["Entwurf", "offen", "bestätigt", "geliefert"];
 function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3200); }
 
@@ -413,8 +429,8 @@ function aktivePos(k){ return D[K[k].P].filter(p => { const h = headOf(k, p[K[k]
 function stat(){
   const S = {};
   const get = (n, s) => { S[n] = S[n] || {}; S[n][s] = S[n][s] || {verf: 0, best: 0, zuB: 0, partien: 0, Herbst: 0, "Frühjahr": 0, zuA: 0}; return S[n][s]; };
-  D.partien.filter(p => verfuegbar(p) && p.jahr === jahrAkt()).forEach(p => SORTS.forEach(s => { const v = num(p[FIELD[s]]); if (v > 0){ const o = get(p.sorte, s); o.verf += v; o.partien++; } }));
-  aktivePos("best").forEach(p => { const o = get(p.sorte, p.sortierung); o.best += num(p.menge_dt); o.zuB += Math.min(zuSum(p.id), num(p.menge_dt)); });
+  D.partien.filter(p => verfuegbar(p) && p.jahr === jahrAkt()).forEach(p => SORTS.forEach(s => { const v = vgMenge(p, s); if (v > 0){ const o = get(p.sorte, s); o.verf += v; o.partien++; } }));
+  aktivePos("best").forEach(p => { const b = bestOf(p.bestellung_id); if (!["Züchter", "Händler"].includes(b.lieferant_typ)) return; const o = get(p.sorte, p.sortierung); o.best += num(p.menge_dt); o.zuB += num(p.menge_dt); });
   aktivePos("auf").forEach(p => { const h = headOf("auf", p.auftrag_id), o = get(p.sorte, p.sortierung); o[h.lieferzeitraum] += num(p.menge_dt); o.zuA += Math.min(zuSumK("auf", p.id), num(p.menge_dt)); });
   return S;
 }
@@ -424,14 +440,14 @@ let uebSort = "NS";
 function renderUeb(){
   const S = stat();
   const sumK = (k, s, f) => aktivePos(k).filter(p => p.sortierung === s && (!f || f(p))).reduce((a, p) => a + num(p.menge_dt), 0);
-  const verfNS = D.partien.filter(p => verfuegbar(p) && p.jahr === jahrAkt()).reduce((a, p) => a + num(p.ns), 0);
-  const bestNS = sumK("best", "NS"), vkH = sumK("auf", "NS", p => headOf("auf", p.auftrag_id).lieferzeitraum === "Herbst"), vkF = sumK("auf", "NS", p => headOf("auf", p.auftrag_id).lieferzeitraum === "Frühjahr");
+  const verfNS = D.partien.filter(p => verfuegbar(p) && p.jahr === jahrAkt()).reduce((a, p) => a + vgMenge(p, "NS"), 0);
+  const bestNS = aktivePos("best").filter(p => p.sortierung === "NS" && ["Züchter", "Händler"].includes(bestOf(p.bestellung_id).lieferant_typ)).reduce((a, p) => a + num(p.menge_dt), 0), vkH = sumK("auf", "NS", p => headOf("auf", p.auftrag_id).lieferzeitraum === "Herbst"), vkF = sumK("auf", "NS", p => headOf("auf", p.auftrag_id).lieferzeitraum === "Frühjahr");
   const offB = aktivePos("best").filter(p => zuSum(p.id) + 0.05 < num(p.menge_dt)).length, offA = aktivePos("auf").filter(p => zuSumK("auf", p.id) + 0.05 < num(p.menge_dt)).length;
   $("#kpis").innerHTML = [
-    [fdt(verfNS) + " dt", "NS in Partien"],
-    [fdt(bestNS) + " dt", "NS bei Vermehrern/VOs bestellt"],
+    [fdt(verfNS) + " dt", "NS verfügbar (VG-Anteil der Partien)"],
     [fdt(vkH + vkF) + " dt", `NS an Kunden verkauft (Herbst ${fdt(vkH)} · Frühjahr ${fdt(vkF)})`],
-    [fdt(bestNS - vkH - vkF) + " dt", "NS noch zu verkaufen"],
+    [fdt(bestNS) + " dt", "NS bei Züchtern/Händlern zugekauft"],
+    [fdt(verfNS + bestNS - vkH - vkF) + " dt", "NS Saldo (+ frei / − fehlt)"],
     [String(D.auf.filter(a => AKTIV.includes(a.status)).length), "Kundenaufträge"],
     [String(offB + offA), `Positionen ohne Partie (Einkauf ${offB} · Verkauf ${offA})`],
   ].map(([b, s]) => `<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join("");
@@ -441,13 +457,13 @@ function renderUeb(){
   const rows = [];
   names.forEach(n => cols.forEach(s => {
     const o = (S[n] || {})[s]; if (!o || (!o.verf && !o.best && !o.Herbst && !o["Frühjahr"])) return;
-    const vk = o.Herbst + o["Frühjahr"], frei = o.best - vk, offB = o.best - o.zuB, offA = vk - o.zuA;
+    const vk = o.Herbst + o["Frühjahr"], frei = o.verf + o.best - vk, offB = 0, offA = vk - o.zuA;
     t.verf += o.verf; t.best += o.best; t.Herbst += o.Herbst; t["Frühjahr"] += o["Frühjahr"]; t.offB += offB; t.offA += offA;
     const so = D.sorten.find(x => x.name === n) || {};
-    rows.push(`<tr><td><b>${esc(n)}</b> <span class="hint">${esc(so.kochtyp || "")}</span></td>${uebSort === "alle" ? `<td>${esc(SORTNAME[s])}</td>` : ""}<td class="n">${o.partien}</td><td class="n">${fdt(o.verf)}</td><td class="n">${fdt(o.best)}</td><td class="n">${fdt(o.Herbst)}</td><td class="n">${fdt(o["Frühjahr"])}</td><td class="n">${frei < -0.05 ? `<span class="pill w" title="mehr verkauft als bestellt">${fdt(frei)}</span>` : `<b>${fdt(frei)}</b>`}</td><td class="n">${offB > 0.05 ? `<span class="pill a">${fdt(offB)}</span>` : "–"}</td><td class="n">${offA > 0.05 ? `<span class="pill a">${fdt(offA)}</span>` : "–"}</td></tr>`);
+    rows.push(`<tr><td><b>${esc(n)}</b> <span class="hint">${esc(so.kochtyp || "")}</span></td>${uebSort === "alle" ? `<td>${esc(SORTNAME[s])}</td>` : ""}<td class="n">${o.partien}</td><td class="n">${fdt(o.verf)}</td><td class="n">${fdt(o.best)}</td><td class="n">${fdt(o.Herbst)}</td><td class="n">${fdt(o["Frühjahr"])}</td><td class="n">${frei < -0.05 ? `<span class="pill w" title="fehlt – Zukauf nötig">${fdt(frei)}</span>` : `<b>${fdt(frei)}</b>`}</td><td class="n">${offA > 0.05 ? `<span class="pill a">${fdt(offA)}</span>` : "–"}</td></tr>`);
   }));
-  $("#ueb-t").innerHTML = `<thead><tr><th>Sorte</th>${uebSort === "alle" ? "<th>Sortierung</th>" : ""}<th class="n">Partien</th><th class="n">in Partien dt</th><th class="n">bestellt dt</th><th class="n">verkauft Herbst</th><th class="n">verkauft Frühjahr</th><th class="n">noch zu verkaufen</th><th class="n">ohne Partie Einkauf</th><th class="n">ohne Partie Verkauf</th></tr></thead><tbody>${rows.join("") || `<tr><td colspan="10" class="empty">Keine Daten</td></tr>`}</tbody>
-  <tfoot><tr class="sum"><td>Summe</td>${uebSort === "alle" ? "<td></td>" : ""}<td></td><td class="n">${fdt(t.verf)}</td><td class="n">${fdt(t.best)}</td><td class="n">${fdt(t.Herbst)}</td><td class="n">${fdt(t["Frühjahr"])}</td><td class="n">${fdt(t.best - t.Herbst - t["Frühjahr"])}</td><td class="n">${fdt(t.offB)}</td><td class="n">${fdt(t.offA)}</td></tr></tfoot>`;
+  $("#ueb-t").innerHTML = `<thead><tr><th>Sorte</th>${uebSort === "alle" ? "<th>Sortierung</th>" : ""}<th class="n">Partien</th><th class="n">VG verfügbar dt</th><th class="n">Zukauf dt</th><th class="n">verkauft Herbst</th><th class="n">verkauft Frühjahr</th><th class="n">Saldo</th><th class="n">ohne Partie</th></tr></thead><tbody>${rows.join("") || `<tr><td colspan="9" class="empty">Keine Daten</td></tr>`}</tbody>
+  <tfoot><tr class="sum"><td>Summe</td>${uebSort === "alle" ? "<td></td>" : ""}<td></td><td class="n">${fdt(t.verf)}</td><td class="n">${fdt(t.best)}</td><td class="n">${fdt(t.Herbst)}</td><td class="n">${fdt(t["Frühjahr"])}</td><td class="n">${fdt(t.verf + t.best - t.Herbst - t["Frühjahr"])}</td><td class="n">${fdt(t.offA)}</td></tr></tfoot>`;
 }
 $("#ueb-sort").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; uebSort = b.dataset.s; $$("#ueb-sort button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderUeb(); });
 
@@ -479,7 +495,7 @@ function renderAufList(){
   const tot = list.filter(a => a.status !== "storniert").reduce((s, a) => s + summeK("auf", a), 0);
   $("#auf-t").innerHTML = `<thead><tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Kd.-Nr.</th><th>Ort</th><th>Lieferung</th><th>Lieferart / Tour</th><th>Sorten</th><th class="n">Pos.</th><th class="n">Menge dt</th><th>Partien</th><th>Status</th></tr></thead><tbody>` +
     (list.map(a => { const ps = posOfK("auf", a.id), k = D.kunden.find(x => x.kdnr === a.kdnr) || {};
-      return `<tr class="click" data-id="${a.id}"><td><b>${esc(a.nr)}</b></td><td>${esc(datum(a.datum))}</td><td>${esc(a.kunde)}</td><td>${esc(a.kdnr || "")}</td><td>${esc(k.ort || "")}</td><td>${esc(a.lieferzeitraum)}${a.lieferdatum ? `<br><span class="hint">${esc(datum(a.lieferdatum))}</span>` : ""}</td><td>${a.lieferart === "Anlieferung" ? (a.tour_id && tourOf(a.tour_id) ? `<span class="pill b">${esc(tourOf(a.tour_id).nr + " " + tourOf(a.tour_id).spedition)}</span>` : `<span class="pill a">Anlieferung, ohne Tour</span>`) : "Abholung" + (a.abholstelle ? " (" + esc(a.abholstelle) + ")" : "")}${a.entlade_abweichend ? ` <span class="pill" title="abweichende Entladestelle">abw. Entladestelle</span>` : ""}</td><td>${esc(ps.map(p => p.sorte + (p.sortierung !== "NS" ? " " + p.sortierung : "")).join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("auf", a))}</td><td>${aufPill(offenK("auf", a))}</td><td>${statPill(a.status)}</td></tr>`; }).join("") || `<tr><td colspan="12" class="empty">Noch keine Kundenaufträge – mit „+ Neuer Auftrag“ anlegen</td></tr>`) +
+      return `<tr class="click" data-id="${a.id}"><td><b>${esc(a.nr)}</b></td><td>${esc(datum(a.datum))}</td><td>${esc(a.kunde)} ${klassePill(klasseVon(a.kdnr))}</td><td>${esc(a.kdnr || "")}</td><td>${esc(k.ort || "")}</td><td>${esc(a.lieferzeitraum)}${a.lieferdatum ? `<br><span class="hint">${esc(datum(a.lieferdatum))}</span>` : ""}</td><td>${a.lieferart === "Anlieferung" ? (a.tour_id && tourOf(a.tour_id) ? `<span class="pill b">${esc(tourOf(a.tour_id).nr + " " + tourOf(a.tour_id).spedition)}</span>` : `<span class="pill a">Anlieferung, ohne Tour</span>`) : "Abholung" + (a.abholstelle ? " (" + esc(a.abholstelle) + ")" : "")}${a.entlade_abweichend ? ` <span class="pill" title="abweichende Entladestelle">abw. Entladestelle</span>` : ""}</td><td>${esc(ps.map(p => p.sorte + (p.sortierung !== "NS" ? " " + p.sortierung : "")).join(", "))}</td><td class="n">${ps.length}</td><td class="n">${fdt(summeK("auf", a))}</td><td>${aufPill(offenK("auf", a))}</td><td>${statPill(a.status)}</td></tr>`; }).join("") || `<tr><td colspan="12" class="empty">Noch keine Kundenaufträge – mit „+ Neuer Auftrag“ anlegen</td></tr>`) +
     `</tbody><tfoot><tr class="sum"><td colspan="9">${list.length} Aufträge</td><td class="n">${fdt(tot)}</td><td colspan="2"></td></tr></tfoot>`;
 }
 ["#auf-q", "#auf-lz", "#auf-stat", "#auf-offen"].forEach(s => $(s).addEventListener("input", renderAufList));
@@ -513,7 +529,7 @@ function kandidaten(p){
 }
 function frei(x, sortierung, posId){
   const k = E.kind, eigen = posId ? D[K[k].Z].filter(z => z.pos_id === posId && z.partie_id === x.id).reduce((a, z) => a + num(z.menge_dt), 0) : 0;
-  return num(x[FIELD[sortierung]]) - partieBelegt(x.id, sortierung, k) + eigen;
+  return vgMenge(x, sortierung) - partieBelegt(x.id, sortierung, k) + eigen;
 }
 function lzSelect(id, val){
   const opts = LZ.slice(); if (val && !opts.includes(val)) opts.push(val);
@@ -567,7 +583,7 @@ function renderEdit(){
 function kundeInfo(){
   if (E.kind !== "auf") return "";
   const kd = E.kdnr ? D.kunden.find(k => k.kdnr === E.kdnr) : null;
-  if (kd) return esc([kd.strasse, [kd.plz, kd.ort].filter(Boolean).join(" "), kd.telefon || kd.mobil].filter(Boolean).join(" · "));
+  if (kd) return klassePill(klasseVon(kd.kdnr)) + " " + esc([kd.strasse, [kd.plz, kd.ort].filter(Boolean).join(" "), kd.telefon || kd.mobil].filter(Boolean).join(" · "));
   return E.kunde ? "Nicht in der büro+-Liste – wird nur mit Namen gespeichert." : "";
 }
 function updSum(){
@@ -628,10 +644,12 @@ function allocHtml(p, k){
   const vk = E.kind === "auf";
   const rows = [...ids].map(id => partie(id)).filter(Boolean).map(x => {
     const z = p.zu.find(z => z.partie_id === x.id), f = frei(x, p.sortierung, p.id);
-    return `<tr><td>${esc(x.vermehrer)}<br><span class="hint">${esc(x.anerk_nr || "–")} · ${esc(x.kat || "")} · ${esc(x.status || "")}</span></td><td class="n">${fdt(num(x[FIELD[p.sortierung]]))}</td>${vk ? `<td class="n">${fdt(partieBelegt(x.id, p.sortierung, "best"))}</td>` : ""}<td class="n">${f < -0.05 ? `<span class="pill w">${fdt(f)}</span>` : fdt(f)}</td><td style="width:84px"><input type="text" inputmode="decimal" class="a-m" data-pid="${x.id}" value="${z ? String(z.menge_dt).replace(".", ",") : ""}"></td></tr>`;
+    const bon = [x.kat, x.rhiz_pct != null ? "Rhiz " + fmt(x.rhiz_pct, 0) + " %" : "", x.hkg_kg ? Math.round(100 / num(x.hkg_kg)) + " Kn/kg" : "", x.virus_pct != null ? "Virus " + fmt(x.virus_pct, 0) + " % (intern)" : ""].filter(Boolean).join(" · ");
+    const warn = vk && klasseVon(E.kdnr) === "A" && bonWarn(x).length ? ` <span class="pill w" title="für A-Kunden möglichst nicht">${esc(bonWarn(x).join(", "))}</span>` : (x.maengel ? ` <span class="pill a">${esc(x.maengel)}</span>` : "");
+    return `<tr><td>${esc(x.vermehrer)}${warn}<br><span class="hint">${esc(x.anerk_nr || "–")} · ${esc(bon || x.status || "")}</span></td><td class="n">${fdt(num(x[FIELD[p.sortierung]]))}</td><td class="n">${fdt(vgMenge(x, p.sortierung))}<br><span class="hint">${fmt(vgPct(x), 0)} %</span></td><td class="n">${f < -0.05 ? `<span class="pill w">${fdt(f)}</span>` : fdt(f)}</td><td style="width:84px"><input type="text" inputmode="decimal" class="a-m" data-pid="${x.id}" value="${z ? String(z.menge_dt).replace(".", ",") : ""}"></td></tr>`;
   });
   return `<div class="alloc"><div class="row"><b class="grow">Partien (${esc(SORTNAME[p.sortierung])})</b><button type="button" class="btn sm sec a-auto">Rest verteilen</button></div>
-    ${rows.length ? `<div class="tw"><table><thead><tr><th>Vermehrer / Partie</th><th class="n">Menge</th>${vk ? `<th class="n">VG best.</th><th class="n">frei Kd.</th>` : `<th class="n">frei</th>`}<th class="n">dt</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>` : `<p class="hint">Keine passende Partie mit Menge in dieser Sortierung${E.kind === "best" && E.lieferant_typ === "Vermehrer" ? " bei diesem Vermehrer" : ""}.</p>`}</div>`;
+    ${rows.length ? `<div class="tw"><table><thead><tr><th>Vermehrer / Partie</th><th class="n">Partie</th><th class="n">VG-Anteil</th><th class="n">frei</th><th class="n">dt</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>` : `<p class="hint">Keine passende Partie mit Menge in dieser Sortierung${E.kind === "best" && E.lieferant_typ === "Vermehrer" ? " bei diesem Vermehrer" : ""}.</p>`}</div>`;
 }
 function readHead(){
   const v = id => $(id) ? $(id).value : null;
@@ -1013,8 +1031,9 @@ function zukaufDaten(){
   const lz = $("#zk-lz").value, Z = {};
   const get = (n, s) => { const k = n + "|" + s; return Z[k] = Z[k] || {sorte: n, sortierung: s, vk: 0, eigen: 0, zu: 0}; };
   aktivePos("auf").forEach(p => { const h = headOf("auf", p.auftrag_id); if (!lz || h.lieferzeitraum === lz) get(p.sorte, p.sortierung).vk += num(p.menge_dt); });
-  D.pos.forEach(p => { const b = bestOf(p.bestellung_id); if (!b || b.status === "storniert" || (lz && b.liefertermin && b.liefertermin !== lz)) return;
-    const o = get(p.sorte, p.sortierung); if (EIGEN.includes(b.lieferant_typ)) o.eigen += num(p.menge_dt); else o.zu += num(p.menge_dt); });
+  D.partien.filter(x => verfuegbar(x) && x.jahr === jahrAkt()).forEach(x => SORTS.forEach(s => { const v = vgMenge(x, s); if (v > 0) get(x.sorte, s).eigen += v; }));
+  D.pos.forEach(p => { const b = bestOf(p.bestellung_id); if (!b || b.status === "storniert" || !ZUKAUF.includes(b.lieferant_typ) || (lz && b.liefertermin && b.liefertermin !== lz)) return;
+    get(p.sorte, p.sortierung).zu += num(p.menge_dt); });
   return Object.values(Z).map(o => { o.fehlt = o.vk - o.eigen - o.zu; const bb = bbStd(o.sorte); o.bb = bb; o.vorschlag = o.fehlt > 0.05 ? Math.ceil(o.fehlt / bb - 0.001) * bb : 0; o.quelle = quelleVon(o.sorte); return o; })
     .sort((a, b) => a.sorte.localeCompare(b.sorte, "de") || SORTS.indexOf(a.sortierung) - SORTS.indexOf(b.sortierung));
 }
@@ -1031,7 +1050,7 @@ function renderZukauf(){
   $("#zk-body").innerHTML = keys.map(q => {
     const g = gruppen[q], kann = q !== "gedeckt" && !q.startsWith("–");
     return `<div class="zkg"><div class="row"><b class="grow">${esc(q)}${kann ? ` <span class="hint">${esc((D.lief.find(l => l.name === q) || {}).typ || "Züchter")}</span>` : ""}</b>${kann ? `<button class="btn sm zk-go" data-q="${esc(q)}">Bestellung als Entwurf anlegen</button>` : ""}</div>
-      <div class="tw"><table><thead><tr>${q !== "gedeckt" ? "<th></th>" : ""}<th>Sorte</th><th class="n">verkauft</th><th class="n">eigene Verm.</th><th class="n">zugekauft</th><th class="n">${q === "gedeckt" ? "frei" : "fehlt"}</th>${q !== "gedeckt" ? `<th class="n">Zukauf dt</th>` : ""}<th>Bezugsquelle</th></tr></thead><tbody>${g.map(r => {
+      <div class="tw"><table><thead><tr>${q !== "gedeckt" ? "<th></th>" : ""}<th>Sorte</th><th class="n">verkauft</th><th class="n">VG verfügbar</th><th class="n">zugekauft</th><th class="n">${q === "gedeckt" ? "frei" : "fehlt"}</th>${q !== "gedeckt" ? `<th class="n">Zukauf dt</th>` : ""}<th>Bezugsquelle</th></tr></thead><tbody>${g.map(r => {
         const k = r.sorte + "|" + r.sortierung, z = ZK[k] = ZK[k] || {an: true, m: r.vorschlag};
         return `<tr>${q !== "gedeckt" ? `<td><input type="checkbox" class="zk-an" data-k="${esc(k)}" ${z.an ? "checked" : ""} aria-label="übernehmen"></td>` : ""}<td><b>${esc(r.sorte)}</b>${r.sortierung !== "NS" ? " " + esc(r.sortierung) : ""}</td><td class="n">${fdt(r.vk)}</td><td class="n">${fdt(r.eigen)}</td><td class="n">${fdt(r.zu)}</td><td class="n">${r.fehlt > 0.05 ? `<span class="pill a">${fdt(r.fehlt)}</span>` : fdt(-r.fehlt)}</td>${q !== "gedeckt" ? `<td class="n" style="width:96px"><input type="text" inputmode="decimal" class="zk-m" data-k="${esc(k)}" value="${String(z.m).replace(".", ",")}" title="aufgerundet auf volle Big Bags à ${fmt(r.bb, r.bb % 1 ? 1 : 0)} dt"></td>` : ""}<td style="min-width:140px"><input type="text" class="zk-q" data-s="${esc(r.sorte)}" list="dl-quelle" value="${esc(r.quelle)}" placeholder="Züchter / Händler"></td></tr>`; }).join("")}</tbody></table></div></div>`;
   }).join("") || `<p class="empty">Keine Kundenaufträge oder Bestellungen in diesem Zeitraum.</p>`;
@@ -1292,13 +1311,13 @@ function renderPart(){
     .sort((a, b) => a.sorte.localeCompare(b.sorte, "de") || a.vermehrer.localeCompare(b.vermehrer, "de"));
   const t = {ha: 0, drill: 0, ns: 0, ueg: 0, bel: 0};
   const rows = list.map(p => {
-    const bel = SORTS.reduce((a, s) => a + partieBelegt(p.id, s), 0);
+    const bel = SORTS.reduce((a, s) => a + partieBelegt(p.id, s, "auf"), 0);
     t.ha += num(p.ha); t.drill += num(p.drill); t.ns += num(p.ns); t.ueg += num(p.ueg); t.bel += bel;
     const sc = NICHT_VERF.includes(p.status) ? "w" : (p.status === "Menge offen" ? "a" : (p.status === "gemeldet" ? "g" : "b"));
-    return `<tr class="click" data-id="${p.id}"><td><b>${esc(p.sorte)}</b></td><td>${esc(p.vermehrer)}</td><td>${esc(p.vo || "")}</td><td>${esc(p.anerk_nr || "")}</td><td>${esc(p.kat || "")}</td><td class="n">${fmt(p.ha, 2)}</td><td class="n">${fdt(p.drill)}</td><td class="n">${fdt(p.ns)}</td><td class="n">${fdt(p.ueg)}</td><td class="n">${fdt(bel)}</td><td><span class="pill ${sc}">${esc(p.status || "–")}</span></td></tr>`;
+    return `<tr class="click" data-id="${p.id}"><td><b>${esc(p.sorte)}</b></td><td>${esc(p.vermehrer)}</td><td>${esc(p.vo || "")}</td><td>${esc(p.anerk_nr || "")}</td><td>${esc(p.kat || "")}</td><td class="n">${fmt(p.ha, 2)}</td><td class="n">${fdt(p.drill)}</td><td class="n">${fdt(p.ns)}</td><td class="n">${fmt(vgPct(p), 0)} %<br><span class="hint">${fdt(vgMenge(p, "NS"))}</span></td><td class="n">${p.rhiz_pct != null ? fmt(p.rhiz_pct, 0) + " %" : ""}</td><td class="n">${p.virus_pct != null ? fmt(p.virus_pct, 0) + " %" : ""}</td><td class="n">${p.hkg_kg ? fmt(p.hkg_kg, 2) : ""}</td><td class="n">${fdt(p.ueg)}</td><td class="n">${fdt(bel)}</td><td><span class="pill ${sc}">${esc(p.status || "–")}</span></td></tr>`;
   });
-  $("#part-t").innerHTML = `<thead><tr><th>Sorte</th><th>Vermehrer</th><th>VO</th><th>Anerk.-Nr.</th><th>Kat.</th><th class="n">ha</th><th class="n">Drill dt</th><th class="n">NS dt</th><th class="n">ÜG dt</th><th class="n">zugeordnet dt</th><th>Status</th></tr></thead><tbody>${rows.join("") || `<tr><td colspan="11" class="empty">Keine Partien</td></tr>`}</tbody>
-  <tfoot><tr class="sum"><td colspan="5">${list.length} Partien</td><td class="n">${fmt(t.ha, 2)}</td><td class="n">${fdt(t.drill)}</td><td class="n">${fdt(t.ns)}</td><td class="n">${fdt(t.ueg)}</td><td class="n">${fdt(t.bel)}</td><td></td></tr></tfoot>`;
+  $("#part-t").innerHTML = `<thead><tr><th>Sorte</th><th>Vermehrer</th><th>VO</th><th>Anerk.-Nr.</th><th>Kat.</th><th class="n">ha</th><th class="n">Drill dt</th><th class="n">NS dt</th><th class="n" title="VG-Anteil (NS dt)">VG</th><th class="n" title="Rhizoctonia-Pustelbesatz">Rhiz</th><th class="n" title="nur intern">Virus</th><th class="n" title="Hundertknollengewicht kg">HKG</th><th class="n">ÜG dt</th><th class="n">an Kunden dt</th><th>Status</th></tr></thead><tbody>${rows.join("") || `<tr><td colspan="11" class="empty">Keine Partien</td></tr>`}</tbody>
+  <tfoot><tr class="sum"><td colspan="5">${list.length} Partien</td><td class="n">${fmt(t.ha, 2)}</td><td class="n">${fdt(t.drill)}</td><td class="n">${fdt(t.ns)}</td><td class="n">${fdt(list.filter(verfuegbar).reduce((a, p) => a + vgMenge(p, "NS"), 0))}</td><td></td><td></td><td></td><td class="n">${fdt(t.ueg)}</td><td class="n">${fdt(t.bel)}</td><td></td></tr></tfoot>`;
 }
 ["#part-q", "#part-jahr", "#part-stat"].forEach(s => $(s).addEventListener("input", () => { renderPart(); if (s === "#part-jahr") renderUeb(); }));
 $("#part-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) partForm(partie(tr.dataset.id)); });
@@ -1321,6 +1340,14 @@ function partForm(p){
       <label class="f">Übergrößen dt<input type="number" step="0.1" id="pf-ueg" value="${x.ueg == null ? "" : x.ueg}"></label>
       <label class="f">Status<select id="pf-stat">${["gemeldet", "geschätzt", "vorläufig", "Menge offen", "ergebnisoffen", "aberkannt", "Direktvermehrung KSG"].map(s => `<option ${x.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
     </div>
+    <h3>VG-Anteil und Bonitur</h3>
+    <div class="grid">
+      <label class="f">VG-Anteil % (leer = 50 %)<input type="number" step="1" min="0" max="100" id="pf-vg" value="${x.vg_pct == null ? "" : x.vg_pct}" placeholder="50"></label>
+      <label class="f">Rhizoctonia-Pustelbesatz %<input type="number" step="1" min="0" max="100" id="pf-rz" value="${x.rhiz_pct == null ? "" : x.rhiz_pct}"></label>
+      <label class="f">Virus % (nur intern)<input type="number" step="0.1" min="0" max="100" id="pf-vir" value="${x.virus_pct == null ? "" : x.virus_pct}"></label>
+      <label class="f">HKG kg (100 Knollen)<input type="number" step="0.01" min="0" id="pf-hkg" value="${x.hkg_kg == null ? "" : x.hkg_kg}"></label>
+    </div>
+    <label class="f">Mängel (z. B. starker Schorf – nicht an A-Kunden)<input type="text" id="pf-mg" value="${esc(x.maengel || "")}"></label>
     <label class="f">Bemerkung<input type="text" id="pf-bem" value="${esc(x.bemerkung || "")}"></label>
     <datalist id="dl-verm">${verm.map(v => `<option value="${esc(v)}">`).join("")}</datalist>
     <div class="row">${x.id ? `<button class="btn red sm" id="pf-del">Partie löschen</button>` : ""}<span class="grow"></span><button class="btn" id="pf-save">Partie speichern</button></div></div>`;
@@ -1329,7 +1356,7 @@ function partForm(p){
   $("#pf-verm").onchange = ev => { const l = D.lief.find(l => l.name === ev.target.value && l.typ === "Vermehrer"); if (l && l.vo && !$("#pf-vo").value) $("#pf-vo").value = l.vo; };
   $("#pf-save").onclick = async () => {
     const row = {jahr: Number($("#pf-jahr").value) || 2027, sorte: $("#pf-sorte").value.trim(), vermehrer: $("#pf-verm").value.trim(), vo: $("#pf-vo").value.trim() || null, anerk_nr: $("#pf-an").value.trim() || null,
-      kat: $("#pf-kat").value || null, ha: numIn($("#pf-ha").value), drill: numIn($("#pf-drill").value), ns: numIn($("#pf-ns").value), ueg: numIn($("#pf-ueg").value), status: $("#pf-stat").value, bemerkung: $("#pf-bem").value.trim() || null, updated_at: new Date().toISOString()};
+      kat: $("#pf-kat").value || null, ha: numIn($("#pf-ha").value), drill: numIn($("#pf-drill").value), ns: numIn($("#pf-ns").value), ueg: numIn($("#pf-ueg").value), status: $("#pf-stat").value, vg_pct: numIn($("#pf-vg").value), rhiz_pct: numIn($("#pf-rz").value), virus_pct: numIn($("#pf-vir").value), hkg_kg: numIn($("#pf-hkg").value), maengel: $("#pf-mg").value.trim() || null, bemerkung: $("#pf-bem").value.trim() || null, updated_at: new Date().toISOString()};
     if (!row.sorte || !row.vermehrer) return toast("Sorte und Vermehrer angeben");
     const q = x.id ? sb.from("pfg_partien").update(row).eq("id", x.id) : sb.from("pfg_partien").insert(Object.assign(row, {quelle: "Eingabe"}));
     const { error } = await q; if (error) return toast("Speichern fehlgeschlagen: " + error.message);
@@ -1374,10 +1401,15 @@ function renderKund(){
   const list = D.kunden.filter(k => !q || norm([k.kdnr, k.name, k.ort, k.plz, k.email, k.strasse].join(" ")).includes(q));
   const anz = {}; D.auf.forEach(a => { if (a.kdnr && a.status !== "storniert") anz[a.kdnr] = (anz[a.kdnr] || 0) + summeK("auf", a); });
   $("#kund-n").textContent = `${D.kunden.length} Kunden${q ? ", " + list.length + " gefunden" : ""}`;
-  $("#kund-t").innerHTML = `<thead><tr><th>Kd.-Nr.</th><th>Name</th><th>Straße</th><th>PLZ</th><th>Ort</th><th>Telefon</th><th>E-Mail</th><th class="n">bestellt dt</th><th></th></tr></thead><tbody>` +
-    (list.slice(0, 400).map(k => `<tr><td>${esc(k.kdnr)}</td><td><b>${esc(k.name)}</b></td><td>${esc(k.strasse || "")}</td><td>${esc(k.plz || "")}</td><td>${esc(k.ort || "")}${k.ortsteil ? " – " + esc(k.ortsteil) : ""}</td><td>${esc(k.telefon || k.mobil || "")}</td><td>${k.email ? `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : ""}</td><td class="n">${anz[k.kdnr] ? fdt(anz[k.kdnr]) : ""}</td><td><button class="btn sm k-auf" data-k="${esc(k.kdnr)}">+ Auftrag</button></td></tr>`).join("") || `<tr><td colspan="9" class="empty">Noch keine Kunden – im Tab „Import büro+“ den Verteiler einlesen.</td></tr>`) +
-    (list.length > 400 ? `<tr><td colspan="9" class="hint">… ${list.length - 400} weitere, bitte Suche eingrenzen</td></tr>` : "") + "</tbody>";
+  $("#kund-t").innerHTML = `<thead><tr><th>Kd.-Nr.</th><th>Name</th><th>Straße</th><th>PLZ</th><th>Ort</th><th>Telefon</th><th>E-Mail</th><th class="n">bestellt dt</th><th title="leer = automatisch: A ab 100 dt, C Sack bis 3 dt, sonst B">Klasse</th><th></th></tr></thead><tbody>` +
+    (list.slice(0, 400).map(k => `<tr><td>${esc(k.kdnr)}</td><td><b>${esc(k.name)}</b></td><td>${esc(k.strasse || "")}</td><td>${esc(k.plz || "")}</td><td>${esc(k.ort || "")}${k.ortsteil ? " – " + esc(k.ortsteil) : ""}</td><td>${esc(k.telefon || k.mobil || "")}</td><td>${k.email ? `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : ""}</td><td class="n">${anz[k.kdnr] ? fdt(anz[k.kdnr]) : ""}</td><td><select class="k-kl" data-k="${esc(k.kdnr)}" style="width:auto;padding:4px 6px">${[["", "auto" + (klasseAuto(k.kdnr) ? " (" + klasseAuto(k.kdnr) + ")" : "")], ["A", "A"], ["B", "B"], ["C", "C"]].map(([v, t]) => `<option value="${v}" ${(k.klasse || "") === v ? "selected" : ""}>${t}</option>`).join("")}</select></td><td><button class="btn sm k-auf" data-k="${esc(k.kdnr)}">+ Auftrag</button></td></tr>`).join("") || `<tr><td colspan="10" class="empty">Noch keine Kunden – im Tab „Import büro+“ den Verteiler einlesen.</td></tr>`) +
+    (list.length > 400 ? `<tr><td colspan="10" class="hint">… ${list.length - 400} weitere, bitte Suche eingrenzen</td></tr>` : "") + "</tbody>";
 }
+$("#kund-t").addEventListener("change", async e => {
+  const sel = e.target.closest(".k-kl"); if (!sel) return;
+  const v = sel.value || null, { error } = await sb.from("pfg_kunden").update({klasse: v}).eq("kdnr", sel.dataset.k);
+  if (error) return toast(error.message); const k = D.kunden.find(x => x.kdnr === sel.dataset.k); if (k) k.klasse = v; toast("Kundenklasse gespeichert"); renderAufList();
+});
 $("#kund-t").addEventListener("click", e => { const b = e.target.closest(".k-auf"); if (!b) return; const k = D.kunden.find(x => x.kdnr === b.dataset.k); if (k) openEdit("auf", null, k); });
 $("#kund-q").addEventListener("input", renderKund);
 
@@ -1410,10 +1442,12 @@ async function lesen(file){
       if (hdr.includes("anerknr")){
         if (typen.has("Partien")) continue; // nur das erste Blatt mit Partien (weitere Blätter sind Auswertungen)
         typen.add("Partien");
-        const ix = {sorte: c(["sorte"]), verm: c(["vermehrer"]), vo: c(["vo"]), kat: c(["kat"]), ha: c(["ha"]), an: c(["anerknr"]), ns: c(["normalsortierung", "ns", "pflanzkartoffel"]), drill: c(["2835mm", "drill", "drillinge", "untergr"]), ueg: c(["ubergro", "uebergro", "ug"]), bem: c(["bemerkung"])};
+        const ix = {sorte: c(["sorte"]), verm: c(["vermehrer"]), vo: c(["vo"]), kat: c(["kat"]), ha: c(["ha"]), an: c(["anerknr"]), ns: c(["normalsortierung", "ns", "pflanzkartoffel"]), drill: c(["2835mm", "drill", "drillinge", "untergr"]), ueg: c(["ubergro", "uebergro", "ug"]), bem: c(["bemerkung"]), vg: c(["davonvgbio", "vgbio", "vganteil"]), vir: c(["virus"]), rz: c(["rhizoctonia", "rhiz"]), hkg: c(["hkg", "hundertknollengewicht"])};
         body.forEach(r => { if (!r[ix.sorte] || !r[ix.verm]) return; const kat = r[ix.kat] ? String(r[ix.kat]) : null;
           partien.push({jahr: Number($("#part-jahr").value || 2026), sorte: String(r[ix.sorte]).trim(), vermehrer: String(r[ix.verm]).trim(), vo: ix.vo >= 0 && r[ix.vo] ? String(r[ix.vo]) : null, kat: kat === "A" ? "ZA" : kat, ha: ix.ha >= 0 ? numIn(r[ix.ha]) : null, anerk_nr: r[ix.an] ? String(r[ix.an]).trim() : null,
             ns: ix.ns >= 0 ? numIn(r[ix.ns]) : null, drill: ix.drill >= 0 ? numIn(r[ix.drill]) : null, ueg: ix.ueg >= 0 ? numIn(r[ix.ueg]) : null,
+            vg_pct: ix.vg >= 0 && numIn(r[ix.vg]) != null && numIn(r[ix.ns]) ? Math.round(numIn(r[ix.vg]) / numIn(r[ix.ns]) * 1000) / 10 : null,
+            virus_pct: ix.vir >= 0 ? numIn(r[ix.vir]) : null, rhiz_pct: ix.rz >= 0 ? numIn(r[ix.rz]) : null, hkg_kg: ix.hkg >= 0 ? numIn(r[ix.hkg]) : null,
             status: kat === "aberkannt" ? "aberkannt" : kat === "ergebnisoffen" ? "ergebnisoffen" : (ix.ns >= 0 && r[ix.ns] != null ? "gemeldet" : "Menge offen"), quelle: file.name}); });
       } else if (hdr.includes("sorte") && !hdr.some(x => /^(kundennr|kontonr)$/.test(x))){
         typen.add("Sorten");
@@ -1432,14 +1466,14 @@ async function lesen(file){
             hdr = hdr.slice(0, iva).concat(hdr.slice(iva + 1), ["versandmobil"]);
           }
         }
-        const ix = {nr: c(["kundennr", "kontonr", "kdnr", "kundennummer"]), name: c(["kunde", "name", "firma"]), mail: c(["email", "mail"]), str: c(["versandstrasse", "strasse"]), plz: c(["versandplz", "plz"]), ort: c(["versandort"]), ot: c(["versandortsteil", "ortsteil"]), tel: c(["versandtelefon", "telefon"]), mob: c(["versandmobil", "mobil"]), gem: c(["gemuse", "gemuese"]), kat: c(["kategorie"]), va: c(["versandadresse", "versandabholstelle"])};
+        const ix = {kl: c(["kundenklasse", "klasse", "abc", "abckunde"]), nr: c(["kundennr", "kontonr", "kdnr", "kundennummer"]), name: c(["kunde", "name", "firma"]), mail: c(["email", "mail"]), str: c(["versandstrasse", "strasse"]), plz: c(["versandplz", "plz"]), ort: c(["versandort"]), ot: c(["versandortsteil", "ortsteil"]), tel: c(["versandtelefon", "telefon"]), mob: c(["versandmobil", "mobil"]), gem: c(["gemuse", "gemuese"]), kat: c(["kategorie"]), va: c(["versandadresse", "versandabholstelle"])};
         if (ix.ort < 0) ix.ort = c(["ort"]);
         body.forEach(r => { const nr = ix.nr >= 0 ? r[ix.nr] : null, nm = ix.name >= 0 ? r[ix.name] : null; if (nr == null || !nm) return;
           const mail = ix.mail >= 0 && r[ix.mail] && /@/.test(r[ix.mail]) ? String(r[ix.mail]).trim() : null; const plz = ix.plz >= 0 && r[ix.plz] != null ? String(r[ix.plz]).trim() : null;
           const k = String(nr).trim(); const old = kunden[k] || {};
           kunden[k] = {kdnr: k, name: String(nm).trim(), email: mail || old.email || null, strasse: ix.str >= 0 && r[ix.str] ? String(r[ix.str]) : old.strasse || null, plz: plz && /^\d{4}$/.test(plz) ? "0" + plz : plz,
             ort: ix.ort >= 0 && r[ix.ort] ? String(r[ix.ort]) : old.ort || null, ortsteil: ix.ot >= 0 && r[ix.ot] ? String(r[ix.ot]) : null, telefon: ix.tel >= 0 && r[ix.tel] ? String(r[ix.tel]) : null, mobil: ix.mob >= 0 && r[ix.mob] ? String(r[ix.mob]) : null,
-            gemuese: ix.gem >= 0 && r[ix.gem] ? true : (old.gemuese || null), kategorie: ix.kat >= 0 && r[ix.kat] ? String(r[ix.kat]) : null, data: {versandadresse: ix.va >= 0 ? r[ix.va] : null, blatt: name}, quelle: file.name, updated_at: new Date().toISOString()}; });
+            gemuese: ix.gem >= 0 && r[ix.gem] ? true : (old.gemuese || null), ...(ix.kl >= 0 && /^[ABC]$/i.test(String(r[ix.kl] || "").trim()) ? {klasse: String(r[ix.kl]).trim().toUpperCase()} : {}), kategorie: ix.kat >= 0 && r[ix.kat] ? String(r[ix.kat]) : null, data: {versandadresse: ix.va >= 0 ? r[ix.va] : null, blatt: name}, quelle: file.name, updated_at: new Date().toISOString()}; });
       }
     }
     IMP = {file: file.name, kunden: Object.values(kunden), partien, sorten: Object.values(sorten)};
@@ -1472,6 +1506,7 @@ async function uebernehmen(){
         if (!o) return Object.assign({}, p, {updated_at: new Date().toISOString()});
         const neg = ["aberkannt", "ergebnisoffen"].includes(p.status);
         return Object.assign({}, o, {kat: p.kat || o.kat, ha: p.ha != null ? p.ha : o.ha, ns: p.ns != null ? p.ns : o.ns, drill: p.drill != null ? p.drill : o.drill, ueg: p.ueg != null ? p.ueg : o.ueg,
+          vg_pct: p.vg_pct != null ? p.vg_pct : o.vg_pct, virus_pct: p.virus_pct != null ? p.virus_pct : o.virus_pct, rhiz_pct: p.rhiz_pct != null ? p.rhiz_pct : o.rhiz_pct, hkg_kg: p.hkg_kg != null ? p.hkg_kg : o.hkg_kg,
           status: neg ? p.status : (o.status === "Menge offen" && p.ns != null ? "gemeldet" : o.status), updated_at: new Date().toISOString()});
       });
       if (rows.length){ const { error } = await sb.from("pfg_partien").upsert(rows, {onConflict: "jahr,anerk_nr"}); if (error) throw error; }

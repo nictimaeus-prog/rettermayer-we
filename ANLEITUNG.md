@@ -143,6 +143,10 @@ assets/                   App-Symbol und Startbild
   Lieferart mit Adresse bzw. Abholstelle und konkretes Lieferdatum
 - Lieferdatum: jeder Auftrag und jede Bestellung hat ein konkretes Datum (Standard Herbst 15.01., Frühjahr 15.03. der Saison),
   änderbar unter „Weitere Angaben“
+- Verfügbarkeit: unser Anteil je Partie = VG-Anteil % (Standard 50 %, in der Partie pflegbar oder per Import aus „davon VG BIO“).
+  Bonitur je Partie: Rhizoctonia %, Virus % (nur intern), HKG, Mängel; Import aus der Vermehrungsliste. Partien mit ZB, Mängeln oder
+  Rhizoctonia ab 20 % werden bei A-Kunden in der Zuordnung markiert
+- Kundenklasse: automatisch (A ab 100 dt, C Sackbesteller bis 3 dt, sonst B) oder manuell im Tab „Kunden“ bzw. per Import (Spalte „Klasse“)
 - Zukaufvorschlag (Tab „Einkauf“): je Sorte und Sortierung Kundenaufträge minus VG-Anteil aus der Vermehrung (Bestellungen bei
   Vermehrern/VOs) minus Zukauf (Züchter/Händler); Bezugsquelle je Sorte (Standard: Züchter laut Katalog), Entwurf-Bestellung per Knopf
 - Verpackung je Position: Big Bag (Standard 11 dt aus der eigenen Vermehrung; 12,5 dt bei holländischer Ware, je Sorte im Sortenkatalog
