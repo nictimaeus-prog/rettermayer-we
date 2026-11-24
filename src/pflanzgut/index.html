@@ -1473,7 +1473,7 @@ async function start(session){
   const { data: prof } = await sb.from("profiles").select("name").eq("id", session.user.id).maybeSingle();
   me = {id: session.user.id, name: (prof && prof.name) || session.user.email};
   $("#who-n").textContent = me.name; $("#who").hidden = false; $("#gate").hidden = true;
-  try { await loadAll(); } catch (err){ console.error(err); toast("Daten konnten nicht geladen werden: " + (err.message || err)); }
+  try { await loadAll(); } catch (err){ console.error(err); toast(navigator.onLine === false || /fetch|network|Load failed/i.test(String(err.message || err)) ? "Keine Verbindung – die Daten kommen automatisch, sobald wieder Netz da ist" : "Daten konnten nicht geladen werden: " + (err.message || err)); }
 }
 $("#login-form").addEventListener("submit", async ev => {
   ev.preventDefault(); $("#li-err").hidden = true; $("#li-go").disabled = true;
@@ -1484,6 +1484,9 @@ $("#login-form").addEventListener("submit", async ev => {
 });
 $("#logout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
 sb.auth.getSession().then(({data}) => { if (data && data.session) start(data.session); });
+// Seite aus dem Gerätespeicher anbieten, wenn das Netz hakt (statt Fehlerseite des Browsers); Daten nach Wiederverbindung neu laden
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js", {scope: "./"}).catch(() => {});
+window.addEventListener("online", () => { if (me) loadAll().then(() => toast("Wieder online – Daten aktualisiert")).catch(() => {}); });
 })();
 </script>
 </body>

@@ -18,6 +18,7 @@ for (const f of ["index.html", "rwe-runtime.js", "knt.js", "la.js"]) cp(path.joi
 cp(path.join(root, "src/saatgut/index.html"), path.join(www, "saatgut/index.html"));
 // Pflanzkartoffeln: Partien, Bestellungen bei Züchtern/Vermehrern/VOs, Zuordnung, Import büro+ (nur Browser), erreichbar unter /pflanzgut/
 cp(path.join(root, "src/pflanzgut/index.html"), path.join(www, "pflanzgut/index.html"));
+cp(path.join(root, "src/pflanzgut/sw.js"), path.join(www, "pflanzgut/sw.js"));
 
 // Bibliotheken
 cp(nm("@supabase/supabase-js/dist/umd/supabase.js"), path.join(www, "lib/supabase.js"));
