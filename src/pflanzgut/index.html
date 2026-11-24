@@ -1355,14 +1355,16 @@ function vorschlagBerechnen(){
   const ueberschuss = Object.values(cap).reduce((a, c) => a + c, 0) > pos.reduce((a, p) => a + num(p.menge_dt) - zuSumK("auf", p.id), 0) * 1.05;
   const prio = p => { const a = headOf("auf", p.auftrag_id), kl = klasseVon(a.kdnr); return (kl === "A" ? 0 : kl === "B" ? 1 : 2) * 1e6 - num(p.menge_dt); };
   const out = [];
-  pos.slice().sort((a, b) => prio(a) - prio(b)).forEach(p => {
+  // Durchgang 1: nur Positionen, die komplett aus EINER Partie gehen; Durchgang 2: Rest mit möglichst wenig Teilung
+  const zuteilen = (p, nurVoll) => {
     const a = headOf("auf", p.auftrag_id), kl = klasseVon(a.kdnr), sack = p.verpackung === "Sack 25 kg", g = num(p.bb_dt) || 11;
     let rest = num(p.menge_dt) - zuSumK("auf", p.id);
-    const used = new Set();
+    const used = new Set(), usedV = new Set();
     while (rest > 0.05){
       let cands = D.partien.filter(x => x.sorte === p.sorte && cap[x.id + "|" + p.sortierung] > 0.05 && !used.has(x.id)
         && (a.lieferart !== "Abholung ab Vermehrer" || !a.abholstelle || x.vermehrer === a.abholstelle));
       if (sack && VT.sackTop3 && cands.some(x => top3.includes(x.vermehrer))) cands = cands.filter(x => top3.includes(x.vermehrer));
+      if (nurVoll){ cands = cands.filter(x => cap[x.id + "|" + p.sortierung] >= rest - 0.05); if (!cands.length) return false; }
       if (!cands.length) break;
       const score = x => {
         const c = cap[x.id + "|" + p.sortierung], q = qualScore(x), km = distKm(vKey(x.vermehrer), kKey(a));
@@ -1371,6 +1373,8 @@ function vorschlagBerechnen(){
         if (km != null) sc += km / (VT.strat === "logistik" ? 5 : 20);
         if (VT.strat === "gleich" || ueberschuss) sc += ((belV[x.vermehrer] || 0) / (vgV[x.vermehrer] || 1)) * (VT.strat === "gleich" ? 60 : 15);
         if (c >= rest - 0.05) sc -= 25; // möglichst aus einer Partie
+        else sc -= Math.min(c, rest) / 10; // sonst große Partie zuerst → wenig Teilung
+        if (usedV.size && !usedV.has(x.vermehrer)) sc += 30; // Teilung möglichst beim selben Vermehrer
         if (kl === "A" && bonWarn(x).length) sc += 40;
         return sc;
       };
@@ -1378,11 +1382,15 @@ function vorschlagBerechnen(){
       let m = c >= rest - 0.05 ? rest : (sack ? c : Math.floor(c / g + 1e-6) * g);
       if (m <= 0.05){ used.add(best.id); continue; }
       m = Math.round(m * 10) / 10;
-      cap[best.id + "|" + p.sortierung] = c - m; belV[best.vermehrer] = (belV[best.vermehrer] || 0) + m; rest -= m; used.add(best.id);
+      cap[best.id + "|" + p.sortierung] = c - m; belV[best.vermehrer] = (belV[best.vermehrer] || 0) + m; rest -= m; used.add(best.id); usedV.add(best.vermehrer);
       out.push({pos: p, auf: a, partie: best, menge: m, km: distKm(vKey(best.vermehrer), kKey(a)), warn: kl === "A" ? bonWarn(best) : []});
     }
     if (rest > 0.05) out.push({pos: p, auf: a, partie: null, menge: Math.round(rest * 10) / 10});
-  });
+    return true;
+  };
+  const sortiert = pos.slice().sort((a, b) => prio(a) - prio(b));
+  const offen = sortiert.filter(p => !zuteilen(p, true));
+  offen.forEach(p => zuteilen(p, false));
   VT.vorschlag = out; renderVorschlag();
 }
 function renderVorschlag(){
