@@ -338,6 +338,10 @@ const D = {sorten: [], lief: [], kunden: [], partien: [], best: [], pos: [], zu:
 const LZ = ["Herbst", "Frühjahr"];
 const LZNAME = {Herbst: "Herbst (Dez. – Mitte Jan.)", "Frühjahr": "Frühjahr (März – April)"};
 const VP = ["Big Bag", "Sack 25 kg", "lose"];
+// Bearbeiter für Kartoffelpflanzgut (Ansprechpartner auf der AB): Standard Martin Haunz, Auswahl Pia Schulz
+const BEARB = [["Martin Haunz", "martin.haunz@bio-vg.de"], ["Pia Schulz", "pia.schulz@bio-vg.de"]];
+const bearbMail = n => (BEARB.find(b => b[0] === n) || BEARB[0])[1];
+const bearbStd = n => BEARB.some(b => b[0] === n) ? n : BEARB[0][0];
 // Konkretes Lieferdatum („bis“): Herbst 15.01., Frühjahr 15.03. der Saison (Aufträge ab Juli zählen zur Saison des Folgejahres)
 function stdLieferdatum(lz, dat){ const d = dat ? new Date(dat) : new Date(); const j = d.getFullYear() + (d.getMonth() >= 6 ? 1 : 0); return `${j}-${lz === "Herbst" ? "01" : "03"}-15`; }
 const LA = ["Anlieferung", "Abholung ab Vermehrer"];
@@ -494,9 +498,9 @@ function openEdit(kind, id, preset){
     const h = headOf(kind, id);
     E = Object.assign({}, h, {kind, pos: posOfK(kind, id).map(p => { const z = zuOfK(kind, p.id); return {id: p.id, sorte: p.sorte, sortierung: p.sortierung, verpackung: p.verpackung || "Big Bag", bb_dt: num(p.bb_dt) || 11, rhiz: p.rhiz !== false, menge_dt: num(p.menge_dt), bemerkung: p.bemerkung || "", zu: z.map(z => ({partie_id: z.partie_id, menge_dt: num(z.menge_dt)})), modus: z.length ? "partie" : "spaeter"}; })});
   } else if (kind === "best"){
-    E = {kind, id: null, nr: "neu", lieferant: "", lieferant_typ: "Vermehrer", vo: "", datum: new Date().toISOString().slice(0, 10), liefertermin: "Frühjahr", lieferdatum: stdLieferdatum("Frühjahr"), status: "offen", bemerkung: "", pos: [newPos()]};
+    E = {kind, id: null, nr: "neu", lieferant: "", lieferant_typ: "Vermehrer", vo: "", datum: new Date().toISOString().slice(0, 10), liefertermin: "Frühjahr", lieferdatum: stdLieferdatum("Frühjahr"), bearbeiter: BEARB[0][0], status: "offen", bemerkung: "", pos: [newPos()]};
   } else {
-    E = {kind, id: null, nr: "neu", kdnr: preset ? preset.kdnr : null, kunde: preset ? preset.name : "", datum: new Date().toISOString().slice(0, 10), lieferzeitraum: "Frühjahr", lieferdatum: stdLieferdatum("Frühjahr"), lieferart: "Anlieferung", entlade_abweichend: false, tour_id: null, status: "offen", bemerkung: "", pos: [newPos()]};
+    E = {kind, id: null, nr: "neu", kdnr: preset ? preset.kdnr : null, kunde: preset ? preset.name : "", datum: new Date().toISOString().slice(0, 10), lieferzeitraum: "Frühjahr", lieferdatum: stdLieferdatum("Frühjahr"), bearbeiter: BEARB[0][0], lieferart: "Anlieferung", entlade_abweichend: false, tour_id: null, status: "offen", bemerkung: "", pos: [newPos()]};
   }
   show(kind === "best" ? "v-best" : "v-auf");
   $(c.list).hidden = true; $(c.edit).hidden = false; renderEdit(); window.scrollTo(0, 0);
@@ -552,6 +556,7 @@ function renderEdit(){
     <div class="grid2">
       <label class="f">Liefertermin bis<input type="date" id="e-ldat" value="${esc(E.lieferdatum || "")}"></label>
       <label class="f">Auftragsdatum<input type="date" id="e-datum" value="${esc(E.datum || "")}"></label>
+      <label class="f">Bearbeiter<select id="e-bearb">${BEARB.map(b => `<option ${bearbStd(E.bearbeiter) === b[0] ? "selected" : ""}>${b[0]}</option>`).join("")}</select></label>
       <label class="f">Status<select id="e-stat">${["Entwurf", "offen", "bestätigt", "geliefert", "storniert"].map(s => `<option ${E.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
     </div>
     <label class="f">Bemerkung (intern, nicht auf der AB)<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
@@ -632,7 +637,7 @@ function readHead(){
   const v = id => $(id) ? $(id).value : null;
   if (E.kind === "best"){ if ($("#e-lief")) E.lieferant = v("#e-lief").trim(); if ($("#e-vo")) E.vo = v("#e-vo").trim(); }
   if ($("#e-datum")) E.datum = v("#e-datum"); if ($("#e-stat")) E.status = v("#e-stat"); if ($("#e-bem")) E.bemerkung = v("#e-bem").trim();
-  if ($("#e-ldat")) E.lieferdatum = v("#e-ldat") || null;
+  if ($("#e-ldat")) E.lieferdatum = v("#e-ldat") || null; if ($("#e-bearb")) E.bearbeiter = v("#e-bearb");
   if (E.kind === "auf"){
     E.tour_id = E.lieferart === "Anlieferung" && $("#e-tour") ? (v("#e-tour") || null) : (E.lieferart === "Anlieferung" ? E.tour_id : null);
     if ($("#e-abw")) E.entlade_abweichend = $("#e-abw").checked;
@@ -672,7 +677,7 @@ function wireEdit(){
     $("#e-lief").onchange = () => { readHead(); const l = D.lief.find(l => l.name === E.lieferant && l.typ === E.lieferant_typ); if (l && l.vo && !E.vo){ E.vo = l.vo; $("#e-vo").value = l.vo; } if (E.lieferant_typ === "VO"){ E.vo = E.lieferant; $("#e-vo").value = E.vo; } updAllInfo(); };
     $("#e-vo").onchange = readHead;
   }
-  ["#e-datum", "#e-stat", "#e-bem", "#e-ldat"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); updSum(); }; });
+  ["#e-datum", "#e-stat", "#e-bem", "#e-ldat", "#e-bearb"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); updSum(); }; });
   if ($("#e-ab")) $("#e-ab").onclick = abPdf;
   $$("#e-pos .pos").forEach(el => wirePos(el));
   if ($("#e-del")) $("#e-del").onclick = delEdit;
@@ -757,7 +762,7 @@ async function saveEdit(){
          entlade_abweichend: !!E.entlade_abweichend, entlade_name: E.entlade_abweichend ? (E.entlade_name || null) : null, entlade_strasse: E.entlade_abweichend ? (E.entlade_strasse || null) : null,
 
          entlade_plz: E.entlade_abweichend ? (E.entlade_plz || null) : null, entlade_ort: E.entlade_abweichend ? (E.entlade_ort || null) : null, entlade_hinweis: E.entlade_abweichend ? (E.entlade_hinweis || null) : null};
-    Object.assign(head, {lieferdatum: E.lieferdatum || stdLieferdatum(E[lzKey()], E.datum), datum: E.datum || null, status: E.status, bemerkung: E.bemerkung || null, bearbeiter: me.name, updated_at: new Date().toISOString()});
+    Object.assign(head, {lieferdatum: E.lieferdatum || stdLieferdatum(E[lzKey()], E.datum), datum: E.datum || null, status: E.status, bemerkung: E.bemerkung || null, bearbeiter: bearbStd(E.bearbeiter), updated_at: new Date().toISOString()});
     let hid = E.id;
     if (hid){ const { error } = await sb.from(c.head).update(head).eq("id", hid); if (error) throw error; }
     else { const { data, error } = await sb.from(c.head).insert(Object.assign(head, {quelle: "Eingabe"})).select().single(); if (error) throw error; hid = data.id; E.nr = data.nr; }
@@ -1045,7 +1050,7 @@ async function zukaufAnlegen(q, rows){
   try {
     if (!l){ const { error } = await sb.from("pfg_lieferanten").insert({name: q, typ}); if (error && !/duplicate/.test(error.message)) throw error; }
     const { data: b, error } = await sb.from("pfg_bestellungen").insert({lieferant: q, lieferant_typ: typ, status: "Entwurf", liefertermin: $("#zk-lz").value || "Frühjahr",
-      bemerkung: "Zukaufvorschlag vom " + new Date().toLocaleDateString("de-DE"), quelle: "Zukaufvorschlag", bearbeiter: me.name}).select().single();
+      bemerkung: "Zukaufvorschlag vom " + new Date().toLocaleDateString("de-DE"), quelle: "Zukaufvorschlag", bearbeiter: BEARB[0][0]}).select().single();
     if (error) throw error;
     const { error: e2 } = await sb.from("pfg_bestellpos").insert(sel.map((r, i) => ({bestellung_id: b.id, sorte: r.sorte, sortierung: r.sortierung, menge_dt: ZK[r.sorte + "|" + r.sortierung].m, verpackung: "Big Bag", bb_dt: r.bb, pos: i + 1})));
     if (e2) throw e2;
@@ -1084,7 +1089,7 @@ async function abPdf(){
   const lzTxt = E.lieferzeitraum === "Herbst" ? "Herbst (Dez. – Mitte Jan.)" : "Frühjahr (März – April)";
   const info = [["AB-Nr.", E.nr, 1], ["Datum", datum(new Date())], ["Kunden-Nr.", E.kdnr || "–"], ["Ihre Bestellung", E.datum ? "vom " + datum(E.datum) : "–"],
     ["Lieferzeitraum", lzTxt, 1], ["Liefertermin", "bis " + datum(E.lieferdatum || stdLieferdatum(E.lieferzeitraum, E.datum)), 1],
-    ["Lieferart", E.lieferart === "Anlieferung" ? "Anlieferung" : "Abholung ab Vermehrer", 1], ["Ansprechpartner", me.name], ["E-Mail", VG.bmail]];
+    ["Lieferart", E.lieferart === "Anlieferung" ? "Anlieferung" : "Abholung ab Vermehrer", 1], ["Ansprechpartner", bearbStd(E.bearbeiter)], ["E-Mail", bearbMail(bearbStd(E.bearbeiter))]];
   info.forEach((r, i) => { font("normal", 8.5, GR); t(r[0], 124, y + i * 4.6); font(r[2] ? "bold" : "normal", 8.5, DK); t(doc.splitTextToSize(String(r[1]), 40)[0], 152, y + i * 4.6); });
   // Titel
   // abweichende Lieferadresse bzw. Abholstelle direkt unter der Anschrift (nicht unten im Text)
@@ -1132,7 +1137,7 @@ async function abPdf(){
 
   y += 4; if (y > 250){ doc.addPage(); y = 20; }
   font("normal", 9.5, DK); t(du ? "Vielen Dank für deinen Auftrag. Bei Fragen melde dich gerne." : "Vielen Dank für Ihren Auftrag. Bei Fragen erreichen Sie uns gerne.", 18, y);
-  t(du ? "Viele Grüße" : "Mit freundlichen Grüßen", 18, y + 9); font("bold", 9.5, DK); t(me.name, 18, y + 19); font("normal", 9.5, DK); t(VG.firma, 18, y + 24);
+  t(du ? "Viele Grüße" : "Mit freundlichen Grüßen", 18, y + 9); font("bold", 9.5, DK); t(bearbStd(E.bearbeiter), 18, y + 19); font("normal", 9.5, DK); t(VG.firma, 18, y + 24);
   // Fuß auf jeder Seite
   const n = doc.getNumberOfPages();
   for (let pg = 1; pg <= n; pg++){
