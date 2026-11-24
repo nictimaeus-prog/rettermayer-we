@@ -1,5 +1,5 @@
 // Pflanzkartoffeln: Adressen in Koordinaten umwandeln und Straßen-Kilometer berechnen.
-// Mit Geheimnis ORS_API_KEY (openrouteservice.org, kostenloses Konto): Geocoding und LKW-Straßenkilometer (driving-hgv).
+// Mit Geheimnis ORS_API_KEY (openrouteservice/HeiGIT, kostenloses Konto auf account.heigit.org; Endpunkte api.heigit.org): Geocoding und LKW-Straßenkilometer (driving-hgv).
 // Ohne Schlüssel: Geocoding über OpenStreetMap-Nominatim (langsam, 1 Anfrage/Sekunde) und Kilometer als Luftlinie × 1,3 („geschätzt“).
 // Zugriff nur für angemeldete, freigegebene Nutzer mit Eintrag in pfg_zugang.
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -52,11 +52,14 @@ Deno.serve(async (req) => {
       if (!q) continue;
       try {
         if (key) {
-          const u = `https://api.openrouteservice.org/geocode/search?api_key=${encodeURIComponent(key)}&size=1&boundary.country=DE,AT,NL,BE,DK,FR,CZ&text=${encodeURIComponent(q)}`;
+          const u = `https://api.heigit.org/pelias/v1/search?api_key=${encodeURIComponent(key)}&size=1&boundary.country=DE,AT,NL,BE,DK,FR,CZ&text=${encodeURIComponent(q)}`;
           const r = await fetch(u); const j = await r.json();
           const f = j?.features?.[0];
-          if (f) out.push({ key: it.key, lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], quelle: "ORS", label: f.properties?.label });
+          if (f) { out.push({ key: it.key, lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], quelle: "ORS", label: f.properties?.label }); continue; }
+          const n = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`, { headers: { "User-Agent": "VG-Bio-Pflanzkartoffeln/1.0 (rettermayer-we.pages.dev)" } }).then((x) => x.json()).catch(() => null);
+          if (n?.[0]) out.push({ key: it.key, lon: Number(n[0].lon), lat: Number(n[0].lat), quelle: "OSM", label: n[0].display_name });
           else out.push({ key: it.key, error: "nicht gefunden" });
+          await sleep(1100);
         } else {
           const u = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de,at,nl,be,dk,fr,cz&q=${encodeURIComponent(q)}`;
           const r = await fetch(u, { headers: { "User-Agent": "VG-Bio-Pflanzkartoffeln/1.0 (rettermayer-we.pages.dev)" } });
@@ -75,7 +78,7 @@ Deno.serve(async (req) => {
     if (!src.length || !dst.length) return fail(400, "bad_request", "Keine Punkte");
     if (key && src.length * dst.length <= 3500) {
       const locations = [...src, ...dst];
-      const r = await fetch("https://api.openrouteservice.org/v2/matrix/driving-hgv", {
+      const r = await fetch("https://api.heigit.org/openrouteservice/v2/matrix/driving-hgv", {
         method: "POST",
         headers: { Authorization: key, "Content-Type": "application/json" },
         body: JSON.stringify({ locations, sources: src.map((_, i) => i), destinations: dst.map((_, i) => src.length + i), metrics: ["distance", "duration"], units: "km" }),

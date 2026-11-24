@@ -151,7 +151,7 @@ assets/                   App-Symbol und Startbild
   (Regel als Text/Diktat, Claude rechnet; leer = anteilig) · 3. Kundenmengen auf Partien (Qualität / logistisch / gleichmäßig,
   Sackware von den 3 größten Vermehrern, möglichst eine Partie je Position) · 4. Bestellung je Vermehrer als PDF + Mail, VO in CC ·
   5. Tourenvorschlag Big Bag auf Strecke (24 BB, 10 Entladestellen, Reihenfolge nach kürzestem Weg) zum Ausdrucken für Ruhland
-- Kilometer: Supabase-Funktion `pflanzgut-geo`. Mit Geheimnis `ORS_API_KEY` (openrouteservice.org) LKW-Straßenkilometer, ohne
+- Kilometer: Supabase-Funktion `pflanzgut-geo`. Mit Geheimnis `ORS_API_KEY` (openrouteservice/HeiGIT, Konto auf account.heigit.org, Endpunkte api.heigit.org) LKW-Straßenkilometer, ohne
   Schlüssel Verortung über OpenStreetMap und Luftlinie × 1,3. Ladeadressen der Vermehrer unter „Sorten & Lieferanten“
 - Ladestellen der Züchter (Zukauf) unter „Sorten & Lieferanten“; im Zukauf unter „Weitere Angaben“ wählbar, dazu Frostschutz
 - Zukaufvorschlag (Tab „Einkauf“): je Sorte und Sortierung Kundenaufträge minus VG-Anteil aus der Vermehrung (Bestellungen bei
