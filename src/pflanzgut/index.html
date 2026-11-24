@@ -1095,7 +1095,7 @@ async function abPdf(){
   const intro = du ? "vielen Dank für deine Pflanzkartoffelbestellung. Hiermit bestätigen wir dir folgende Positionen:" : "vielen Dank für Ihre Pflanzkartoffelbestellung. Hiermit bestätigen wir Ihnen folgende Positionen:";
   const il = doc.splitTextToSize(intro, 174); il.forEach((l, i) => t(l, 18, y + 13 + i * 5)); y = y + 13 + il.length * 5 + 6;
   // Tabelle (ohne Preise)
-  const cols = [[18, "Pos."], [28, "Sorte"], [62, "Züchter"], [96, "Sortierung"], [139, "Menge dt", "r"], [143, "Verpackung / Gebinde"]];
+  const cols = [[18, "Pos."], [28, "Sorte"], [72, "Sortierung"], [128, "Menge dt", "r"], [134, "Verpackung / Gebinde"]]; // ohne Züchter
   doc.setFillColor(...G); doc.rect(17, y - 4.2, 176, 6.2, "F"); font("bold", 8.5, [255, 255, 255]);
   cols.forEach(c => t(c[1], c[0] + (c[2] ? 0 : 0.5), y, c[2] ? {align: "right"} : undefined)); y += 6.2;
   let sum = 0; const geb = {};
@@ -1105,13 +1105,13 @@ async function abPdf(){
     const so = D.sorten.find(s => s.name === p.sorte) || {}, g = gebinde(p); sum += num(p.menge_dt);
     const gk = p.verpackung === "Big Bag" ? "Big Bags" : p.verpackung === "Sack 25 kg" ? "Säcke à 25 kg" : "lose"; geb[gk] = (geb[gk] || 0) + (p.verpackung === "lose" ? 0 : g.n);
     const gt = p.verpackung === "Big Bag" ? `${g.n} Big Bag${g.n === 1 ? "" : "s"} à ${fmt(num(p.bb_dt) || 11, (num(p.bb_dt) || 11) % 1 ? 1 : 0)} dt` : p.verpackung === "Sack 25 kg" ? `${g.n} Säcke à 25 kg` : "lose";
-    const vals = [String(i + 1), p.sorte, so.zuechter || "–", ({NS: "NS", Drill: "Drillinge", "ÜG": "Übergrößen"})[p.sortierung] + (p.bemerkung && /\d\d\/\d\d/.test(p.bemerkung) ? " " + p.bemerkung.match(/\d\d\/\d\d/)[0] : ""), fmt(p.menge_dt, 1), gt];
-    cols.forEach((c, j) => { font(j === 1 ? "bold" : "normal", 9, DK); t(doc.splitTextToSize(vals[j], j === 3 ? 42 : j === 2 ? 33 : 60)[0], c[0] + (c[2] ? 0 : 0.5), y, c[2] ? {align: "right"} : undefined); });
+    const vals = [String(i + 1), p.sorte, ({NS: "NS", Drill: "Drillinge", "ÜG": "Übergrößen"})[p.sortierung] + (p.bemerkung && /\d\d\/\d\d/.test(p.bemerkung) ? " " + p.bemerkung.match(/\d\d\/\d\d/)[0] : ""), fmt(p.menge_dt, 1), gt];
+    cols.forEach((c, j) => { font(j === 1 ? "bold" : "normal", 9, DK); t(doc.splitTextToSize(vals[j], j === 1 ? 42 : j === 2 ? 50 : 58)[0], c[0] + (c[2] ? 0 : 0.5), y, c[2] ? {align: "right"} : undefined); });
     y += 5.6;
   });
   doc.setDrawColor(...G); doc.setLineWidth(0.4); doc.line(17, y - 3.6, 193, y - 3.6);
-  font("bold", 9.5, DK); t("Summe", 18, y + 1); t(fmt(sum, 1), 139, y + 1, {align: "right"});
-  font("normal", 9.5, DK); t(Object.entries(geb).filter(([k, n]) => n).map(([k, n]) => k === "Big Bags" ? `${n} Big Bag${n === 1 ? "" : "s"}` : `${n} ${k}`).join(", "), 143.5, y + 1);
+  font("bold", 9.5, DK); t("Summe", 18, y + 1); t(fmt(sum, 1), 128, y + 1, {align: "right"});
+  font("normal", 9.5, DK); t(Object.entries(geb).filter(([k, n]) => n).map(([k, n]) => k === "Big Bags" ? `${n} Big Bag${n === 1 ? "" : "s"}` : `${n} ${k}`).join(", "), 134.5, y + 1);
   // Hinweise
   y += 11;
   // Zusatz Rhizoctonia ausgeschrieben (in der App nur als Häkchen „RHIZ“)
