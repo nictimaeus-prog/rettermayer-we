@@ -140,7 +140,7 @@ assets/                   App-Symbol und Startbild
   Datum, Status, Tour, abweichende Entladestelle und Bemerkung unter „Weitere Angaben“. Reiterleiste verschwindet beim Runterscrollen
 - Auftragsbestätigung: im gespeicherten Kundenauftrag „AB als PDF“ – standardisiert (Sie-Form, ohne Preise, ohne Züchter,
   ohne Zusatztexte aus dem Mailverkehr). Enthält nur lieferrelevante Angaben: Positionen, Gebinde, Rhizoctonia-Zusatz (Häkchen RHIZ),
-  Lieferart mit Adresse bzw. Abholstelle und konkretes Lieferdatum „bis“
+  Lieferart mit Adresse bzw. Abholstelle und konkretes Lieferdatum
 - Lieferdatum: jeder Auftrag und jede Bestellung hat ein konkretes Datum (Standard Herbst 15.01., Frühjahr 15.03. der Saison),
   änderbar unter „Weitere Angaben“
 - Zukaufvorschlag (Tab „Einkauf“): je Sorte und Sortierung Kundenaufträge minus VG-Anteil aus der Vermehrung (Bestellungen bei
