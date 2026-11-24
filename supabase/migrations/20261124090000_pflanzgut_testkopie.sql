@@ -34,3 +34,12 @@ begin
 end $$;
 revoke all on function public.pfgt_neu_kopieren() from public, anon;
 grant execute on function public.pfgt_neu_kopieren() to authenticated;
+
+-- Eigene Nummernkreise für die Testkopie (echte Nummern bleiben lückenlos)
+create sequence if not exists pfgt_best_nr start 901;
+create sequence if not exists pfgt_auf_nr start 901;
+create sequence if not exists pfgt_tour_nr start 901;
+grant usage on sequence pfgt_best_nr, pfgt_auf_nr, pfgt_tour_nr to authenticated;
+alter table pfgt_bestellungen alter column nr set default ('TPB27-' || lpad(nextval('pfgt_best_nr')::text, 4, '0'));
+alter table pfgt_auftraege alter column nr set default ('TKA27-' || lpad(nextval('pfgt_auf_nr')::text, 4, '0'));
+alter table pfgt_touren alter column nr set default ('TT27-' || lpad(nextval('pfgt_tour_nr')::text, 3, '0'));
