@@ -147,6 +147,13 @@ assets/                   App-Symbol und Startbild
   Bonitur je Partie: Rhizoctonia %, Virus % (nur intern), HKG, Mängel; Import aus der Vermehrungsliste. Partien mit ZB, Mängeln oder
   Rhizoctonia ab 20 % werden bei A-Kunden in der Zuordnung markiert
 - Kundenklasse: automatisch (A ab 100 dt, C Sackbesteller bis 3 dt, sonst B) oder manuell im Tab „Kunden“ bzw. per Import (Spalte „Klasse“)
+- Verteilung (Tab „Verteilung“, je Lieferzeitraum): 1. Abgleich Bedarf/verfügbar/Zukauf · 2. Kürzung nur Big Bag, ganze BB
+  (Regel als Text/Diktat, Claude rechnet; leer = anteilig) · 3. Kundenmengen auf Partien (Qualität / logistisch / gleichmäßig,
+  Sackware von den 3 größten Vermehrern, möglichst eine Partie je Position) · 4. Bestellung je Vermehrer als PDF + Mail, VO in CC ·
+  5. Tourenvorschlag Big Bag auf Strecke (24 BB, 10 Entladestellen, Reihenfolge nach kürzestem Weg) zum Ausdrucken für Ruhland
+- Kilometer: Supabase-Funktion `pflanzgut-geo`. Mit Geheimnis `ORS_API_KEY` (openrouteservice.org) LKW-Straßenkilometer, ohne
+  Schlüssel Verortung über OpenStreetMap und Luftlinie × 1,3. Ladeadressen der Vermehrer unter „Sorten & Lieferanten“
+- Ladestellen der Züchter (Zukauf) unter „Sorten & Lieferanten“; im Zukauf unter „Weitere Angaben“ wählbar, dazu Frostschutz
 - Zukaufvorschlag (Tab „Einkauf“): je Sorte und Sortierung Kundenaufträge minus VG-Anteil aus der Vermehrung (Bestellungen bei
   Vermehrern/VOs) minus Zukauf (Züchter/Händler); Bezugsquelle je Sorte (Standard: Züchter laut Katalog), Entwurf-Bestellung per Knopf
 - Verpackung je Position: Big Bag (Standard 11 dt aus der eigenen Vermehrung; 12,5 dt bei holländischer Ware, je Sorte im Sortenkatalog

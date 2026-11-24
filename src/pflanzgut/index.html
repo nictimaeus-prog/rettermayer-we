@@ -142,6 +142,7 @@ details.more[open]{display:grid;gap:8px}
   <button role="tab" aria-selected="true" data-view="v-ueb">Übersicht</button>
   <button role="tab" aria-selected="false" data-view="v-auf">Kundenaufträge</button>
   <button role="tab" aria-selected="false" data-view="v-best">Einkauf &amp; Zukauf</button>
+  <button role="tab" aria-selected="false" data-view="v-vert">Verteilung</button>
   <button role="tab" aria-selected="false" data-view="v-tour">Touren</button>
   <button role="tab" aria-selected="false" data-view="v-part">Partien</button>
   <button role="tab" aria-selected="false" data-view="v-stamm">Sorten &amp; Lieferanten</button>
@@ -206,6 +207,49 @@ details.more[open]{display:grid;gap:8px}
   <section class="card" id="best-edit" hidden></section>
 </main>
 
+<!-- Verteilung -->
+<main id="v-vert" hidden>
+  <section class="card">
+    <div class="row"><h2 class="grow">Verteilung der Kundenmengen</h2>
+      <select id="vt-lz" style="width:auto"><option value="Frühjahr" selected>Frühjahr (März – April)</option><option value="Herbst">Herbst (Dez. – Mitte Jan.)</option></select></div>
+    <h3>1. Abgleich Bedarf – verfügbar – Zukauf</h3>
+    <div id="vt-abgl"></div>
+  </section>
+  <section class="card">
+    <h3>2. Kürzung (nur wenn auch per Zukauf nicht genug kommt)</h3>
+    <p class="hint">Gekürzt wird nur Big-Bag-Ware, auf ganze Big Bags. Sackware bleibt, außer du schreibst es ausdrücklich. Leer lassen = anteilig über alle Big-Bag-Besteller.</p>
+    <div class="row" style="align-items:stretch"><textarea id="vt-ktext" rows="2" class="grow" placeholder="z. B. „Agria NS: A-Kunden voll, Rest anteilig; Gesellschafter zuerst“"></textarea><button class="mic" id="vt-kmic" type="button" aria-label="Diktat"></button></div>
+    <div class="row"><button class="btn sec" id="vt-kgo2">Kürzung vorschlagen</button><span class="hint" id="vt-kst"></span></div>
+    <div id="vt-kvor"></div>
+  </section>
+  <section class="card">
+    <h3>3. Kundenmengen auf Partien verteilen</h3>
+    <div class="row">
+      <select id="vt-strat" style="width:auto">
+        <option value="qualitaet">Qualität: A-Kunden die besten Partien, schwächere als Sackware</option>
+        <option value="logistik">Logistisch: möglichst kurze Wege Vermehrer → Kunde</option>
+        <option value="gleich">Gleichmäßig: alle Vermehrer gleicher Anteil (bei Überschuss)</option>
+      </select>
+      <label class="row chk"><input type="checkbox" id="vt-top3" checked> Sackware nur von den 3 größten Vermehrern</label>
+    </div>
+    <p class="hint">Immer: möglichst eine Partie je Position (Teilung nur wenn nötig), Big Bags in ganzen Einheiten, Abholung nur von der gewählten Abholstelle, ZB/Mängel/Rhizoctonia ≥ 20 % möglichst nicht an A-Kunden. Bei Überschuss wird automatisch gleichmäßig verteilt. Was nicht reicht, wird als Zukauf markiert.</p>
+    <div class="row"><button class="btn" id="vt-calc">Vorschlag berechnen</button></div>
+    <div id="vt-vor" style="display:grid;gap:8px"></div>
+  </section>
+  <section class="card">
+    <h3>4. Bestellung an die Vermehrer (VO-Firma in CC)</h3>
+    <p class="hint">Aus den Partiezuordnungen des gewählten Lieferzeitraums. „PDF + Mail“ erzeugt die Bestellung und öffnet eine E-Mail an den Vermehrer mit der VO-Firma in CC (E-Mail-Adressen unter „Sorten &amp; Lieferanten“).</p>
+    <div id="vt-best"></div>
+  </section>
+  <section class="card">
+    <h3>5. Tourenvorschlag Big Bag auf Strecke</h3>
+    <p class="hint">Je Ladestelle (Vermehrer) bis 24 Big Bags und 10 Entladestellen, Reihenfolge nach kürzestem Weg. Sackware plant die Spedition Ruhland selbst (Kommissionierlager Oberviechtach).</p>
+    <div class="row"><button class="btn sec" id="vt-km">Adressen verorten &amp; Kilometer berechnen</button><span class="hint" id="vt-kmst"></span></div>
+    <div class="row"><button class="btn" id="vt-tcalc">Tourenvorschlag berechnen</button><span class="hint" id="vt-tst"></span></div>
+    <div id="vt-tour" style="display:grid;gap:8px"></div>
+  </section>
+</main>
+
 <!-- Touren -->
 <main id="v-tour" hidden>
   <section class="card" id="tour-list-card">
@@ -250,6 +294,7 @@ details.more[open]{display:grid;gap:8px}
   </section>
   <section class="card">
     <div class="row"><h2 class="grow">Lieferanten: Züchter, Vermehrer, VO-Firmen, Speditionen</h2></div>
+    <p class="hint">Adresse = Ladestelle für Kilometer und Touren; E-Mail für die Bestellung (Vermehrer) bzw. CC (VO-Firma). Direkt in der Tabelle ändern.</p>
     <div class="grid">
       <label class="f">Name<input type="text" id="ln-name"></label>
       <label class="f">Art<select id="ln-typ"><option>Vermehrer</option><option>VO</option><option>Züchter</option><option>Händler</option><option>Spedition</option></select></label>
@@ -258,6 +303,21 @@ details.more[open]{display:grid;gap:8px}
       <div class="row" style="align-self:end"><button class="btn sm" id="ln-add">Lieferant anlegen</button></div>
     </div>
     <div class="tw" style="max-height:46vh"><table id="lief-t"></table></div>
+  </section>
+  <section class="card">
+    <h2>Ladestellen der Züchter (Zukauf)</h2>
+    <p class="hint">Wiederkehrende Vermehrer und Umschlagplätze der Züchter, auch Norddeutschland und Ausland. Beim Zukauf unter „Weitere Angaben“ wählbar, sobald der Ladeort bei der Freistellung feststeht.</p>
+    <div class="grid">
+      <label class="f">Ladestelle<input type="text" id="lst-name"></label>
+      <label class="f">Züchter<input type="text" id="lst-zue" list="dl-zue"></label>
+      <label class="f">Straße<input type="text" id="lst-str"></label>
+      <label class="f">PLZ<input type="text" id="lst-plz"></label>
+      <label class="f">Ort<input type="text" id="lst-ort"></label>
+      <label class="f">Land<input type="text" id="lst-land" value="DE"></label>
+      <label class="f">Bemerkung<input type="text" id="lst-bem"></label>
+      <div class="row" style="align-self:end"><button class="btn sm" id="lst-add">Ladestelle speichern</button></div>
+    </div>
+    <div class="tw" style="max-height:40vh"><table id="lst-t"></table></div>
   </section>
 </main>
 
@@ -293,6 +353,7 @@ details.more[open]{display:grid;gap:8px}
 <datalist id="dl-kunden"></datalist>
 <datalist id="dl-sped"></datalist>
 <datalist id="dl-quelle"></datalist>
+<datalist id="dl-lst"></datalist>
 <datalist id="dl-verm"></datalist>
 
 <div class="toast" id="toast" hidden></div>
@@ -350,7 +411,7 @@ function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false
 const CFG = window.RWE_CONFIG || {};
 const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {auth: {persistSession: true, autoRefreshToken: true, storageKey: "rwe-auth"}});
 let me = null;
-const D = {sorten: [], lief: [], kunden: [], partien: [], best: [], pos: [], zu: [], auf: [], apos: [], azu: [], touren: []};
+const D = {sorten: [], lief: [], kunden: [], partien: [], best: [], pos: [], zu: [], auf: [], apos: [], azu: [], touren: [], dist: [], ladestellen: []};
 const LZ = ["Herbst", "Frühjahr"];
 const LZNAME = {Herbst: "Herbst (Dez. – Mitte Jan.)", "Frühjahr": "Frühjahr (März – April)"};
 const VP = ["Big Bag", "Sack 25 kg", "lose"];
@@ -387,9 +448,9 @@ async function all(table, order){
   return out;
 }
 async function loadAll(){
-  const [s, l, k, p, b, pos, z, a, apos, azu, tou] = await Promise.all([all("pfg_sorten", "name"), all("pfg_lieferanten", "name"), all("pfg_kunden", "name"), all("pfg_partien", "sorte"),
-    all("pfg_bestellungen", "nr"), all("pfg_bestellpos", "pos"), all("pfg_zuordnung"), all("pfg_auftraege", "nr"), all("pfg_auftragpos", "pos"), all("pfg_auftrag_zuordnung"), all("pfg_touren", "nr")]);
-  Object.assign(D, {sorten: s, lief: l, kunden: k, partien: p, best: b, pos, zu: z, auf: a, apos, azu, touren: tou});
+  const [s, l, k, p, b, pos, z, a, apos, azu, tou, dist, lst] = await Promise.all([all("pfg_sorten", "name"), all("pfg_lieferanten", "name"), all("pfg_kunden", "name"), all("pfg_partien", "sorte"),
+    all("pfg_bestellungen", "nr"), all("pfg_bestellpos", "pos"), all("pfg_zuordnung"), all("pfg_auftraege", "nr"), all("pfg_auftragpos", "pos"), all("pfg_auftrag_zuordnung"), all("pfg_touren", "nr"), all("pfg_distanz"), all("pfg_ladestellen", "name")]);
+  Object.assign(D, {sorten: s, lief: l, kunden: k, partien: p, best: b, pos, zu: z, auf: a, apos, azu, touren: tou, dist, ladestellen: lst});
   fillLists(); renderAll();
 }
 const kundeLabel = k => `${k.name} · ${k.kdnr}${k.ort ? " · " + k.ort : ""}`;
@@ -575,6 +636,10 @@ function renderEdit(){
       <label class="f">Bearbeiter<select id="e-bearb">${BEARB.map(b => `<option ${bearbStd(E.bearbeiter) === b[0] ? "selected" : ""}>${b[0]}</option>`).join("")}</select></label>
       <label class="f">Status<select id="e-stat">${["Entwurf", "offen", "bestätigt", "geliefert", "storniert"].map(s => `<option ${E.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
     </div>
+    ${E.kind === "best" ? `<div class="grid2">
+      <label class="f">Ladestelle (bei Freistellung)<input type="text" id="e-lst" list="dl-lst" value="${esc(E.ladestelle || "")}" placeholder="z. B. Vermehrer/Umschlagplatz des Züchters"></label>
+      <label class="row chk" style="align-self:end"><input type="checkbox" id="e-frost" ${E.frostschutz ? "checked" : ""}> Frostschutz (bei Frost, weite Strecke)</label>
+    </div>` : ""}
     <label class="f">Bemerkung (intern, nicht auf der AB)<input type="text" id="e-bem" value="${esc(E.bemerkung || "")}"></label>
   </details>
   <div class="row">${E.id ? `<button class="btn red sm" id="e-del">Löschen</button>` : ""}<span class="grow"></span>${E.kind === "auf" ? `<button class="btn blue" id="e-ab" type="button" ${E.id ? "" : "disabled title=\"erst speichern\""}>AB als PDF</button>` : ""}<button class="btn" id="e-save">Speichern</button></div>`;
@@ -632,7 +697,7 @@ function posInfoHtml(p){
   const zs = p.zu.reduce((a, z) => a + num(z.menge_dt), 0), rest = num(p.menge_dt) - zs, k = p.sorte ? kandidaten(p) : [];
   const bits = [];
   bits.push(`<label class="rz" title="${RHIZ_TXT}"><input type="checkbox" class="p-rhiz" ${p.rhiz !== false ? "checked" : ""}> RHIZ &lt;20 %</label>`);
-  if (num(p.menge_dt) > 0) bits.push(`<b>${esc(gebinde(p).txt)}</b>`);
+  if (num(p.menge_dt) > 0) bits.push(`<b>${esc(gebinde(p).txt)}</b>` + (palettenText(p) ? ` <span class="hint">(${esc(palettenText(p))})</span>` : ""));
   if (p.sorte && !D.sorten.some(s => s.name === p.sorte)) bits.push(`<span class="pill a">nicht im Katalog</span>`);
   if (p.modus === "partie") bits.push(zs > 0 ? (rest > 0.05 ? `<span class="pill a">Partie: ${fdt(zs)} von ${fdt(p.menge_dt)} dt</span>` : `<span class="pill g">Partie zugeordnet</span>`) : `<span class="pill a">Partie wählen</span>`);
   if (p.sorte) bits.push(`<button type="button" class="link p-tog">${p.modus === "partie" ? "Partie später" : k.length ? `Partie zuordnen (${k.length})` : "keine Partie"}</button>`);
@@ -655,7 +720,7 @@ function readHead(){
   const v = id => $(id) ? $(id).value : null;
   if (E.kind === "best"){ if ($("#e-lief")) E.lieferant = v("#e-lief").trim(); if ($("#e-vo")) E.vo = v("#e-vo").trim(); }
   if ($("#e-datum")) E.datum = v("#e-datum"); if ($("#e-stat")) E.status = v("#e-stat"); if ($("#e-bem")) E.bemerkung = v("#e-bem").trim();
-  if ($("#e-ldat")) E.lieferdatum = v("#e-ldat") || null; if ($("#e-bearb")) E.bearbeiter = v("#e-bearb");
+  if ($("#e-ldat")) E.lieferdatum = v("#e-ldat") || null; if ($("#e-lst")) E.ladestelle = v("#e-lst").trim(); if ($("#e-frost")) E.frostschutz = $("#e-frost").checked; if ($("#e-bearb")) E.bearbeiter = v("#e-bearb");
   if (E.kind === "auf"){
     E.tour_id = E.lieferart === "Anlieferung" && $("#e-tour") ? (v("#e-tour") || null) : (E.lieferart === "Anlieferung" ? E.tour_id : null);
     if ($("#e-abw")) E.entlade_abweichend = $("#e-abw").checked;
@@ -695,7 +760,7 @@ function wireEdit(){
     $("#e-lief").onchange = () => { readHead(); const l = D.lief.find(l => l.name === E.lieferant && l.typ === E.lieferant_typ); if (l && l.vo && !E.vo){ E.vo = l.vo; $("#e-vo").value = l.vo; } if (E.lieferant_typ === "VO"){ E.vo = E.lieferant; $("#e-vo").value = E.vo; } updAllInfo(); };
     $("#e-vo").onchange = readHead;
   }
-  ["#e-datum", "#e-stat", "#e-bem", "#e-ldat", "#e-bearb"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); updSum(); }; });
+  ["#e-datum", "#e-stat", "#e-bem", "#e-ldat", "#e-bearb", "#e-lst", "#e-frost"].forEach(s => { if ($(s)) $(s).onchange = () => { readHead(); updSum(); }; });
   if ($("#e-ab")) $("#e-ab").onclick = abPdf;
   $$("#e-pos .pos").forEach(el => wirePos(el));
   if ($("#e-del")) $("#e-del").onclick = delEdit;
@@ -775,7 +840,7 @@ async function saveEdit(){
       const { error } = await sb.from("pfg_lieferanten").insert({name: E.lieferant, typ: E.lieferant_typ, vo: E.lieferant_typ === "Vermehrer" ? (E.vo || null) : null}); if (error) throw error;
     }
     const head = k === "best"
-      ? {lieferant: E.lieferant, lieferant_typ: E.lieferant_typ, vo: E.vo || null, liefertermin: E.liefertermin || null}
+      ? {lieferant: E.lieferant, lieferant_typ: E.lieferant_typ, vo: E.vo || null, liefertermin: E.liefertermin || null, ladestelle: E.ladestelle || null, frostschutz: !!E.frostschutz}
       : {kdnr: E.kdnr || null, kunde: E.kunde, lieferzeitraum: E.lieferzeitraum, lieferart: E.lieferart, abholstelle: E.lieferart === "Anlieferung" ? null : (E.abholstelle || null), tour_id: E.tour_id || null, tour_pos: tourPosFuer(E),
          entlade_abweichend: !!E.entlade_abweichend, entlade_name: E.entlade_abweichend ? (E.entlade_name || null) : null, entlade_strasse: E.entlade_abweichend ? (E.entlade_strasse || null) : null,
 
@@ -871,7 +936,7 @@ function micToggle(btn, ta){
   rec.onresult = ev => { let fin = "", part = "";
     for (let i = ev.resultIndex; i < ev.results.length; i++){ const r = ev.results[i]; if (r.isFinal) fin += r[0].transcript; else part += r[0].transcript; }
     if (fin) base = base + fin.trim() + ", ";
-    ta.value = (base + part).trim(); E._dikText = ta.value; };
+    ta.value = (base + part).trim(); if (E && ta.id === "e-dik") E._dikText = ta.value; };
   rec.onerror = ev => { if (ev.error === "not-allowed") toast("Mikrofon nicht erlaubt – bitte im Browser freigeben."); };
   rec.onend = () => { btn.classList.remove("on"); REC = null; };
   try { rec.start(); REC = rec; btn.classList.add("on"); } catch (e) { REC = null; toast("Diktat gerade nicht möglich"); }
@@ -1179,6 +1244,330 @@ async function abPdf(){
   toast("AB " + E.nr + " erstellt");
 }
 
+// ---------- Verteilung: Abgleich, Kürzung, Zuordnung der Kundenmengen auf Partien, Bestellung an Vermehrer, Tourenvorschlag
+const BB_LKW = 24, BB_STOPPS = 10, SACK_PAL_DT = 8;
+const palettenText = p => p.verpackung === "Big Bag" ? `${gebinde(p).n} Euro-Tauschpal.` : p.verpackung === "Sack 25 kg" ? `${Math.ceil(num(p.menge_dt) / SACK_PAL_DT - 0.001)} Einwegpal.` : "";
+const vKey = name => "L:" + name, kKey = a => a.entlade_abweichend ? "A:" + a.id : "K:" + (a.kdnr || a.id);
+const distKm = (von, nach) => { const d = D.dist.find(x => x.von === von && x.nach === nach) || D.dist.find(x => x.von === nach && x.nach === von); return d && d.km != null ? num(d.km) : null; };
+const vermehrerVon = name => D.lief.find(l => l.name === name && l.typ === "Vermehrer");
+function punktVon(key){
+  if (key.startsWith("L:")){ const l = vermehrerVon(key.slice(2)); return l && l.lat != null ? [l.lon, l.lat] : null; }
+  if (key.startsWith("A:")){ const a = headOf("auf", key.slice(2)); return a && a.entlade_lat != null ? [a.entlade_lon, a.entlade_lat] : null; }
+  const k = D.kunden.find(x => x.kdnr === key.slice(2)); return k && k.lat != null ? [k.lon, k.lat] : null;
+}
+let VT = {lz: "Frühjahr", strat: "qualitaet", sackTop3: true, vorschlag: null, kuerz: null, touren: null, kText: ""};
+function vtPositionen(){ return aktivePos("auf").filter(p => headOf("auf", p.auftrag_id).lieferzeitraum === VT.lz); }
+function vgGesamtJeVermehrer(){ const m = {}; D.partien.filter(x => verfuegbar(x) && x.jahr === jahrAkt()).forEach(x => SORTS.forEach(s => m[x.vermehrer] = (m[x.vermehrer] || 0) + vgMenge(x, s))); return m; }
+function belegtJeVermehrer(){ const m = {}; D.azu.forEach(z => { const x = partie(z.partie_id); if (x) m[x.vermehrer] = (m[x.vermehrer] || 0) + num(z.menge_dt); }); return m; }
+function qualScore(x){ return ((x.kat || "") === "ZB" ? 2 : 0) + (x.maengel ? 2 : 0) + num(x.rhiz_pct) / 10 + num(x.virus_pct) / 5; }
+
+function renderVert(){
+  const pos = vtPositionen();
+  const rows = {}; const get = (n, s) => rows[n + "|" + s] = rows[n + "|" + s] || {sorte: n, s, bed: 0, bb: 0, sack: 0, zu: 0, verf: 0, zk: 0};
+  pos.forEach(p => { const o = get(p.sorte, p.sortierung); o.bed += num(p.menge_dt); o[p.verpackung === "Sack 25 kg" ? "sack" : "bb"] += num(p.menge_dt); o.zu += Math.min(zuSumK("auf", p.id), num(p.menge_dt)); });
+  Object.values(rows).forEach(o => {
+    o.verf = D.partien.filter(x => verfuegbar(x) && x.jahr === jahrAkt() && x.sorte === o.sorte).reduce((a, x) => a + Math.max(0, vgMenge(x, o.s) - partieBelegt(x.id, o.s, "auf")), 0) + o.zu;
+    o.zk = aktivePos("best").filter(p => p.sorte === o.sorte && p.sortierung === o.s && ZUKAUF.includes(bestOf(p.bestellung_id).lieferant_typ)).reduce((a, p) => a + num(p.menge_dt), 0);
+    o.fehlt = o.bed - o.verf - o.zk;
+  });
+  const list = Object.values(rows).sort((a, b) => a.sorte.localeCompare(b.sorte, "de"));
+  const fehlt = list.filter(o => o.fehlt > 0.05);
+  $("#vt-abgl").innerHTML = `<div class="tw"><table><thead><tr><th>Sorte</th><th class="n">Bedarf dt</th><th class="n">davon Sack</th><th class="n">VG verfügbar</th><th class="n">Zukauf</th><th class="n">fehlt</th></tr></thead><tbody>${list.map(o => `<tr><td><b>${esc(o.sorte)}</b> ${o.s !== "NS" ? esc(o.s) : ""}</td><td class="n">${fdt(o.bed)}</td><td class="n">${o.sack ? fdt(o.sack) : ""}</td><td class="n">${fdt(o.verf)}</td><td class="n">${o.zk ? fdt(o.zk) : ""}</td><td class="n">${o.fehlt > 0.05 ? `<span class="pill w">${fdt(o.fehlt)}</span>` : "–"}</td></tr>`).join("") || `<tr><td colspan="6" class="empty">Keine Kundenaufträge im ${esc(VT.lz)}</td></tr>`}</tbody></table></div>
+    ${fehlt.length ? `<p class="hint">Fehlmengen zuerst als Zukauf buchen (Tab „Einkauf & Zukauf“ → Zukaufvorschlag). Was auch per Zukauf nicht zu bekommen ist, hier kürzen.</p>` : `<p class="hint">Bedarf ist durch VG-Anteil und Zukauf gedeckt.</p>`}`;
+  renderKuerz(); renderVorschlag(); renderVBest(); renderTourVorschlag();
+}
+
+// ---- Kürzung (nur Big-Bag-Ware; Sackware nur wenn ausdrücklich gewünscht)
+async function kuerzungVorschlagen(){
+  const pos = vtPositionen();
+  const knapp = {};
+  pos.forEach(p => { const k = p.sorte + "|" + p.sortierung; knapp[k] = knapp[k] || {sorte: p.sorte, s: p.sortierung, bed: 0, pos: []}; knapp[k].bed += num(p.menge_dt); knapp[k].pos.push(p); });
+  const daten = Object.values(knapp).map(o => {
+    const verf = D.partien.filter(x => verfuegbar(x) && x.jahr === jahrAkt() && x.sorte === o.sorte).reduce((a, x) => a + Math.max(0, vgMenge(x, o.s) - partieBelegt(x.id, o.s, "auf")), 0) + o.pos.reduce((a, p) => a + Math.min(zuSumK("auf", p.id), num(p.menge_dt)), 0)
+      + aktivePos("best").filter(p => p.sorte === o.sorte && p.sortierung === o.s && ZUKAUF.includes(bestOf(p.bestellung_id).lieferant_typ)).reduce((a, p) => a + num(p.menge_dt), 0);
+    return Object.assign(o, {verf, fehlt: o.bed - verf});
+  }).filter(o => o.fehlt > 0.05);
+  if (!daten.length) return toast("Nichts zu kürzen – alles gedeckt");
+  const text = ($("#vt-ktext").value || "").trim(); VT.kText = text;
+  let vorschlag = [];
+  if (!text){
+    // Standard: anteilig nur Big-Bag-Positionen, auf ganze Big Bags gerundet
+    daten.forEach(o => {
+      const bb = o.pos.filter(p => p.verpackung === "Big Bag"), sumBB = bb.reduce((a, p) => a + num(p.menge_dt), 0);
+      if (!sumBB) return; const q = Math.max(0, 1 - o.fehlt / sumBB);
+      bb.forEach(p => { const g = num(p.bb_dt) || 11, neu = Math.floor(num(p.menge_dt) * q / g + 1e-6) * g; if (neu < num(p.menge_dt) - 0.05) vorschlag.push({pos_id: p.id, neu}); });
+    });
+  } else {
+    const st = $("#vt-kst"); st.textContent = "Claude rechnet die Kürzung …";
+    const info = daten.map(o => ({sorte: o.sorte, sortierung: o.s, bedarf_dt: o.bed, verfuegbar_dt: Math.round(o.verf * 10) / 10, fehlt_dt: Math.round(o.fehlt * 10) / 10,
+      positionen: o.pos.map(p => { const a = headOf("auf", p.auftrag_id); return {pos_id: p.id, kunde: a.kunde, kdnr: a.kdnr, klasse: klasseVon(a.kdnr), auftragsdatum: a.datum, verpackung: p.verpackung, bb_dt: num(p.bb_dt) || 11, menge_dt: num(p.menge_dt)}; })}));
+    const prompt = `Du kürzt Pflanzkartoffel-Kundenaufträge der VG Bio, weil die Ware nicht reicht.
+Feste Regeln: Gekürzt wird nur Big-Bag-Ware, auf ganze Big Bags (menge = Vielfaches von bb_dt). Sackware bleibt unverändert, außer die Anweisung verlangt es ausdrücklich. Je Sorte/Sortierung soll die Summe nach Kürzung höchstens verfuegbar_dt betragen (Sack zählt mit).
+Anweisung des Disponenten: ${text}
+DATEN (JSON): ${JSON.stringify(info)}
+Antworte nur mit JSON: {"kuerzungen":[{"pos_id":"…","neu_dt":0}],"erklaerung":"kurz"}`;
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const r = await fetch(CFG.supabaseUrl + "/functions/v1/pflanzgut-import", {method: "POST", headers: {"Content-Type": "application/json", "apikey": CFG.supabaseAnonKey, "Authorization": "Bearer " + (session ? session.access_token : "")}, body: JSON.stringify({input: prompt})});
+      const out = await r.json(); if (!r.ok) throw new Error(out && out.error ? out.error.message : "Fehler");
+      const t = String(out.text || ""); const j = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1));
+      vorschlag = (j.kuerzungen || []).filter(k => D.apos.some(p => p.id === k.pos_id)).map(k => ({pos_id: k.pos_id, neu: num(k.neu_dt)}));
+      st.textContent = j.erklaerung || "";
+    } catch (e){ st.textContent = "Kürzung konnte nicht berechnet werden: " + (e.message || e); return; }
+  }
+  VT.kuerz = vorschlag; renderKuerz();
+}
+function renderKuerz(){
+  const box = $("#vt-kvor"); if (!VT.kuerz){ box.innerHTML = ""; return; }
+  if (!VT.kuerz.length){ box.innerHTML = `<p class="hint">Kein Kürzungsbedarf bei Big-Bag-Ware.</p>`; return; }
+  box.innerHTML = `<div class="tw"><table><thead><tr><th>Kunde</th><th>Sorte</th><th class="n">bisher dt</th><th class="n">neu dt</th><th class="n">Big Bags</th></tr></thead><tbody>${VT.kuerz.map(k => { const p = D.apos.find(x => x.id === k.pos_id), a = headOf("auf", p.auftrag_id), g = num(p.bb_dt) || 11;
+    return `<tr><td>${esc(a.kunde)} ${klassePill(klasseVon(a.kdnr))}</td><td>${esc(p.sorte)} ${esc(p.sortierung)}</td><td class="n">${fdt(p.menge_dt)}</td><td class="n"><b>${fdt(k.neu)}</b></td><td class="n">${Math.round(num(p.menge_dt) / g)} → ${Math.round(k.neu / g)}</td></tr>`; }).join("")}</tbody></table></div>
+    <div class="row"><button class="btn red" id="vt-kgo">Kürzung übernehmen</button><button class="btn sec" id="vt-kno">verwerfen</button></div>`;
+  $("#vt-kno").onclick = () => { VT.kuerz = null; renderKuerz(); };
+  $("#vt-kgo").onclick = async () => {
+    if (!confirm(`${VT.kuerz.length} Position(en) kürzen? Die ursprüngliche Menge bleibt gespeichert.`)) return;
+    for (const k of VT.kuerz){ const p = D.apos.find(x => x.id === k.pos_id);
+      const { error } = await sb.from("pfg_auftragpos").update({menge_dt: k.neu, menge_bestellt: p.menge_bestellt != null ? p.menge_bestellt : p.menge_dt, bemerkung: [p.bemerkung, `gekürzt von ${fmt(p.menge_dt, 1)} dt`].filter(Boolean).join(" · ")}).eq("id", k.pos_id);
+      if (error) return toast(error.message);
+      const zs = zuOfK("auf", k.pos_id); let over = zs.reduce((a, z) => a + num(z.menge_dt), 0) - k.neu;
+      for (const z of zs.slice().reverse()){ if (over <= 0.05) break; const m = num(z.menge_dt), nm = Math.max(0, m - over); over -= m - nm;
+        if (nm <= 0.05) await sb.from("pfg_auftrag_zuordnung").delete().eq("id", z.id); else await sb.from("pfg_auftrag_zuordnung").update({menge_dt: nm}).eq("id", z.id); }
+    }
+    VT.kuerz = null; toast("Kürzung übernommen"); await loadAll();
+  };
+}
+
+// ---- Vorschlag Zuordnung Kundenmengen → Partien
+function vorschlagBerechnen(){
+  const pos = vtPositionen().filter(p => num(p.menge_dt) - zuSumK("auf", p.id) > 0.05);
+  const cap = {}; D.partien.filter(x => verfuegbar(x) && x.jahr === jahrAkt()).forEach(x => SORTS.forEach(s => { const c = vgMenge(x, s) - partieBelegt(x.id, s, "auf"); if (c > 0.05) cap[x.id + "|" + s] = c; }));
+  const vgV = vgGesamtJeVermehrer(), belV = belegtJeVermehrer();
+  const top3 = Object.entries(vgV).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
+  const ueberschuss = Object.values(cap).reduce((a, c) => a + c, 0) > pos.reduce((a, p) => a + num(p.menge_dt) - zuSumK("auf", p.id), 0) * 1.05;
+  const prio = p => { const a = headOf("auf", p.auftrag_id), kl = klasseVon(a.kdnr); return (kl === "A" ? 0 : kl === "B" ? 1 : 2) * 1e6 - num(p.menge_dt); };
+  const out = [];
+  pos.slice().sort((a, b) => prio(a) - prio(b)).forEach(p => {
+    const a = headOf("auf", p.auftrag_id), kl = klasseVon(a.kdnr), sack = p.verpackung === "Sack 25 kg", g = num(p.bb_dt) || 11;
+    let rest = num(p.menge_dt) - zuSumK("auf", p.id);
+    const used = new Set();
+    while (rest > 0.05){
+      let cands = D.partien.filter(x => x.sorte === p.sorte && cap[x.id + "|" + p.sortierung] > 0.05 && !used.has(x.id)
+        && (a.lieferart !== "Abholung ab Vermehrer" || !a.abholstelle || x.vermehrer === a.abholstelle));
+      if (sack && VT.sackTop3 && cands.some(x => top3.includes(x.vermehrer))) cands = cands.filter(x => top3.includes(x.vermehrer));
+      if (!cands.length) break;
+      const score = x => {
+        const c = cap[x.id + "|" + p.sortierung], q = qualScore(x), km = distKm(vKey(x.vermehrer), kKey(a));
+        let sc = 0;
+        if (VT.strat === "qualitaet" || VT.strat === "logistik") sc += kl === "A" ? q * 10 : sack ? -q * 5 : q * 2;
+        if (km != null) sc += km / (VT.strat === "logistik" ? 5 : 20);
+        if (VT.strat === "gleich" || ueberschuss) sc += ((belV[x.vermehrer] || 0) / (vgV[x.vermehrer] || 1)) * (VT.strat === "gleich" ? 60 : 15);
+        if (c >= rest - 0.05) sc -= 25; // möglichst aus einer Partie
+        if (kl === "A" && bonWarn(x).length) sc += 40;
+        return sc;
+      };
+      const best = cands.sort((x, y) => score(x) - score(y))[0], c = cap[best.id + "|" + p.sortierung];
+      let m = c >= rest - 0.05 ? rest : (sack ? c : Math.floor(c / g + 1e-6) * g);
+      if (m <= 0.05){ used.add(best.id); continue; }
+      m = Math.round(m * 10) / 10;
+      cap[best.id + "|" + p.sortierung] = c - m; belV[best.vermehrer] = (belV[best.vermehrer] || 0) + m; rest -= m; used.add(best.id);
+      out.push({pos: p, auf: a, partie: best, menge: m, km: distKm(vKey(best.vermehrer), kKey(a)), warn: kl === "A" ? bonWarn(best) : []});
+    }
+    if (rest > 0.05) out.push({pos: p, auf: a, partie: null, menge: Math.round(rest * 10) / 10});
+  });
+  VT.vorschlag = out; renderVorschlag();
+}
+function renderVorschlag(){
+  const box = $("#vt-vor"); const v = VT.vorschlag; if (!v){ box.innerHTML = ""; return; }
+  if (!v.length){ box.innerHTML = `<p class="hint">Alle Kundenmengen im ${esc(VT.lz)} sind schon Partien zugeordnet.</p>`; return; }
+  const grp = {}; v.forEach(r => { const k = r.partie ? r.partie.vermehrer : "– Zukauf nötig –"; (grp[k] = grp[k] || []).push(r); });
+  const kmSum = v.filter(r => r.km != null && r.pos.verpackung === "Big Bag").reduce((a, r) => a + r.km, 0);
+  box.innerHTML = `<p class="hint">${v.filter(r => r.partie).length} Zuordnungen · ${v.filter(r => r.partie && v.filter(x => x.pos.id === r.pos.id).length > 1).length ? "mit Teilung von Positionen · " : ""}${kmSum ? "Summe Einzelstrecken Big Bag ca. " + fmt(kmSum, 0) + " km" : "Kilometer noch nicht berechnet"}</p>` +
+    Object.keys(grp).sort((a, b) => a.startsWith("–") - b.startsWith("–") || a.localeCompare(b, "de")).map(k => `<div class="zkg"><b>${esc(k)}</b> <span class="hint">${fdt(grp[k].reduce((a, r) => a + r.menge, 0))} dt</span>
+    <div class="tw"><table><thead><tr><th>Kunde</th><th>Sorte</th><th class="n">dt</th><th>Verp.</th><th>Partie</th><th class="n">km</th></tr></thead><tbody>${grp[k].map(r => `<tr><td>${esc(r.auf.kunde)} ${klassePill(klasseVon(r.auf.kdnr))}<br><span class="hint">${esc(entladestelle(r.auf).ort || "")}${r.auf.lieferart !== "Anlieferung" ? " · Abholung" : ""}</span></td><td>${esc(r.pos.sorte)} ${r.pos.sortierung !== "NS" ? esc(r.pos.sortierung) : ""}</td><td class="n">${fdt(r.menge)}</td><td>${esc(vpVal(r.pos))}</td><td>${r.partie ? esc(r.partie.anerk_nr || "") + (r.warn && r.warn.length ? ` <span class="pill w">${esc(r.warn.join(", "))}</span>` : "") : `<span class="pill a">Zukauf</span>`}</td><td class="n">${r.km != null ? fmt(r.km, 0) : ""}</td></tr>`).join("")}</tbody></table></div></div>`).join("") +
+    `<div class="row"><button class="btn" id="vt-go">Vorschlag übernehmen</button><button class="btn sec" id="vt-no">verwerfen</button></div>`;
+  $("#vt-no").onclick = () => { VT.vorschlag = null; renderVorschlag(); };
+  $("#vt-go").onclick = async () => {
+    const rows = v.filter(r => r.partie);
+    if (!rows.length) return toast("Nichts zuzuordnen");
+    const merged = {}; rows.forEach(r => { const k = r.pos.id + "|" + r.partie.id; merged[k] = merged[k] || {pos_id: r.pos.id, partie_id: r.partie.id, menge_dt: 0}; merged[k].menge_dt += r.menge; });
+    for (const z of Object.values(merged)){
+      const ex = D.azu.find(x => x.pos_id === z.pos_id && x.partie_id === z.partie_id);
+      const { error } = ex ? await sb.from("pfg_auftrag_zuordnung").update({menge_dt: num(ex.menge_dt) + z.menge_dt}).eq("id", ex.id) : await sb.from("pfg_auftrag_zuordnung").insert(z);
+      if (error) return toast(error.message);
+    }
+    for (const r of rows) if (r.pos.verpackung === "Big Bag" && num(r.pos.bb_dt) !== 11) await sb.from("pfg_auftragpos").update({bb_dt: 11}).eq("id", r.pos.id);
+    VT.vorschlag = null; toast(`${Object.keys(merged).length} Zuordnungen übernommen`); await loadAll();
+  };
+}
+
+// ---- Bestellung an die Vermehrer (Herbst/Frühjahr), VO-Firma in CC
+function vBestDaten(){
+  const m = {};
+  D.azu.forEach(z => { const p = D.apos.find(x => x.id === z.pos_id), a = p && headOf("auf", p.auftrag_id), x = partie(z.partie_id);
+    if (!p || !a || !x || !AKTIV.includes(a.status) || a.lieferzeitraum !== VT.lz) return;
+    const v = m[x.vermehrer] = m[x.vermehrer] || {vermehrer: x.vermehrer, vo: x.vo, zeilen: []};
+    v.zeilen.push({sorte: p.sorte, sortierung: p.sortierung, anerk: x.anerk_nr, menge: num(z.menge_dt), vp: vpVal(p), verpackung: p.verpackung, bb_dt: p.bb_dt, kunde: a.kunde, ort: entladestelle(a).ort || "", lieferart: a.lieferart, lieferdatum: a.lieferdatum}); });
+  return Object.values(m).sort((a, b) => a.vermehrer.localeCompare(b.vermehrer, "de"));
+}
+function renderVBest(){
+  const d = vBestDaten();
+  $("#vt-best").innerHTML = d.length ? `<div class="tw"><table><thead><tr><th>Vermehrer</th><th>VO (CC)</th><th class="n">Positionen</th><th class="n">dt</th><th class="n">Paletten</th><th></th></tr></thead><tbody>${d.map((v, i) => { const l = vermehrerVon(v.vermehrer) || {}, vo = D.lief.find(x => x.typ === "VO" && x.name === v.vo) || {};
+    const bb = v.zeilen.filter(z => z.verpackung === "Big Bag").reduce((a, z) => a + Math.ceil(z.menge / (num(z.bb_dt) || 11) - 0.001), 0), sp = Math.ceil(v.zeilen.filter(z => z.verpackung === "Sack 25 kg").reduce((a, z) => a + z.menge, 0) / SACK_PAL_DT - 0.001);
+    return `<tr><td><b>${esc(v.vermehrer)}</b><br><span class="hint">${esc(l.email || "E-Mail fehlt")}</span></td><td>${esc(v.vo || "")}<br><span class="hint">${esc(vo.email || (v.vo ? "E-Mail fehlt" : ""))}</span></td><td class="n">${v.zeilen.length}</td><td class="n">${fdt(v.zeilen.reduce((a, z) => a + z.menge, 0))}</td><td class="n">${bb ? bb + " BB" : ""}${bb && sp ? " · " : ""}${sp ? sp + " Einweg" : ""}</td><td><button class="btn sm vb-pdf" data-i="${i}">PDF + Mail</button></td></tr>`; }).join("")}</tbody></table></div>`
+    : `<p class="hint">Noch keine Kundenmengen im ${esc(VT.lz)} auf Partien verteilt.</p>`;
+  $$("#vt-best .vb-pdf").forEach(b => b.onclick = () => vBestPdf(d[+b.dataset.i]));
+}
+async function vBestPdf(v){
+  if (!window.jspdf) { try { await loadScript("../lib/jspdf.umd.min.js"); } catch (e) { return toast("PDF-Erstellung konnte nicht geladen werden"); } }
+  const {jsPDF} = window.jspdf, doc = new jsPDF({unit: "mm", format: "a4"});
+  const G = [92, 138, 19], GR = [107, 107, 107], DK = [20, 20, 20];
+  const t = (s, x, y, o) => doc.text(String(s), x, y, o), font = (st, sz, col) => { doc.setFont("helvetica", st); doc.setFontSize(sz); doc.setTextColor(...col); };
+  const l = vermehrerVon(v.vermehrer) || {}, saison = `${VT.lz} ${VT.lz === "Herbst" ? (new Date().getFullYear()) + "/" + String(new Date().getFullYear() + 1).slice(2) : new Date().getFullYear() + (new Date().getMonth() >= 6 ? 1 : 0)}`;
+  font("bold", 15, G); t(VG.firma, 18, 18); font("normal", 8.5, GR); t(`${VG.str} · ${VG.ort} · Tel. ${VG.tel} · ${VG.web}`, 18, 23.5);
+  try { doc.addImage($("header img").src, "JPEG", 156, 7.5, 36, 14.8); } catch (x) {}
+  doc.setFillColor(147, 195, 26); doc.rect(18, 28, 116, 1.4, "F"); doc.setFillColor(95, 178, 222); doc.rect(134, 28, 58, 1.4, "F");
+  font("bold", 11, DK); t(v.vermehrer, 18, 40); font("normal", 10, DK); if (l.adresse) t(l.adresse, 18, 45);
+  font("normal", 8.5, GR); [["Datum", datum(new Date())], ["VO-Firma", v.vo || "–"], ["Ansprechpartner", BEARB[0][0]], ["E-Mail", BEARB[0][1]]].forEach((r, i) => { t(r[0], 124, 40 + i * 4.6); font("bold", 8.5, DK); t(r[1], 152, 40 + i * 4.6); font("normal", 8.5, GR); });
+  font("bold", 17, G); t(`Pflanzkartoffel-Bestellung ${saison}`, 18, 66);
+  font("normal", 9.5, DK); t("Sehr geehrte Damen und Herren, wir bestellen aus Ihren Partien folgende Mengen:", 18, 74);
+  let y = 82; const cols = [[18, "Sorte"], [48, "Sort."], [64, "Anerk.-Nr."], [100, "Menge dt", "r"], [104, "Verp."], [124, "Kunde / Ort"]];
+  doc.setFillColor(...G); doc.rect(17, y - 4.2, 176, 6.2, "F"); font("bold", 8.5, [255, 255, 255]); cols.forEach(c => t(c[1], c[0], y, c[2] ? {align: "right"} : undefined)); y += 6.2;
+  v.zeilen.sort((a, b) => a.sorte.localeCompare(b.sorte, "de")).forEach((z, i) => {
+    if (y > 262){ doc.addPage(); y = 20; }
+    if (i % 2){ doc.setFillColor(242, 248, 228); doc.rect(17, y - 4, 176, 5.6, "F"); }
+    font("normal", 9, DK); [z.sorte, z.sortierung, z.anerk || "", fmt(z.menge, 1), z.vp, `${z.kunde}${z.ort ? ", " + z.ort : ""}${z.lieferart !== "Anlieferung" ? " (Abholung)" : ""}`].forEach((s, j) => t(doc.splitTextToSize(String(s), j === 5 ? 68 : 34)[0], cols[j][0], y, cols[j][2] ? {align: "right"} : undefined)); y += 5.6;
+  });
+  doc.setDrawColor(...G); doc.line(17, y - 3.6, 193, y - 3.6); font("bold", 9.5, DK); t("Summe", 18, y + 1); t(fmt(v.zeilen.reduce((a, z) => a + z.menge, 0), 1), 100, y + 1, {align: "right"});
+  y += 10; font("normal", 9, DK);
+  doc.splitTextToSize("Bitte bestätigen Sie die Mengen und melden Sie uns, ab wann die Ware verladebereit ist. Die Abholung bzw. Anlieferung stimmen wir mit der Spedition ab. Sackware wird über die Spedition Ruhland (Kommissionierlager Oberviechtach) gesammelt.", 174).forEach(s => { t(s, 18, y); y += 4.8; });
+  y += 6; t("Mit freundlichen Grüßen", 18, y); font("bold", 9.5, DK); t(BEARB[0][0], 18, y + 10); font("normal", 9.5, DK); t(VG.firma, 18, y + 15);
+  const name = `Bestellung_${VT.lz}_${v.vermehrer}`.replace(/[\\/:*?"<>|,]+/g, "").replace(/\s+/g, "_") + ".pdf";
+  const blob = doc.output("blob"), file = new File([blob], name, {type: "application/pdf"});
+  const vo = D.lief.find(x => x.typ === "VO" && x.name === v.vo) || {};
+  const subj = `Pflanzkartoffel-Bestellung ${saison} – ${v.vermehrer}`;
+  if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file], title: subj}); } catch (e) {} }
+  else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  if (l.email || vo.email) location.href = `mailto:${encodeURIComponent(l.email || "")}?cc=${encodeURIComponent(vo.email || "")}&subject=${encodeURIComponent(subj)}&body=${encodeURIComponent("Sehr geehrte Damen und Herren,\n\nanbei unsere Pflanzkartoffel-Bestellung " + saison + " (PDF im Anhang).\n\nMit freundlichen Grüßen\n" + BEARB[0][0] + "\n" + VG.firma)}`;
+}
+
+// ---- Kilometer: Adressen verorten (OpenRouteService bzw. OpenStreetMap) und Entfernungen laden
+async function geoCall(body){
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch(CFG.supabaseUrl + "/functions/v1/pflanzgut-geo", {method: "POST", headers: {"Content-Type": "application/json", "apikey": CFG.supabaseAnonKey, "Authorization": "Bearer " + (session ? session.access_token : "")}, body: JSON.stringify(body)});
+  const out = await r.json().catch(() => null); if (!r.ok) throw new Error(out && out.error ? out.error.message : "Fehler " + r.status); return out;
+}
+async function kmAktualisieren(){
+  const st = $("#vt-kmst"), btn = $("#vt-km"); btn.disabled = true;
+  try {
+    const s = await geoCall({action: "status"}); VT.ors = s.ors;
+    const aufs = D.auf.filter(a => AKTIV.includes(a.status) && a.lieferzeitraum === VT.lz && a.lieferart === "Anlieferung");
+    const offen = [];
+    D.lief.filter(l => l.typ === "Vermehrer" && l.adresse && l.lat == null).forEach(l => offen.push({key: "L:" + l.id, q: l.adresse}));
+    [...new Set(aufs.filter(a => !a.entlade_abweichend && a.kdnr).map(a => a.kdnr))].forEach(k => { const c = D.kunden.find(x => x.kdnr === k); if (c && c.lat == null && (c.plz || c.ort)) offen.push({key: "K:" + k, q: [c.strasse, [c.plz, c.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ")}); });
+    aufs.filter(a => a.entlade_abweichend && a.entlade_lat == null && (a.entlade_plz || a.entlade_ort)).forEach(a => offen.push({key: "A:" + a.id, q: [a.entlade_strasse, [a.entlade_plz, a.entlade_ort].filter(Boolean).join(" ")].filter(Boolean).join(", ")}));
+    const step = s.ors ? 40 : 12;
+    for (let i = 0; i < offen.length; i += step){
+      st.textContent = `Adressen verorten … ${i} von ${offen.length}${s.ors ? "" : " (ohne Schlüssel langsam: 1 Adresse/Sekunde)"}`;
+      const r = await geoCall({action: "geocode", items: offen.slice(i, i + step)});
+      for (const g of r.results.filter(g => g.lat != null)){
+        const [typ, id] = [g.key.slice(0, 1), g.key.slice(2)], row = {lat: g.lat, lon: g.lon, geo_quelle: g.quelle};
+        if (typ === "L") await sb.from("pfg_lieferanten").update(row).eq("id", id);
+        else if (typ === "K") await sb.from("pfg_kunden").update(row).eq("kdnr", id);
+        else await sb.from("pfg_auftraege").update({entlade_lat: g.lat, entlade_lon: g.lon}).eq("id", id);
+      }
+    }
+    await loadAll();
+    // Entfernungen Vermehrer → Entladestellen
+    const vs = D.lief.filter(l => l.typ === "Vermehrer" && l.lat != null), ks = [...new Set(aufs.map(kKey))].filter(k => punktVon(k) && !vs.every(v => distKm(vKey(v.name), k) != null));
+    const per = Math.max(1, Math.min(50 - vs.length, Math.floor(2500 / Math.max(1, vs.length))));
+    for (let i = 0; i < ks.length && vs.length; i += per){
+      st.textContent = `Kilometer berechnen … ${i} von ${ks.length}`;
+      const part = ks.slice(i, i + per), r = await geoCall({action: "matrix", sources: vs.map(v => [v.lon, v.lat]), destinations: part.map(punktVon)});
+      const rows = []; vs.forEach((v, a) => part.forEach((k, b) => { if (r.km[a][b] != null) rows.push({von: vKey(v.name), nach: k, km: r.km[a][b], min: r.min[a] ? r.min[a][b] : null, quelle: r.quelle, updated_at: new Date().toISOString()}); }));
+      if (rows.length){ const { error } = await sb.from("pfg_distanz").upsert(rows, {onConflict: "von,nach"}); if (error) throw error; }
+    }
+    await loadAll();
+    const ohneAdr = D.lief.filter(l => l.typ === "Vermehrer" && !l.adresse).map(l => l.name);
+    st.innerHTML = `✓ Kilometer ${s.ors ? "über OpenRouteService (LKW-Straßenkilometer)" : "<b>geschätzt</b> (Luftlinie × 1,3 – für echte Straßenkilometer ORS-Schlüssel hinterlegen)"}.${ohneAdr.length ? ` <span class="pill a">Ladeadresse fehlt: ${esc(ohneAdr.join(", "))}</span>` : ""}`;
+  } catch (e){ console.error(e); st.textContent = "Fehler: " + (e.message || e); }
+  finally { btn.disabled = false; }
+}
+
+// ---- Tourenvorschlag Big Bag auf Strecke: je Vermehrer (Ladestelle) bis 24 BB und 10 Entladestellen, Reihenfolge nach nächstem Nachbarn
+async function tourVorschlag(){
+  const st = $("#vt-tst"); st.textContent = "Touren werden gebildet …";
+  const stops = {};
+  D.azu.forEach(z => { const p = D.apos.find(x => x.id === z.pos_id), a = p && headOf("auf", p.auftrag_id), x = partie(z.partie_id);
+    if (!p || !a || !x || !AKTIV.includes(a.status) || a.lieferzeitraum !== VT.lz || a.lieferart !== "Anlieferung" || p.verpackung !== "Big Bag") return;
+    const k = x.vermehrer + "|" + kKey(a), bb = Math.ceil(num(z.menge_dt) / (num(p.bb_dt) || 11) - 0.001);
+    const s = stops[k] = stops[k] || {verm: x.vermehrer, key: kKey(a), name: entladestelle(a).name, ort: [entladestelle(a).plz, entladestelle(a).ort].filter(Boolean).join(" "), bb: 0, dt: 0, sorten: new Set()};
+    s.bb += bb; s.dt += num(z.menge_dt); s.sorten.add(p.sorte); });
+  const byV = {}; Object.values(stops).forEach(s => (byV[s.verm] = byV[s.verm] || []).push(s));
+  const touren = [];
+  for (const [verm, list] of Object.entries(byV)){
+    // volle LKW direkt
+    list.forEach(s => { while (s.bb >= BB_LKW){ touren.push({verm, stopps: [{...s, bb: BB_LKW, sorten: s.sorten}], direkt: true}); s.bb -= BB_LKW; } });
+    let rest = list.filter(s => s.bb > 0);
+    // Entfernungen zwischen den Stopps (für die Reihenfolge)
+    const pts = [vKey(verm), ...rest.map(s => s.key)].filter(k => punktVon(k));
+    let M = null;
+    if (pts.length > 1 && pts.length <= 50){ try { const r = await geoCall({action: "matrix", sources: pts.map(punktVon), destinations: pts.map(punktVon)}); M = {keys: pts, km: r.km, quelle: r.quelle}; VT.kmQuelle = r.quelle; } catch (e) {} }
+    const d = (a, b) => { if (M){ const i = M.keys.indexOf(a), j = M.keys.indexOf(b); if (i >= 0 && j >= 0 && M.km[i][j] != null) return M.km[i][j]; } return distKm(a, b); };
+    while (rest.length){
+      const t = {verm, stopps: [], bb: 0}; let cur = vKey(verm);
+      while (rest.length && t.stopps.length < BB_STOPPS){
+        const cand = rest.filter(s => t.bb + s.bb <= BB_LKW); if (!cand.length) break;
+        cand.sort((a, b) => (d(cur, a.key) ?? 9999) - (d(cur, b.key) ?? 9999));
+        const n = cand[0]; t.stopps.push(n); t.bb += n.bb; rest = rest.filter(s => s !== n); cur = n.key;
+      }
+      if (!t.stopps.length){ t.stopps.push(rest.shift()); }
+      touren.push(t);
+    }
+    touren.filter(t => t.verm === verm).forEach(t => { let km = 0, cur = vKey(verm), ok = true; t.stopps.forEach(s => { const x = d(cur, s.key); if (x == null) ok = false; else km += x; cur = s.key; }); t.km = ok ? km : null; t.bb = t.stopps.reduce((a, s) => a + s.bb, 0); });
+  }
+  VT.touren = touren; st.textContent = ""; renderTourVorschlag();
+}
+function renderTourVorschlag(){
+  const box = $("#vt-tour"); const T = VT.touren; if (!T){ box.innerHTML = ""; return; }
+  if (!T.length){ box.innerHTML = `<p class="hint">Keine Big-Bag-Anlieferungen mit Partiezuordnung im ${esc(VT.lz)}.</p>`; return; }
+  const kmS = T.reduce((a, t) => a + (t.km || 0), 0), bbS = T.reduce((a, t) => a + t.bb, 0);
+  box.innerHTML = `<p class="hint">${T.length} LKW · ${bbS} Big Bags · ${fmt(kmS, 0)} km${VT.kmQuelle === "ORS" ? " (Straßen-km)" : " (geschätzt)"} · Auslastung ${fmt(bbS / (T.length * BB_LKW) * 100, 0)} % · ${fmt(kmS / Math.max(1, bbS), 1)} km je BB</p>` +
+    T.map((t, i) => `<div class="zkg"><div class="row"><b class="grow">LKW ${i + 1}: ab ${esc(t.verm)}</b><span class="pill ${t.bb >= 20 ? "g" : "a"}">${t.bb}/${BB_LKW} BB</span><span class="hint">${t.km != null ? fmt(t.km, 0) + " km" : "km offen"}</span></div>
+      <ol style="margin:0;padding-left:20px">${t.stopps.map(s => `<li>${esc(s.name)} <span class="hint">${esc(s.ort)} · ${s.bb} BB · ${esc([...s.sorten].join(", "))}</span></li>`).join("")}</ol></div>`).join("") +
+    `<div class="row"><button class="btn sec" id="vt-tprint">Tourenvorschlag für Spedition drucken</button></div>`;
+  $("#vt-tprint").onclick = () => {
+    const w = window.open("", "_blank"); if (!w) return toast("Bitte Pop-ups erlauben");
+    w.document.write(`<!DOCTYPE html><html lang="de"><meta charset="utf-8"><title>Tourenvorschlag ${esc(VT.lz)}</title><style>body{font:12px Arial,sans-serif;margin:18px}h1{font-size:18px;color:#5C8A13}table{border-collapse:collapse;width:100%;margin:6px 0 14px}th{background:#5C8A13;color:#fff;text-align:left;padding:4px}td{border-bottom:1px solid #ccc;padding:4px;vertical-align:top}@page{size:A4 landscape;margin:12mm}</style>
+      <h1>Tourenvorschlag Big Bag auf Strecke – ${esc(VT.lz)} · Spedition Ruhland</h1><p>${T.length} LKW · ${bbS} Big Bags · ${fmt(kmS, 0)} km ${VT.kmQuelle === "ORS" ? "(LKW-Straßenkilometer, OpenRouteService)" : "(geschätzt: Luftlinie × 1,3)"} · max. ${BB_LKW} BB / ${BB_STOPPS} Entladestellen je LKW · Vorschlag, die Feinplanung erfolgt durch die Spedition.</p>
+      ${T.map((t, i) => { const l = vermehrerVon(t.verm) || {}; return `<h3>LKW ${i + 1}: Ladestelle ${esc(t.verm)}${l.adresse ? ", " + esc(l.adresse) : ""} – ${t.bb} BB${t.km != null ? ", " + fmt(t.km, 0) + " km" : ""}</h3><table><tr><th>#</th><th>Entladestelle</th><th>Ort</th><th>Big Bags</th><th>Sorten</th></tr>${t.stopps.map((s, j) => `<tr><td>${j + 1}</td><td>${esc(s.name)}</td><td>${esc(s.ort)}</td><td>${s.bb}</td><td>${esc([...s.sorten].join(", "))}</td></tr>`).join("")}</table>`; }).join("")}
+      <p style="color:#666">VG Bio Bauern · Pflanzkartoffeln · erstellt ${new Date().toLocaleString("de-DE")}</p><script>window.onload=()=>window.print()<\/script>`);
+    w.document.close();
+  };
+}
+function wireVert(){
+  $("#vt-lz").onchange = () => { VT.lz = $("#vt-lz").value; VT.vorschlag = VT.kuerz = VT.touren = null; renderVert(); };
+  $("#vt-strat").onchange = () => { VT.strat = $("#vt-strat").value; VT.vorschlag = null; renderVorschlag(); };
+  $("#vt-top3").onchange = () => { VT.sackTop3 = $("#vt-top3").checked; VT.vorschlag = null; renderVorschlag(); };
+  $("#vt-kgo2").onclick = kuerzungVorschlagen;
+  $("#vt-calc").onclick = vorschlagBerechnen;
+  $("#vt-km").onclick = kmAktualisieren;
+  $("#vt-tcalc").onclick = tourVorschlag;
+  $("#vt-kmic").innerHTML = MIC; if (SR) $("#vt-kmic").onclick = () => micToggle($("#vt-kmic"), $("#vt-ktext")); else $("#vt-kmic").hidden = true;
+}
+wireVert();
+
+// ---- Ladestellen der Züchter (Zukauf)
+function renderLadestellen(){
+  $("#dl-lst").innerHTML = D.ladestellen.map(l => `<option value="${esc(l.name)}">`).join("");
+  $("#lst-t").innerHTML = `<thead><tr><th>Ladestelle</th><th>Züchter</th><th>Adresse</th><th>Bemerkung</th></tr></thead><tbody>${D.ladestellen.map(l => `<tr><td><b>${esc(l.name)}</b></td><td>${esc(l.zuechter || "")}</td><td>${esc([l.strasse, [l.plz, l.ort].filter(Boolean).join(" "), l.land !== "DE" ? l.land : ""].filter(Boolean).join(", "))}</td><td>${esc(l.bemerkung || "")}</td></tr>`).join("") || `<tr><td colspan="4" class="empty">Noch keine Ladestellen – unten anlegen</td></tr>`}</tbody>`;
+}
+$("#lst-add").onclick = async () => {
+  const row = {name: $("#lst-name").value.trim(), zuechter: $("#lst-zue").value.trim() || null, strasse: $("#lst-str").value.trim() || null, plz: $("#lst-plz").value.trim() || null, ort: $("#lst-ort").value.trim() || null, land: $("#lst-land").value.trim() || "DE", bemerkung: $("#lst-bem").value.trim() || null};
+  if (!row.name) return toast("Name fehlt");
+  const { error } = await sb.from("pfg_ladestellen").upsert(row, {onConflict: "name,zuechter"}); if (error) return toast(error.message);
+  ["#lst-name", "#lst-str", "#lst-plz", "#lst-ort", "#lst-bem"].forEach(s => $(s).value = ""); toast("Ladestelle gespeichert"); await loadAll();
+};
+
 // ---------- Touren (Speditionen)
 let TE = null; // offene Tour im Bearbeiten
 function entladestelle(a){
@@ -1211,7 +1600,7 @@ function renderTouren(){
 $("#tour-t").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (tr) openTour(tr.dataset.id); });
 $("#tour-neu").onclick = () => openTour(null);
 function openTour(id){
-  TE = id ? Object.assign({}, tourOf(id)) : {id: null, nr: "neu", spedition: "", datum: "", lieferzeitraum: $("#tour-lz").value || "Frühjahr", fahrzeug: "", kapazitaet_dt: 240, status: "geplant", bemerkung: ""};
+  TE = id ? Object.assign({}, tourOf(id)) : {id: null, nr: "neu", spedition: "", datum: "", lieferzeitraum: $("#tour-lz").value || "Frühjahr", fahrzeug: "", kapazitaet_dt: 264, frostschutz: false, status: "geplant", bemerkung: ""};
   show("v-tour"); $("#tour-list-card").hidden = true; $("#tour-edit").hidden = false; renderTourEdit(); window.scrollTo(0, 0);
 }
 function closeTour(){ TE = null; $("#tour-edit").hidden = true; $("#tour-edit").innerHTML = ""; $("#tour-list-card").hidden = false; renderTouren(); }
@@ -1235,6 +1624,7 @@ function renderTourEdit(){
     <label class="f">Lieferzeitraum${lzSelect("t-lz", t.lieferzeitraum)}</label>
     <label class="f">Fahrzeug / Kennzeichen<input type="text" id="t-fz" value="${esc(t.fahrzeug || "")}"></label>
     <label class="f">Kapazität dt<input type="number" step="1" id="t-kap" value="${t.kapazitaet_dt == null ? "" : t.kapazitaet_dt}"></label>
+    <label class="row chk" style="align-self:end"><input type="checkbox" id="t-frost" ${t.frostschutz ? "checked" : ""}> Frostschutz</label>
     <label class="f">Status<select id="t-st">${["geplant", "beauftragt", "gefahren", "storniert"].map(x => `<option ${t.status === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
   </div>
   <label class="f">Bemerkung<input type="text" id="t-bem" value="${esc(t.bemerkung || "")}"></label>
@@ -1273,13 +1663,13 @@ function renderTourEdit(){
   $$("#tour-edit .t-dn").forEach(b => b.onclick = () => move(b.dataset.id, 1));
 }
 function readTour(){
-  Object.assign(TE, {spedition: $("#t-sp").value.trim(), datum: $("#t-dat").value || null, lieferzeitraum: $("#t-lz").value, fahrzeug: $("#t-fz").value.trim() || null, kapazitaet_dt: numIn($("#t-kap").value), status: $("#t-st").value, bemerkung: $("#t-bem").value.trim() || null});
+  Object.assign(TE, {spedition: $("#t-sp").value.trim(), datum: $("#t-dat").value || null, lieferzeitraum: $("#t-lz").value, fahrzeug: $("#t-fz").value.trim() || null, kapazitaet_dt: numIn($("#t-kap").value), frostschutz: $("#t-frost").checked, status: $("#t-st").value, bemerkung: $("#t-bem").value.trim() || null});
 }
 async function saveTour(){
   readTour(); const t = TE;
   if (!t.spedition) return toast("Bitte Spedition angeben");
   if (t.id && tourAuf(t.id).some(a => a.lieferzeitraum !== t.lieferzeitraum) && !confirm("Auf der Tour sind Aufträge mit anderem Lieferzeitraum. Trotzdem speichern?")) return;
-  const row = {spedition: t.spedition, datum: t.datum, lieferzeitraum: t.lieferzeitraum, fahrzeug: t.fahrzeug, kapazitaet_dt: t.kapazitaet_dt, status: t.status, bemerkung: t.bemerkung, bearbeiter: me.name, updated_at: new Date().toISOString()};
+  const row = {spedition: t.spedition, datum: t.datum, lieferzeitraum: t.lieferzeitraum, fahrzeug: t.fahrzeug, kapazitaet_dt: t.kapazitaet_dt, frostschutz: !!t.frostschutz, status: t.status, bemerkung: t.bemerkung, bearbeiter: me.name, updated_at: new Date().toISOString()};
   if (!D.lief.some(l => l.name === t.spedition && l.typ === "Spedition")) await sb.from("pfg_lieferanten").insert({name: t.spedition, typ: "Spedition"});
   let id = t.id;
   if (id){ const { error } = await sb.from("pfg_touren").update(row).eq("id", id); if (error) return toast(error.message); }
@@ -1294,7 +1684,7 @@ function tourDruck(t){
     return `<tr><td>${i + 1}</td><td><b>${esc(e.name)}</b><br>${esc(e.strasse)}<br>${esc([e.plz, e.ort].filter(Boolean).join(" "))}${e.hinweis ? "<br>" + esc(e.hinweis) : ""}</td><td>${esc(ls.map(l => l.name + (l.adresse ? ", " + l.adresse : "")).join("; ") || "offen")}</td><td>${ps.map(p => `${esc(p.sorte)} ${esc(SORTNAME[p.sortierung])}: ${fdt(p.menge_dt)} dt – ${esc(gebinde(p).txt)}`).join("<br>")}</td><td style="text-align:right">${fdt(aufMenge(a))}</td><td>${esc(a.nr)}${a.kdnr ? "<br>Kd. " + esc(a.kdnr) : ""}</td></tr>`; }).join("");
   w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Tour ${esc(t.nr)}</title><style>body{font:12px Arial,sans-serif;margin:18px;color:#1F2A1A}h1{font-size:18px;color:#5C8A13;margin:0 0 4px}table{border-collapse:collapse;width:100%;margin-top:10px}th{background:#5C8A13;color:#fff;text-align:left;padding:5px}td{border-bottom:1px solid #ccc;padding:5px;vertical-align:top}.k{display:flex;gap:24px;flex-wrap:wrap;margin:6px 0}@page{size:A4 landscape;margin:12mm}</style></head><body>
     <h1>Tourenblatt ${esc(t.nr)} – Spedition ${esc(t.spedition)}</h1>
-    <div class="k"><span><b>Datum:</b> ${esc(datum(t.datum) || "offen")}</span><span><b>Lieferzeitraum:</b> ${esc(t.lieferzeitraum)}</span><span><b>Fahrzeug:</b> ${esc(t.fahrzeug || "–")}</span><span><b>Menge:</b> ${fdt(m)} dt${t.kapazitaet_dt ? " / " + fdt(t.kapazitaet_dt) + " dt" : ""}</span><span><b>Stopps:</b> ${as.length}</span></div>
+    <div class="k"><span><b>Datum:</b> ${esc(datum(t.datum) || "offen")}</span><span><b>Lieferzeitraum:</b> ${esc(t.lieferzeitraum)}</span><span><b>Fahrzeug:</b> ${esc(t.fahrzeug || "–")}</span><span><b>Menge:</b> ${fdt(m)} dt${t.kapazitaet_dt ? " / " + fdt(t.kapazitaet_dt) + " dt" : ""}</span><span><b>Stopps:</b> ${as.length}</span>${t.frostschutz ? "<span><b>Frostschutz: ja</b></span>" : ""}</div>
     <div><b>Ladestellen:</b> ${esc(lade.map(l => `${l.name} (${fdt(l.dt)} dt)` + (l.adresse ? " – " + l.adresse : "")).join("; ") || "noch offen")}</div>
     ${t.bemerkung ? `<div><b>Bemerkung:</b> ${esc(t.bemerkung)}</div>` : ""}
     <table><thead><tr><th>#</th><th>Entladestelle</th><th>Ladestelle</th><th>Ware / Gebinde</th><th style="text-align:right">dt</th><th>Auftrag</th></tr></thead><tbody>${rows}</tbody></table>
@@ -1380,8 +1770,11 @@ function renderStamm(){
     D.sorten.filter(s => !q || norm(s.name + " " + (s.zuechter || "")).includes(q)).map(s => `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.kochtyp || "")}</td><td>${esc(s.reife || "")}</td><td>${esc(s.zuechter || "")}</td><td>${s.bio ? "✓" : ""}</td><td>${s.konv ? "✓" : ""}</td><td class="n">${s.ghp == null ? "" : fmt(s.ghp, 2)}</td><td><select class="s-bb" data-n="${esc(s.name)}" style="width:auto">${[11, 12.5].map(x => `<option value="${x}" ${(num(s.bb_dt) || 11) === x ? "selected" : ""}>${fmt(x, x % 1 ? 1 : 0)} dt</option>`).join("")}</select></td><td class="n">${vm[s.name] || ""}</td><td><input type="checkbox" class="s-akt" data-n="${esc(s.name)}" ${s.aktiv ? "checked" : ""} aria-label="aktiv"></td></tr>`).join("") + "</tbody>";
   $$(".s-akt").forEach(c => c.onchange = async () => { const { error } = await sb.from("pfg_sorten").update({aktiv: c.checked}).eq("name", c.dataset.n); if (error) toast(error.message); else { D.sorten.find(s => s.name === c.dataset.n).aktiv = c.checked; fillLists(); } });
   $$(".s-bb").forEach(c => c.onchange = async () => { const v = num(c.value), { error } = await sb.from("pfg_sorten").update({bb_dt: v === 11 ? null : v}).eq("name", c.dataset.n); if (error) toast(error.message); else { D.sorten.find(s => s.name === c.dataset.n).bb_dt = v === 11 ? null : v; toast(`${c.dataset.n}: Big Bag ${fmt(v, v % 1 ? 1 : 0)} dt`); } });
-  $("#lief-t").innerHTML = `<thead><tr><th>Name</th><th>Art</th><th>VO-Firma</th><th>E-Mail</th><th class="n">Bestellungen</th></tr></thead><tbody>` +
-    D.lief.slice().sort((a, b) => a.typ.localeCompare(b.typ) || a.name.localeCompare(b.name, "de")).map(l => `<tr><td><b>${esc(l.name)}</b></td><td>${esc(l.typ)}</td><td>${esc(l.vo || "")}</td><td>${esc(l.email || "")}</td><td class="n">${D.best.filter(b => b.lieferant === l.name && b.lieferant_typ === l.typ).length || ""}</td></tr>`).join("") + "</tbody>";
+  $("#lief-t").innerHTML = `<thead><tr><th>Name</th><th>Art</th><th>VO-Firma</th><th>Adresse (Ladestelle)</th><th>E-Mail</th><th>km</th></tr></thead><tbody>` +
+    D.lief.slice().sort((a, b) => a.typ.localeCompare(b.typ) || a.name.localeCompare(b.name, "de")).map(l => `<tr><td><b>${esc(l.name)}</b></td><td>${esc(l.typ)}</td><td>${esc(l.vo || "")}</td><td style="min-width:200px"><input type="text" class="l-ed" data-id="${l.id}" data-f="adresse" value="${esc(l.adresse || "")}" placeholder="Straße, PLZ Ort"></td><td style="min-width:170px"><input type="email" class="l-ed" data-id="${l.id}" data-f="email" value="${esc(l.email || "")}"></td><td>${l.lat != null ? `<span class="pill g" title="${esc(l.geo_quelle || "")}">verortet</span>` : ""}</td></tr>`).join("") + "</tbody>";
+  $$("#lief-t .l-ed").forEach(i => i.onchange = async () => { const row = {[i.dataset.f]: i.value.trim() || null}; if (i.dataset.f === "adresse") Object.assign(row, {lat: null, lon: null, geo_quelle: null});
+    const { error } = await sb.from("pfg_lieferanten").update(row).eq("id", i.dataset.id); if (error) return toast(error.message); Object.assign(D.lief.find(x => x.id === i.dataset.id), row); toast("gespeichert"); });
+  renderLadestellen();
 }
 $("#sorte-q").addEventListener("input", renderStamm);
 $("#sn-add").onclick = async () => {
@@ -1519,7 +1912,7 @@ async function uebernehmen(){
 }
 
 // ---------- Navigation, Start
-function renderAll(){ renderUeb(); renderBestList(); renderAufList(); renderZukauf(); renderTouren(); renderPart(); renderStamm(); renderKund(); if (E && !$(K[E.kind].edit).hidden) renderEdit(); }
+function renderAll(){ renderUeb(); renderBestList(); renderAufList(); renderZukauf(); renderVert(); renderTouren(); renderPart(); renderStamm(); renderKund(); if (E && !$(K[E.kind].edit).hidden) renderEdit(); }
 function show(id){ $$("main").forEach(m => m.hidden = m.id !== id); $$("nav.tabs button").forEach(b => { b.setAttribute("aria-selected", b.dataset.view === id); if (b.dataset.view === id) b.scrollIntoView({block: "nearest", inline: "nearest"}); }); $("nav.tabs").classList.remove("hide"); }
 $$("nav.tabs button").forEach(b => b.onclick = () => show(b.dataset.view));
 // Reiterleiste beim Runterscrollen ausblenden, beim Hochscrollen wieder zeigen

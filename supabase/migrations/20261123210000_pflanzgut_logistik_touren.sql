@@ -85,3 +85,25 @@ alter table public.pfg_partien
   add column if not exists hkg_kg numeric,
   add column if not exists maengel text;
 alter table public.pfg_kunden add column if not exists klasse text check (klasse in ('A','B','C'));
+
+-- Verteilung und Logistik: Koordinaten, Entfernungs-Cache, Ladestellen der Züchter, Frostschutz, Kürzung
+alter table public.pfg_kunden add column if not exists lat double precision, add column if not exists lon double precision, add column if not exists geo_quelle text;
+alter table public.pfg_lieferanten add column if not exists lat double precision, add column if not exists lon double precision, add column if not exists geo_quelle text;
+create table if not exists public.pfg_distanz (von text not null, nach text not null, km numeric, min numeric, quelle text, updated_at timestamptz not null default now(), primary key (von, nach));
+create table if not exists public.pfg_ladestellen (id uuid primary key default gen_random_uuid(), name text not null, zuechter text, strasse text, plz text, ort text, land text default 'DE',
+  lat double precision, lon double precision, bemerkung text, created_at timestamptz not null default now(), unique (name, zuechter));
+alter table public.pfg_bestellungen add column if not exists ladestelle text, add column if not exists frostschutz boolean not null default false;
+alter table public.pfg_touren add column if not exists frostschutz boolean not null default false;
+alter table public.pfg_auftragpos add column if not exists menge_bestellt numeric;
+alter table public.pfg_auftraege add column if not exists entlade_lat double precision, add column if not exists entlade_lon double precision;
+do $$
+declare t text;
+begin
+  foreach t in array array['pfg_distanz','pfg_ladestellen'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('create policy "%s lesen" on public.%I for select to authenticated using (public.pfg_ok())', t, t);
+    execute format('create policy "%s anlegen" on public.%I for insert to authenticated with check (public.pfg_ok())', t, t);
+    execute format('create policy "%s aendern" on public.%I for update to authenticated using (public.pfg_ok()) with check (public.pfg_ok())', t, t);
+    execute format('create policy "%s loeschen" on public.%I for delete to authenticated using (public.pfg_ok())', t, t);
+  end loop;
+end $$;
