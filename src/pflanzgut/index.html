@@ -1083,10 +1083,21 @@ async function abPdf(){
   adr.forEach((l, i) => { font(i ? "normal" : "bold", i ? 10.5 : 11, DK); t(l, 18, y + 6 + i * 5); });
   const lzTxt = E.lieferzeitraum === "Herbst" ? "Herbst (Dez. – Mitte Jan.)" : "Frühjahr (März – April)";
   const info = [["AB-Nr.", E.nr, 1], ["Datum", datum(new Date())], ["Kunden-Nr.", E.kdnr || "–"], ["Ihre Bestellung", E.datum ? "vom " + datum(E.datum) : "–"],
-    ["Lieferzeitraum", lzTxt, 1], ["Liefertermin", "bis " + datum(E.lieferdatum || stdLieferdatum(E.lieferzeitraum, E.datum)), 1], ["Ansprechpartner", me.name], ["E-Mail", VG.bmail]];
+    ["Lieferzeitraum", lzTxt, 1], ["Liefertermin", "bis " + datum(E.lieferdatum || stdLieferdatum(E.lieferzeitraum, E.datum)), 1],
+    ["Lieferart", E.lieferart === "Anlieferung" ? "Anlieferung" : "Abholung ab Vermehrer", 1], ["Ansprechpartner", me.name], ["E-Mail", VG.bmail]];
   info.forEach((r, i) => { font("normal", 8.5, GR); t(r[0], 124, y + i * 4.6); font(r[2] ? "bold" : "normal", 8.5, DK); t(doc.splitTextToSize(String(r[1]), 40)[0], 152, y + i * 4.6); });
   // Titel
-  y = 86; font("bold", 18, G); t("Auftragsbestätigung", 18, y); font("normal", 11, B); t("Nr. " + E.nr, 92, y);
+  // abweichende Lieferadresse bzw. Abholstelle direkt unter der Anschrift (nicht unten im Text)
+  let yy = y + 6 + adr.length * 5 + 3;
+  const ent = entladestelle(E);
+  let block = null;
+  if (E.lieferart === "Anlieferung" && ent.abw) block = ["Abweichende Lieferadresse", [ent.name, ent.strasse, [ent.plz, ent.ort].filter(Boolean).join(" "), ent.hinweis].filter(Boolean)];
+  else if (E.lieferart !== "Anlieferung"){ const l = E.abholstelle ? D.lief.find(x => x.name === E.abholstelle && x.typ === "Vermehrer") : null; block = ["Abholstelle (Vermehrer)", [E.abholstelle || "wird mitgeteilt", l && l.adresse].filter(Boolean)]; }
+  if (block){
+    const h = 5 + block[1].length * 4.4; doc.setFillColor(238, 245, 250); doc.rect(17, yy - 3.6, 96, h + 1.5, "F"); doc.setFillColor(...B); doc.rect(17, yy - 3.6, 0.9, h + 1.5, "F");
+    font("bold", 8.5, B); t(block[0], 20, yy); font("normal", 9.5, DK); block[1].forEach((l, i) => t(doc.splitTextToSize(l, 90)[0], 20, yy + 4.6 + i * 4.4)); yy += h + 2;
+  }
+  y = Math.max(88, yy + 8, 42 + info.length * 4.6 + 8); font("bold", 18, G); t("Auftragsbestätigung", 18, y); font("normal", 11, B); t("Nr. " + E.nr, 92, y);
   font("normal", 9.5, DK); t(ANREDE_STD(false), 18, y + 8);
   const intro = "vielen Dank für Ihre Bestellung. Hiermit bestätigen wir Ihnen folgende Positionen:";
   const il = doc.splitTextToSize(intro, 174); il.forEach((l, i) => t(l, 18, y + 13 + i * 5)); y = y + 13 + il.length * 5 + 6;
@@ -1117,13 +1128,8 @@ async function abPdf(){
     font("bold", 9, DK); t("Zusatz:", 18, y); font("normal", 9, DK);
     doc.splitTextToSize(zt, 158).forEach((l, i) => t(l, 34, y + i * 4.8)); y += doc.splitTextToSize(zt, 158).length * 4.8 + 3;
   }
-  const ent = entladestelle(E);
-  const bis = datum(E.lieferdatum || stdLieferdatum(E.lieferzeitraum, E.datum));
-  const lief = E.lieferart === "Anlieferung" ? `Lieferung: Anlieferung bis ${bis} an ${[ent.abw ? ent.name : "", ent.strasse, [ent.plz, ent.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "die vereinbarte Adresse"}.`
-    : `Lieferung: Abholung bis ${bis} ab Vermehrer${E.abholstelle ? ": " + E.abholstelle : ""}${(() => { const l = E.abholstelle ? D.lief.find(x => x.name === E.abholstelle && x.typ === "Vermehrer") : null; return l && l.adresse ? ", " + l.adresse : ""; })()}.`;
-  const para = [lief]; // nur lieferrelevante Angaben, keine Zusatztexte aus dem Mailverkehr
-  font("normal", 9, DK);
-  para.forEach(pa => { doc.splitTextToSize(pa, 174).forEach(l => { if (y > 262){ doc.addPage(); y = 20; } t(l, 18, y); y += 4.8; }); y += 2; });
+
+
   y += 4; if (y > 250){ doc.addPage(); y = 20; }
   font("normal", 9.5, DK); t(du ? "Vielen Dank für deinen Auftrag. Bei Fragen melde dich gerne." : "Vielen Dank für Ihren Auftrag. Bei Fragen erreichen Sie uns gerne.", 18, y);
   t(du ? "Viele Grüße" : "Mit freundlichen Grüßen", 18, y + 9); font("bold", 9.5, DK); t(me.name, 18, y + 19); font("normal", 9.5, DK); t(VG.firma, 18, y + 24);
